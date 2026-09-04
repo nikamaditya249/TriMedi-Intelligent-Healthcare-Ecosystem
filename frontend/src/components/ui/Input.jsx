@@ -1,0 +1,101 @@
+import React from "react";
+
+export function Input({
+  label,
+  error,
+  helperText,
+  icon: Icon,
+  className = "",
+  type = "text",
+  id,
+  required = false,
+  ...props
+}) {
+  const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+
+  return (
+    <div className="w-full">
+      {label && (
+        <label
+          htmlFor={inputId}
+          className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
+        >
+          {label} {required && <span className="text-rose-500">*</span>}
+        </label>
+      )}
+
+      <div className="relative">
+        {Icon && (
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <Icon className="w-4 h-4" />
+          </div>
+        )}
+
+        <input
+          id={inputId}
+          type={type}
+          required={required}
+          className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent ${
+            Icon ? "pl-10" : ""
+          } ${
+            error
+              ? "border-rose-300 focus:ring-rose-500"
+              : "border-slate-300 hover:border-slate-400"
+          } ${className}`}
+          {...props}
+        />
+      </div>
+
+      {error && <p className="mt-1.5 text-xs text-rose-500 font-medium">{error}</p>}
+      {helperText && !error && (
+        <p className="mt-1 text-xs text-slate-400">{helperText}</p>
+      )}
+    </div>
+  );
+}
+
+export function Select({
+  label,
+  error,
+  options = [],
+  className = "",
+  id,
+  required = false,
+  ...props
+}) {
+  const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+
+  return (
+    <div className="w-full">
+      {label && (
+        <label
+          htmlFor={selectId}
+          className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
+        >
+          {label} {required && <span className="text-rose-500">*</span>}
+        </label>
+      )}
+
+      <select
+        id={selectId}
+        required={required}
+        className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-800 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent ${
+          error
+            ? "border-rose-300 focus:ring-rose-500"
+            : "border-slate-300 hover:border-slate-400"
+        } ${className}`}
+        {...props}
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+
+      {error && <p className="mt-1.5 text-xs text-rose-500 font-medium">{error}</p>}
+    </div>
+  );
+}
+
+export default Input;
