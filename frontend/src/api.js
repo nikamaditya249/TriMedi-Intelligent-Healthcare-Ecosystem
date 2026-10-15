@@ -1,181 +1,436 @@
-const BASE_URL = "http://localhost:5001/api";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
+/**
+ * Universal safe fetch helper with error handling & token attachment
+ */
+async function request(endpoint, options = {}) {
+  const url = endpoint.startsWith("http") ? endpoint : `${BASE_URL}${endpoint}`;
+  const token = localStorage.getItem("token");
+
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options.headers || {}),
+  };
+
+  try {
+    const res = await fetch(url, { ...options, headers });
+    const contentType = res.headers.get("content-type");
+    const data = contentType && contentType.includes("application/json") ? await res.json() : null;
+
+    if (!res.ok) {
+      const errorMsg = data?.message || data?.error || `Request failed with status ${res.status}`;
+      return { success: false, error: errorMsg, status: res.status, ...data };
+    }
+
+    return data;
+  } catch (err) {
+    console.error(`API Request error [${endpoint}]:`, err);
+    return {
+      success: false,
+      error: "Unable to reach the TriMedi server. Please verify your connection.",
+      offline: true,
+    };
+  }
+}
+
+// -------------------------------------------------------------
 // 1. PRODUCTS & MEDICINE CATALOG
+// -------------------------------------------------------------
 export const getProducts = async (params = {}) => {
   const query = new URLSearchParams(params).toString();
-  const url = query ? `${BASE_URL}/products?${query}` : `${BASE_URL}/products`;
-  const res = await fetch(url);
-  return res.json();
+  const endpoint = query ? `/products?${query}` : `/products`;
+  const res = await request(endpoint);
+  return Array.isArray(res) ? res : res?.products || [];
 };
 
-// 2. AUTHENTICATION
-export const registerUser = async (data) => {
-  const res = await fetch(`${BASE_URL}/auth/register`, {
+export const addProduct = async (productData) => {
+  return request("/products", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(productData),
+  });
+};
+
+// -------------------------------------------------------------
+// 2. AUTHENTICATION & PROFILE
+// -------------------------------------------------------------
+export const registerUser = async (data) => {
+  return request("/auth/register", {
+    method: "POST",
     body: JSON.stringify(data),
   });
-  return res.json();
 };
 
 export const loginUser = async (data) => {
-  const res = await fetch(`${BASE_URL}/auth/login`, {
+  return request("/auth/login", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  return res.json();
 };
 
 export const getCurrentUser = async (token) => {
-  const res = await fetch(`${BASE_URL}/auth/me`, {
-    headers: { Authorization: `Bearer ${token}` },
+  return request("/auth/me", {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
-  return res.json();
 };
 
 export const updateProfile = async (userData) => {
-  const res = await fetch(`${BASE_URL}/auth/profile`, {
+  return request("/auth/profile", {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(userData),
   });
-  return res.json();
 };
 
-// 3. DASHBOARD STATS
+// -------------------------------------------------------------
+// 3. DASHBOARD STATS & TELEMETRY
+// -------------------------------------------------------------
 export const getDashboardStats = async (role = "patient") => {
-  const res = await fetch(`${BASE_URL}/stats/dashboard?role=${role}`);
-  return res.json();
+  const res = await request(`/stats/dashboard?role=${role}`);
+  return res || { stats: {} };
 };
 
+// -------------------------------------------------------------
 // 4. DIGITAL PRESCRIPTIONS
+// -------------------------------------------------------------
 export const getPrescriptions = async (params = {}) => {
   const query = new URLSearchParams(params).toString();
-  const url = query ? `${BASE_URL}/prescriptions?${query}` : `${BASE_URL}/prescriptions`;
-  const res = await fetch(url);
-  return res.json();
+  const endpoint = query ? `/prescriptions?${query}` : `/prescriptions`;
+  const res = await request(endpoint);
+  return Array.isArray(res) ? res : [];
 };
 
 export const getPrescriptionById = async (id) => {
-  const res = await fetch(`${BASE_URL}/prescriptions/${id}`);
-  return res.json();
+  return request(`/prescriptions/${id}`);
 };
 
 export const createPrescription = async (prescriptionData) => {
-  const res = await fetch(`${BASE_URL}/prescriptions`, {
+  return request("/prescriptions", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(prescriptionData),
   });
-  return res.json();
 };
 
 export const updatePrescriptionStatus = async (id, status) => {
-  const res = await fetch(`${BASE_URL}/prescriptions/${id}/status`, {
+  return request(`/prescriptions/${id}/status`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status }),
   });
-  return res.json();
 };
 
+// -------------------------------------------------------------
 // 5. APPOINTMENTS
+// -------------------------------------------------------------
 export const getAppointments = async (params = {}) => {
   const query = new URLSearchParams(params).toString();
-  const url = query ? `${BASE_URL}/appointments?${query}` : `${BASE_URL}/appointments`;
-  const res = await fetch(url);
-  return res.json();
+  const endpoint = query ? `/appointments?${query}` : `/appointments`;
+  const res = await request(endpoint);
+  return Array.isArray(res) ? res : [];
 };
 
 export const bookAppointment = async (appointmentData) => {
-  const res = await fetch(`${BASE_URL}/appointments`, {
+  return request("/appointments", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(appointmentData),
   });
-  return res.json();
 };
 
 export const updateAppointmentStatus = async (id, status) => {
-  const res = await fetch(`${BASE_URL}/appointments/${id}/status`, {
+  return request(`/appointments/${id}/status`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status }),
   });
-  return res.json();
 };
 
+// -------------------------------------------------------------
 // 6. ORDERS & FULFILLMENT
+// -------------------------------------------------------------
 export const getOrders = async (params = {}) => {
   const query = new URLSearchParams(params).toString();
-  const url = query ? `${BASE_URL}/orders?${query}` : `${BASE_URL}/orders`;
-  const res = await fetch(url);
-  return res.json();
+  const endpoint = query ? `/orders?${query}` : `/orders`;
+  const res = await request(endpoint);
+  return Array.isArray(res) ? res : [];
 };
 
 export const getOrderById = async (id) => {
-  const res = await fetch(`${BASE_URL}/orders/${id}`);
-  return res.json();
+  return request(`/orders/${id}`);
 };
 
 export const createOrder = async (orderData) => {
-  const res = await fetch(`${BASE_URL}/orders`, {
+  return request("/orders", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(orderData),
   });
-  return res.json();
 };
 
 export const updateOrderStatus = async (id, statusData) => {
-  const res = await fetch(`${BASE_URL}/orders/${id}/status`, {
+  const payload = typeof statusData === "string" ? { status: statusData } : statusData;
+  return request(`/orders/${id}/status`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(statusData),
+    body: JSON.stringify(payload),
   });
-  return res.json();
 };
 
-// 7. PAYPAL INTEGRATION
+// -------------------------------------------------------------
+// 7. SMART REFILL INTELLIGENCE & ORDER AGAIN
+// -------------------------------------------------------------
+export const getRefillStatus = async (userEmail) => {
+  const endpoint = userEmail ? `/refill/status?userEmail=${encodeURIComponent(userEmail)}` : "/refill/status";
+  return request(endpoint);
+};
+
+export const createOrderAgainDraft = async (payload) => {
+  return request("/refill/order-again-draft", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const getMedicationSupplyIntelligence = async (patientEmail) => {
+  const endpoint = patientEmail
+    ? `/intelligence/supply-summary?patientEmail=${encodeURIComponent(patientEmail)}`
+    : `/intelligence/supply-summary`;
+  return request(endpoint);
+};
+
+// -------------------------------------------------------------
+// 8. PAYPAL PAYMENTS
+// -------------------------------------------------------------
 export const getPayPalConfig = async () => {
-  const res = await fetch(`${BASE_URL}/paypal/config`);
-  return res.json();
+  return request("/paypal/config");
 };
 
 export const createPayPalOrder = async (cartPayload) => {
-  const res = await fetch(`${BASE_URL}/paypal/create-order`, {
+  return request("/paypal/create-order", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(cartPayload),
   });
-  return res.json();
 };
 
 export const capturePayPalOrder = async (capturePayload) => {
-  const res = await fetch(`${BASE_URL}/paypal/capture-order`, {
+  return request("/paypal/capture-order", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(capturePayload),
   });
-  return res.json();
 };
 
-// 8. AI PRESCRIPTION UNDERSTANDING
+// -------------------------------------------------------------
+// 9. ASSISTIVE HEALTHCARE AI
+// -------------------------------------------------------------
 export const extractPrescriptionWithAI = async (documentPayload) => {
-  const res = await fetch(`${BASE_URL}/ai/extract-prescription`, {
+  return request("/ai/extract-prescription", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(documentPayload),
   });
-  return res.json();
 };
 
-// 9. MEDICATION SUPPLY INTELLIGENCE
-export const getMedicationSupplyIntelligence = async (patientEmail) => {
-  const url = patientEmail
-    ? `${BASE_URL}/intelligence/supply-summary?patientEmail=${encodeURIComponent(patientEmail)}`
-    : `${BASE_URL}/intelligence/supply-summary`;
-  const res = await fetch(url);
-  return res.json();
+export const simplifyInstructionsWithAI = async (payload) => {
+  return request("/ai/simplify-instructions", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const draftDoctorQuestionWithAI = async (payload) => {
+  return request("/ai/draft-doctor-question", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const summarizeConsultationWithAI = async (payload) => {
+  return request("/ai/summarize-consultation", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+// -------------------------------------------------------------
+// 10. REAL-TIME NOTIFICATIONS & CHAT
+// -------------------------------------------------------------
+export const getNotifications = async (userEmail, role = "patient") => {
+  return request(`/notifications?userEmail=${encodeURIComponent(userEmail)}&role=${role}`);
+};
+
+export const markNotificationRead = async (id) => {
+  return request(`/notifications/${id}/read`, { method: "PATCH" });
+};
+
+export const markAllNotificationsRead = async (userEmail) => {
+  return request("/notifications/read-all", {
+    method: "PATCH",
+    body: JSON.stringify({ userEmail }),
+  });
+};
+
+export const getConversations = async (userEmail, role = "patient") => {
+  return request(`/chat/conversations?userEmail=${encodeURIComponent(userEmail)}&role=${role}`);
+};
+
+export const getMessages = async (conversationId, userEmail) => {
+  return request(`/chat/messages/${conversationId}?userEmail=${encodeURIComponent(userEmail)}`);
+};
+
+export const sendMessage = async (messagePayload) => {
+  return request("/chat/messages", {
+    method: "POST",
+    body: JSON.stringify(messagePayload),
+  });
+};
+
+// -------------------------------------------------------------
+// 11. CLINIC QUEUE & PATIENT CHECK-IN WORKFLOW
+// -------------------------------------------------------------
+export const getClinicQueue = async (doctorEmail = "", clinicName = "") => {
+  const query = new URLSearchParams();
+  if (doctorEmail) query.append("doctorEmail", doctorEmail);
+  if (clinicName) query.append("clinicName", clinicName);
+  const qStr = query.toString();
+  return request(`/queue${qStr ? `?${qStr}` : ""}`);
+};
+
+export const checkInAppointment = async (appointmentId, priority = "normal", notes = "") => {
+  return request("/queue/check-in", {
+    method: "POST",
+    body: JSON.stringify({ appointmentId, priority, notes }),
+  });
+};
+
+export const callPatientInQueue = async (queueId) => {
+  return request(`/queue/${queueId}/call`, { method: "PUT" });
+};
+
+export const startConsultation = async (queueId, appointmentId) => {
+  return request(`/queue/${queueId}/start`, {
+    method: "PUT",
+    body: JSON.stringify({ appointmentId }),
+  });
+};
+
+export const completeConsultationEncounter = async (consultationId, prescriptionData = null, queueId = null) => {
+  return request(`/consultations/${consultationId}/complete`, {
+    method: "POST",
+    body: JSON.stringify({ prescriptionData, queueId }),
+  });
+};
+
+export const updateQueueStatus = async (queueId, status, reason = "") => {
+  return request(`/queue/${queueId}/status`, {
+    method: "PUT",
+    body: JSON.stringify({ status, reason }),
+  });
+};
+
+// -------------------------------------------------------------
+// 12. DOCTOR CONSULTATION & LONGITUDINAL MEDICAL RECORDS
+// -------------------------------------------------------------
+export const initConsultation = async (payload) => {
+  return request("/consultations", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const getConsultationEncounter = async (appointmentId) => {
+  return request(`/consultations/encounter/${appointmentId}`);
+};
+
+export const saveConsultationNotes = async (consultationId, notesPayload) => {
+  return request(`/consultations/${consultationId}`, {
+    method: "PUT",
+    body: JSON.stringify(notesPayload),
+  });
+};
+
+export const getPatientMedicalRecord = async (patientEmail) => {
+  const endpoint = patientEmail
+    ? `/consultations/patient-record?patientEmail=${encodeURIComponent(patientEmail)}`
+    : `/consultations/patient-record`;
+  return request(endpoint);
+};
+
+export const approvePrescription = async (prescriptionId, approvalNotes = "") => {
+  return request(`/prescriptions/${prescriptionId}/approve`, {
+    method: "POST",
+    body: JSON.stringify({ approvalNotes }),
+  });
+};
+
+// -------------------------------------------------------------
+// 13. RECEPTION OPERATIONS & DOCTOR VERIFICATION
+// -------------------------------------------------------------
+export const getReceptionTodayAppointments = async () => {
+  return request("/reception/today-appointments");
+};
+
+export const registerReceptionPatient = async (patientPayload) => {
+  return request("/reception/register-patient", {
+    method: "POST",
+    body: JSON.stringify(patientPayload),
+  });
+};
+
+export const updateReceptionAppointmentStatus = async (appointmentId, status, reason = "") => {
+  return request(`/reception/appointments/${appointmentId}/status`, {
+    method: "PUT",
+    body: JSON.stringify({ status, reason }),
+  });
+};
+
+export const verifyDoctorCredential = async (doctorId, status, notes = "", verifiedBy = "") => {
+  return request(`/auth/doctor/${doctorId}/verify`, {
+    method: "PUT",
+    body: JSON.stringify({ status, notes, verifiedBy }),
+  });
+};
+
+export default {
+  getProducts,
+  addProduct,
+  registerUser,
+  loginUser,
+  getCurrentUser,
+  updateProfile,
+  getDashboardStats,
+  getPrescriptions,
+  getPrescriptionById,
+  createPrescription,
+  updatePrescriptionStatus,
+  approvePrescription,
+  getAppointments,
+  bookAppointment,
+  updateAppointmentStatus,
+  checkInAppointment,
+  getClinicQueue,
+  callPatientInQueue,
+  startConsultation,
+  completeConsultationEncounter,
+  updateQueueStatus,
+  initConsultation,
+  getConsultationEncounter,
+  saveConsultationNotes,
+  getPatientMedicalRecord,
+  getReceptionTodayAppointments,
+  registerReceptionPatient,
+  updateReceptionAppointmentStatus,
+  verifyDoctorCredential,
+  getOrders,
+  getOrderById,
+  createOrder,
+  updateOrderStatus,
+  getRefillStatus,
+  createOrderAgainDraft,
+  getMedicationSupplyIntelligence,
+  getPayPalConfig,
+  createPayPalOrder,
+  capturePayPalOrder,
+  extractPrescriptionWithAI,
+  simplifyInstructionsWithAI,
+  draftDoctorQuestionWithAI,
+  summarizeConsultationWithAI,
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  getConversations,
+  getMessages,
+  sendMessage,
 };

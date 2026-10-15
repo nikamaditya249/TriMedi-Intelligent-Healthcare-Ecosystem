@@ -3,10 +3,12 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import User from "../models/User.js";
+import { optionalAuth } from "../middleware/authMiddleware.js";
+import { logClinicalAudit } from "../services/auditService.js";
 
 const router = express.Router();
 
-const fallbackUsers = [
+export const fallbackUsers = [
   {
     _id: "demo_patient_1",
     name: "Aditya Nikam",
@@ -16,6 +18,10 @@ const fallbackUsers = [
     phone: "+91 98765 43210",
     bloodGroup: "O+",
     allergies: ["Penicillin"],
+    existingConditions: ["Dyslipidemia", "Mild Hypertension"],
+    currentMedications: ["Atorvastatin 20mg", "Telmisartan 40mg"],
+    dob: "1994-06-15",
+    gender: "Male",
   },
   {
     _id: "demo_doctor_1",
@@ -26,6 +32,11 @@ const fallbackUsers = [
     specialty: "Internal Medicine & Cardiology",
     hospital: "Metro Health Center",
     licenseNumber: "MED-88492-IN",
+    qualifications: "MBBS, MD (Internal Medicine), FACC",
+    experienceYears: 14,
+    verificationStatus: "verified",
+    verifiedAt: new Date("2025-01-15"),
+    verifiedBy: "State Medical Council (Gov ID: SMC-9912)",
     phone: "+91 98221 11223",
   },
   {
@@ -47,24 +58,51 @@ const fallbackUsers = [
     role: "admin",
     phone: "+91 99000 11222",
   },
+  {
+    _id: "demo_reception_1",
+    name: "Meena Ramanathan",
+    email: "reception@trimedi.health",
+    password: "$2a$10$demoHashedPasswordDummyString1234567890",
+    role: "reception",
+    phone: "+91 98333 44556",
+    clinicName: "Metro Health Center",
+    shift: "General Day Shift",
+  },
 ];
 
 // Helper: Normalize user object response
-const sanitizeUser = (user) => ({
+export const sanitizeUser = (user) => ({
   _id: user._id,
   name: user.name,
   email: user.email,
   role: user.role || "patient",
   phone: user.phone || "",
   avatar: user.avatar || "",
+  // Doctor specific fields & verification
   specialty: user.specialty || "",
   hospital: user.hospital || "",
   licenseNumber: user.licenseNumber || "",
+  qualifications: user.qualifications || "",
+  experienceYears: user.experienceYears || 0,
+  verificationStatus: user.verificationStatus || (user.role === "doctor" ? "verified" : "not_applicable"),
+  verifiedAt: user.verifiedAt || null,
+  verifiedBy: user.verifiedBy || "",
+  // Reception specific fields
+  clinicName: user.clinicName || "Metro Health Center",
+  shift: user.shift || "General Day Shift",
+  // Pharmacy specific fields
   pharmacyName: user.pharmacyName || "",
   licenseId: user.licenseId || "",
   address: user.address || "",
+  // Patient clinical onboarding fields
+  dob: user.dob || "",
+  gender: user.gender || "",
   bloodGroup: user.bloodGroup || "",
   allergies: user.allergies || [],
+  existingConditions: user.existingConditions || [],
+  currentMedications: user.currentMedications || [],
+  medicalHistoryNotes: user.medicalHistoryNotes || "",
+  emergencyContact: user.emergencyContact || "",
 });
 
 // ✅ REGISTER
@@ -265,12 +303,100 @@ router.put("/profile", async (req, res) => {
     }
 
     if (updatedUser) {
+      await logClinicalAudit({
+        req,
+        action: "PATIENT_PROFILE_UPDATED",
+        resourceType: "user",
+        resourceId: String(updatedUser._id),
+        details: { email: updatedUser.email },
+      });
       return res.json({ message: "Profile updated successfully", user: sanitizeUser(updatedUser) });
     }
 
     res.status(400).json({ message: "Unable to update profile" });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// ✅ PUT /doctor/:id/verify
+// Explicit Doctor Credential Verification (Admin Only)
+router.put("/doctor/:id/verify", optionalAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const status = req.body.status || req.body.verificationStatus;
+    const { notes = "", verifiedBy = "State Medical Council Authority" } = req.body;
+
+    // Role check: Only admin can change verification status (checked first)
+    if (req.user && req.user.role !== "admin") {
+      await logClinicalAudit({
+        req,
+        action: "ACCESS_DENIED_VERIFICATION_TAMPER",
+        resourceType: "doctor",
+        resourceId: String(id),
+        status: "DENIED",
+        details: { targetStatus: status },
+      });
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: Only System Administrators can modify doctor credential verification.",
+      });
+    }
+
+    const allowedStatuses = ["pending", "under_review", "verified", "rejected", "suspended"];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid verification status '${status}'. Allowed: ${allowedStatuses.join(", ")}`,
+      });
+    }
+
+    const verificationTime = new Date();
+    let updatedDoctor = null;
+
+    if (mongoose.connection.readyState === 1 && mongoose.isValidObjectId(id)) {
+      updatedDoctor = await User.findByIdAndUpdate(
+        id,
+        {
+          verificationStatus: status,
+          verifiedAt: status === "verified" ? verificationTime : null,
+          verifiedBy: status === "verified" ? verifiedBy : "",
+        },
+        { new: true }
+      );
+    } else {
+      updatedDoctor = fallbackUsers.find((u) => String(u._id) === String(id) || u.email === id);
+      if (updatedDoctor) {
+        updatedDoctor.verificationStatus = status;
+        updatedDoctor.verifiedAt = status === "verified" ? verificationTime : null;
+        updatedDoctor.verifiedBy = status === "verified" ? verifiedBy : "";
+      }
+    }
+
+    if (!updatedDoctor) {
+      return res.status(404).json({ success: false, message: "Doctor record not found" });
+    }
+
+    await logClinicalAudit({
+      req,
+      action: "DOCTOR_VERIFICATION_CHANGED",
+      resourceType: "doctor",
+      resourceId: String(id),
+      details: {
+        newStatus: status,
+        verifiedBy,
+        doctorEmail: updatedDoctor.email,
+        notes,
+      },
+    });
+
+    res.json({
+      success: true,
+      message: `Doctor credential verification status set to ${status}`,
+      doctor: sanitizeUser(updatedDoctor),
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 

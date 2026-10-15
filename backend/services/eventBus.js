@@ -60,6 +60,66 @@ class HealthcareEventBus extends EventEmitter {
       });
     });
 
+    this.on("APPOINTMENT_CHECKED_IN", async (data) => {
+      // Notify Doctor that patient is in waiting room
+      await this.createNotification({
+        userEmail: data.doctorEmail,
+        userRole: "doctor",
+        type: "PATIENT_CHECKED_IN",
+        title: `Patient Checked In: Queue #${data.queueNumber}`,
+        message: `${data.patientName} has arrived at the clinic and is waiting in the queue.`,
+        category: "appointment",
+        priority: "high",
+        relatedEntityType: "appointment",
+        relatedEntityId: data.appointmentId || "",
+        linkUrl: "/app/doctor/dashboard",
+      });
+
+      // Notify Patient with Queue position & estimated wait
+      await this.createNotification({
+        userEmail: data.patientEmail,
+        userRole: "patient",
+        type: "CHECK_IN_CONFIRMED",
+        title: `Checked In: Queue #${data.queueNumber}`,
+        message: `You are checked in for Dr. ${data.doctorName}. Estimated wait: ~${data.estimatedWaitMinutes} minutes.`,
+        category: "appointment",
+        priority: "medium",
+        relatedEntityType: "appointment",
+        relatedEntityId: data.appointmentId || "",
+        linkUrl: "/app/patient/dashboard",
+      });
+    });
+
+    this.on("CONSULTATION_STARTED", async (data) => {
+      await this.createNotification({
+        userEmail: data.patientEmail,
+        userRole: "patient",
+        type: "CONSULTATION_STARTED",
+        title: "Consultation In Progress",
+        message: `Dr. ${data.doctorName} has started your clinical consultation encounter.`,
+        category: "appointment",
+        priority: "urgent",
+        relatedEntityType: "appointment",
+        relatedEntityId: data.appointmentId || "",
+        linkUrl: "/app/patient/dashboard",
+      });
+    });
+
+    this.on("CONSULTATION_COMPLETED", async (data) => {
+      await this.createNotification({
+        userEmail: data.patientEmail,
+        userRole: "patient",
+        type: "CONSULTATION_COMPLETED",
+        title: "Consultation Concluded",
+        message: `Your consultation with Dr. ${data.doctorName} is complete. Your medical records and digital prescription have been finalized.`,
+        category: "appointment",
+        priority: "medium",
+        relatedEntityType: "appointment",
+        relatedEntityId: data.appointmentId || "",
+        linkUrl: "/app/patient/prescriptions",
+      });
+    });
+
     // 2. PRESCRIPTIONS
     this.on("PRESCRIPTION_ISSUED", async (data) => {
       await this.createNotification({

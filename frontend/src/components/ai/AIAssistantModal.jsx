@@ -2,6 +2,11 @@ import React, { useState } from "react";
 import Modal from "../ui/Modal";
 import Button from "../ui/Button";
 import Badge from "../ui/Badge";
+import {
+  simplifyInstructionsWithAI,
+  draftDoctorQuestionWithAI,
+  summarizeConsultationWithAI,
+} from "../../api";
 
 const AIAssistantModal = ({ isOpen, onClose }) => {
   const [mode, setMode] = useState("simplify"); // 'simplify' | 'draft_question' | 'summarize'
@@ -18,37 +23,26 @@ const AIAssistantModal = ({ isOpen, onClose }) => {
       setLoading(true);
       setResult(null);
 
-      let endpoint = "";
-      let payload = {};
-
+      let data;
       if (mode === "simplify") {
-        endpoint = "http://localhost:5001/api/ai/simplify-instructions";
-        payload = {
+        data = await simplifyInstructionsWithAI({
           medicines: [{ name: "Prescribed Regimen", instructions: medInput }],
           diagnosis: "General Wellness & Lipid Regulation",
-        };
+        });
       } else if (mode === "draft_question") {
-        endpoint = "http://localhost:5001/api/ai/draft-doctor-question";
-        payload = {
+        data = await draftDoctorQuestionWithAI({
           symptomTopic: symptomInput,
           currentMedication: "Prescribed Routine",
           duration: "the past few days",
-        };
+        });
       } else {
-        endpoint = "http://localhost:5001/api/ai/summarize-consultation";
-        payload = {
+        data = await summarizeConsultationWithAI({
           doctorName: doctorNameInput,
           notes: "Routine follow-up regarding blood pressure and lipid profile adherence.",
-        };
+        });
       }
 
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (data.success) {
+      if (data && data.success) {
         setResult(data);
       }
     } catch (e) {

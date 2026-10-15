@@ -35,18 +35,18 @@ export function Input({
           id={inputId}
           type={type}
           required={required}
-          className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent ${
+          className={`w-full rounded-xl border bg-white px-3.5 py-2 text-sm text-slate-800 placeholder-slate-400 transition-colors duration-150 focus:outline-none focus:ring-1 focus:ring-brand-700 focus:border-brand-700 ${
             Icon ? "pl-10" : ""
           } ${
             error
-              ? "border-rose-300 focus:ring-rose-500"
+              ? "border-rose-300 focus:ring-rose-500 focus:border-rose-500"
               : "border-slate-300 hover:border-slate-400"
           } ${className}`}
           {...props}
         />
       </div>
 
-      {error && <p className="mt-1.5 text-xs text-rose-500 font-medium">{error}</p>}
+      {error && <p className="mt-1 text-xs text-rose-600 font-medium">{error}</p>}
       {helperText && !error && (
         <p className="mt-1 text-xs text-slate-400">{helperText}</p>
       )}
@@ -61,6 +61,7 @@ export function Select({
   className = "",
   id,
   required = false,
+  children,
   ...props
 }) {
   const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
@@ -79,21 +80,23 @@ export function Select({
       <select
         id={selectId}
         required={required}
-        className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-800 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent ${
+        className={`w-full rounded-xl border bg-white px-3.5 py-2 text-sm text-slate-800 transition-colors duration-150 focus:outline-none focus:ring-1 focus:ring-brand-700 focus:border-brand-700 ${
           error
-            ? "border-rose-300 focus:ring-rose-500"
+            ? "border-rose-300 focus:ring-rose-500 focus:border-rose-500"
             : "border-slate-300 hover:border-slate-400"
         } ${className}`}
         {...props}
       >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
+        {children
+          ? children
+          : options.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
       </select>
 
-      {error && <p className="mt-1.5 text-xs text-rose-500 font-medium">{error}</p>}
+      {error && <p className="mt-1 text-xs text-rose-600 font-medium">{error}</p>}
     </div>
   );
 }

@@ -26,11 +26,39 @@ const appointmentSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["scheduled", "confirmed", "completed", "cancelled"],
+      enum: [
+        "requested",
+        "scheduled",
+        "confirmed",
+        "checked_in",
+        "waiting",
+        "in_consultation",
+        "completed",
+        "cancelled",
+        "no_show",
+      ],
       default: "scheduled",
+      index: true,
     },
     reason: { type: String, default: "General Consultation & Prescription Review" },
     notes: { type: String, default: "" },
+    // Phase 2 State Machine Tracking & Audit
+    checkInAt: { type: Date, default: null },
+    consultationStartedAt: { type: Date, default: null },
+    consultationCompletedAt: { type: Date, default: null },
+    queueNumber: { type: Number, default: null },
+    estimatedWaitMinutes: { type: Number, default: 0 },
+    checkedInBy: { type: String, default: "" },
+    statusHistory: [
+      {
+        fromStatus: { type: String },
+        toStatus: { type: String },
+        changedBy: { type: String },
+        role: { type: String },
+        timestamp: { type: Date, default: Date.now },
+        reason: { type: String, default: "" },
+      },
+    ],
   },
   { timestamps: true }
 );

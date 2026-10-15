@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import { io } from "socket.io-client";
 import { useAuth } from "./AuthContext";
+import { getNotifications, markNotificationRead, markAllNotificationsRead } from "../api";
 
 const SocketContext = createContext(null);
 
@@ -88,9 +89,8 @@ export const SocketProvider = ({ children }) => {
     if (!user) return;
     try {
       const email = user.email || "patient@trimedi.com";
-      const res = await fetch(`http://localhost:5001/api/notifications?userEmail=${encodeURIComponent(email)}&role=${user.role || "patient"}`);
-      const data = await res.json();
-      if (data.success) {
+      const data = await getNotifications(email, user.role || "patient");
+      if (data && data.success) {
         setNotifications(data.notifications || []);
         const unread = (data.notifications || []).filter((n) => !n.isRead).length;
         setUnreadNotifCount(unread);
@@ -107,7 +107,7 @@ export const SocketProvider = ({ children }) => {
   // Mark single notification as read
   const markAsRead = async (id) => {
     try {
-      await fetch(`http://localhost:5001/api/notifications/${id}/read`, { method: "PATCH" });
+      await markNotificationRead(id);
       setNotifications((prev) =>
         prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
       );
@@ -121,11 +121,7 @@ export const SocketProvider = ({ children }) => {
   const markAllAsRead = async () => {
     if (!user) return;
     try {
-      await fetch("http://localhost:5001/api/notifications/read-all", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userEmail: user.email, role: user.role }),
-      });
+      await markAllNotificationsRead(user.email);
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadNotifCount(0);
     } catch (e) {
@@ -149,27 +145,27 @@ export const SocketProvider = ({ children }) => {
       }}
     >
       {children}
-      {/* Real-time In-App Toast Popup */}
+      {/* Real-time In-App Notification Toast */}
       {latestToast && (
-        <div className="fixed bottom-5 right-5 z-50 max-w-sm w-full bg-slate-900 border border-teal-500/40 text-white rounded-2xl shadow-2xl p-4 transition-all duration-300 transform translate-y-0 animate-bounce-short">
+        <div className="fixed bottom-5 right-5 z-50 max-w-sm w-full bg-white border border-slate-200 text-slate-800 rounded-xl shadow-dropdown p-4 transition-all duration-200 transform translate-y-0">
           <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center flex-shrink-0 text-lg font-bold">
-              🔔
+            <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-700 border border-brand-100 flex items-center justify-center shrink-0 text-sm">
+              <span className="w-2 h-2 rounded-full bg-brand-600"></span>
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-xs font-bold uppercase tracking-wider text-teal-400">
-                  {latestToast.category || "Notification"}
-                </p>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  {latestToast.category || "Clinical Update"}
+                </span>
                 <button
                   onClick={() => setLatestToast(null)}
-                  className="text-slate-400 hover:text-white text-xs font-bold"
+                  className="text-slate-400 hover:text-slate-600 text-xs font-bold p-0.5"
                 >
                   ✕
                 </button>
               </div>
-              <h4 className="text-sm font-semibold text-white mt-0.5 truncate">{latestToast.title}</h4>
-              <p className="text-xs text-slate-300 mt-1 line-clamp-2">{latestToast.message}</p>
+              <h4 className="text-xs font-bold text-slate-900 mt-0.5 truncate">{latestToast.title}</h4>
+              <p className="text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed">{latestToast.message}</p>
             </div>
           </div>
         </div>

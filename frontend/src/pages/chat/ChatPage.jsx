@@ -5,6 +5,7 @@ import ChatWindow from "../../components/chat/ChatWindow";
 import Avatar from "../../components/ui/Avatar";
 import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
+import { getConversations } from "../../api";
 
 const ChatPage = () => {
   const { user } = useAuth();
@@ -19,10 +20,7 @@ const ChatPage = () => {
   const fetchConversations = async () => {
     try {
       setLoading(true);
-      const res = await fetch(
-        `http://localhost:5001/api/chat/conversations?userEmail=${encodeURIComponent(userEmail)}&role=${user?.role || "patient"}`
-      );
-      const data = await res.json();
+      const data = await getConversations(userEmail, user?.role || "patient");
       if (data.success && data.conversations) {
         setConversations(data.conversations);
         if (data.conversations.length > 0 && !activeConv) {

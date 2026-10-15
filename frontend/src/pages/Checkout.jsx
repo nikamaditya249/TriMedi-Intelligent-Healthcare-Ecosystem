@@ -451,7 +451,7 @@ function Checkout() {
         </div>
 
         {/* Right: Order Summary */}
-        <Card className="border-teal-100 bg-gradient-to-b from-white to-slate-50/50">
+        <Card>
           <h3 className="text-base font-bold text-slate-900 pb-3 border-b border-slate-100 mb-4">
             Prescription & Order Items
           </h3>
@@ -465,7 +465,7 @@ function Checkout() {
                     Qty: {item.qty || 1} • {item.supplyDays ? `~${item.supplyDays} Days Supply` : "Verified Stock"}
                   </p>
                   {item.prescriptionRef && (
-                    <span className="text-[10px] text-teal-700 font-semibold block mt-0.5">
+                    <span className="text-[10px] text-brand-700 font-semibold block mt-0.5">
                       Rx Ref: {item.prescriptionRef}
                     </span>
                   )}
@@ -479,15 +479,15 @@ function Checkout() {
 
           <div className="pt-3 border-t border-slate-200 flex justify-between items-baseline mb-4">
             <span className="text-sm font-bold text-slate-900">Authoritative Total</span>
-            <span className="text-xl font-extrabold text-brand-700">₹{total}</span>
+            <span className="text-xl font-extrabold text-brand-800">₹{total}</span>
           </div>
 
-          <div className="p-3 rounded-xl bg-teal-50 text-[11px] text-teal-900 space-y-1 border border-teal-100">
-            <p className="font-semibold flex items-center gap-1">
-              <FiShield className="w-3.5 h-3.5 text-teal-700" />
-              <span>Phase 2 Treatment Synchronization:</span>
+          <div className="p-3 rounded-xl bg-brand-50 text-[11px] text-brand-900 space-y-1 border border-brand-200/80">
+            <p className="font-semibold flex items-center gap-1.5">
+              <FiShield className="w-3.5 h-3.5 text-brand-700" />
+              <span>Medication Supply Synchronization:</span>
             </p>
-            <p>
+            <p className="text-brand-800 leading-relaxed">
               Your medicine purchase will be automatically linked to your prescription timeline for supply gap tracking.
             </p>
           </div>

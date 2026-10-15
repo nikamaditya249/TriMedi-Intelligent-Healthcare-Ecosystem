@@ -36,12 +36,33 @@ const prescriptionSchema = new mongoose.Schema(
     validUntil: { type: Date },
     status: {
       type: String,
-      enum: ["active", "completed", "expired", "cancelled"],
+      enum: ["draft", "reviewed", "approved", "issued", "active", "completed", "expired", "cancelled"],
       default: "active",
+      index: true,
     },
     notes: { type: String, default: "" },
     aiExtracted: { type: Boolean, default: false },
     originalDocumentName: { type: String, default: "" },
+    // Phase 2 Clinical Governance & Lifecycle Tracking
+    consultationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Consultation",
+      required: false,
+    },
+    appointmentId: { type: String, default: "" },
+    createdBy: { type: String, default: "" },
+    reviewedBy: { type: String, default: "" },
+    approvedBy: { type: String, default: "" },
+    approvedAt: { type: Date, default: null },
+    approvalNotes: { type: String, default: "" },
+    history: [
+      {
+        status: { type: String },
+        changedBy: { type: String },
+        timestamp: { type: Date, default: Date.now },
+        notes: { type: String, default: "" },
+      },
+    ],
   },
   { timestamps: true }
 );

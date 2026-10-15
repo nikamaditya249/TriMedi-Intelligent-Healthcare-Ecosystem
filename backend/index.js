@@ -16,6 +16,9 @@ import intelligenceRoutes from "./routes/intelligence.js";
 import chatRoutes from "./routes/chat.js";
 import notificationRoutes from "./routes/notifications.js";
 import refillRoutes from "./routes/refill.js";
+import queueRoutes from "./routes/queue.js";
+import consultationRoutes from "./routes/consultations.js";
+import receptionRoutes from "./routes/reception.js";
 
 import { initSocketIO } from "./services/socketService.js";
 import { startHealthcareScheduler } from "./services/scheduler.js";
@@ -58,6 +61,9 @@ app.use("/api/intelligence", intelligenceRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/refill", refillRoutes);
+app.use("/api/queue", queueRoutes);
+app.use("/api/consultations", consultationRoutes);
+app.use("/api/reception", receptionRoutes);
 
 /* ================= DB CONNECT ================= */
 const mongoURI = process.env.MONGO_URI || process.env.URL;

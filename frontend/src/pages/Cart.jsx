@@ -1,11 +1,10 @@
 import React from "react";
 import { useCart } from "../context/CartContext";
-import { useNavigate, Link } from "react-router-dom";
-import { FiShoppingBag, FiTrash2, FiArrowRight, FiShield, FiPackage } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { FiShoppingBag, FiTrash2, FiArrowRight, FiShield } from "react-icons/fi";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import EmptyState from "../components/ui/EmptyState";
-import Badge from "../components/ui/Badge";
 
 function Cart() {
   const { cart = [], removeFromCart, total = 0 } = useCart() || {};
@@ -31,11 +30,11 @@ function Cart() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           {/* Items List */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-3.5">
             {cart.map((item) => (
               <Card key={item._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-xl bg-slate-50 border border-slate-100 p-2 flex items-center justify-center shrink-0">
+                  <div className="w-16 h-16 rounded-lg bg-slate-50 border border-slate-200/80 p-2 flex items-center justify-center shrink-0">
                     <img
                       src={item.image || "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300"}
                       alt={item.name}
@@ -45,7 +44,7 @@ function Cart() {
                   <div>
                     <h3 className="text-sm font-bold text-slate-900">{item.name}</h3>
                     <p className="text-xs text-slate-500">Unit Price: ₹{item.price}</p>
-                    <span className="text-[11px] text-brand-600 font-semibold mt-0.5 inline-block">
+                    <span className="text-[11px] text-brand-700 font-semibold mt-0.5 inline-block">
                       Qty: {item.qty || 1}
                     </span>
                   </div>
@@ -57,7 +56,7 @@ function Cart() {
                   </p>
                   <button
                     onClick={() => removeFromCart(item._id)}
-                    className="inline-flex items-center gap-1 text-xs text-rose-500 hover:text-rose-700 font-medium transition-colors"
+                    className="inline-flex items-center gap-1 text-xs text-rose-600 hover:text-rose-800 font-medium transition-colors"
                   >
                     <FiTrash2 className="w-3.5 h-3.5" />
                     <span>Remove</span>
@@ -68,7 +67,7 @@ function Cart() {
           </div>
 
           {/* Order Summary Box */}
-          <Card className="border-teal-100 bg-gradient-to-b from-white to-slate-50/50">
+          <Card>
             <h3 className="text-base font-bold text-slate-900 pb-3 border-b border-slate-100 mb-4">
               Order Summary
             </h3>
@@ -84,7 +83,7 @@ function Cart() {
               </div>
               <div className="flex justify-between">
                 <span>Pharmacy Dispensing Fee</span>
-                <span className="text-emerald-600 font-semibold">FREE</span>
+                <span className="text-emerald-700 font-semibold">FREE</span>
               </div>
               <div className="flex justify-between">
                 <span>Estimated Delivery</span>
@@ -94,13 +93,13 @@ function Cart() {
 
             <div className="pt-4 mt-4 border-t border-slate-200 flex justify-between items-baseline mb-6">
               <span className="text-sm font-bold text-slate-900">Total Payable</span>
-              <span className="text-xl font-extrabold text-brand-700">₹{total}</span>
+              <span className="text-xl font-extrabold text-brand-800">₹{total}</span>
             </div>
 
             <Button
               variant="primary"
               size="lg"
-              className="w-full shadow-md"
+              className="w-full"
               onClick={() => navigate("/checkout")}
               icon={FiArrowRight}
               iconPosition="right"
@@ -110,7 +109,7 @@ function Cart() {
 
             <div className="mt-4 pt-3 border-t border-slate-100 text-center">
               <p className="text-[11px] text-slate-400 flex items-center justify-center gap-1">
-                <FiShield className="w-3.5 h-3.5 text-brand-600" />
+                <FiShield className="w-3.5 h-3.5 text-brand-700" />
                 <span>100% Genuine Medicines • Encrypted Checkout</span>
               </p>
             </div>

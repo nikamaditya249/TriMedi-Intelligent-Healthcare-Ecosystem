@@ -21,6 +21,9 @@ const DEMO_USERS = {
     specialty: "Internal Medicine & Cardiology",
     hospital: "Metro Health Center",
     licenseNumber: "MED-88492-IN",
+    qualifications: "MBBS, MD (Internal Medicine), FACC",
+    experienceYears: 14,
+    verificationStatus: "verified",
     phone: "+91 98221 11223",
   },
   pharmacy: {
@@ -39,6 +42,15 @@ const DEMO_USERS = {
     email: "admin@trimedi.health",
     role: "admin",
     phone: "+91 99000 11222",
+  },
+  reception: {
+    _id: "demo_reception_1",
+    name: "Meena Ramanathan",
+    email: "reception@trimedi.health",
+    role: "reception",
+    clinicName: "Metro Health Center",
+    shift: "General Day Shift",
+    phone: "+91 98333 44556",
   },
 };
 

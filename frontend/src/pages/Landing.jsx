@@ -13,210 +13,216 @@ import {
   FiRefreshCw,
   FiHeart,
   FiLock,
-  FiZap,
+  FiCalendar,
 } from "react-icons/fi";
 import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
 import Card from "../components/ui/Card";
-import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
 
 export function Landing() {
   const navigate = useNavigate();
-  const { user, activeRole } = useAuth();
+  const { switchDemoRole, isAuthenticated, activeRole } = useAuth();
+
+  const handleRoleLaunch = (role) => {
+    switchDemoRole(role);
+    navigate(`/app/${role}/dashboard`);
+  };
 
   const workflowSteps = [
-    { step: "01", title: "Patient", desc: "Signs up & connects medical history", icon: FiHeart, color: "text-sky-500 bg-sky-50" },
-    { step: "02", title: "Doctor", desc: "Conducts consultation & clinical review", icon: FiUserCheck, color: "text-teal-600 bg-teal-50" },
-    { step: "03", title: "Prescription", desc: "Issues digital prescription with dosage", icon: FiFileText, color: "text-brand-600 bg-brand-50" },
-    { step: "04", title: "Medicine", desc: "Verified pharmacy dispenses exact items", icon: FiPackage, color: "text-purple-600 bg-purple-50" },
-    { step: "05", title: "Treatment Tracking", desc: "Monitors daily schedule & supply days", icon: FiActivity, color: "text-emerald-600 bg-emerald-50" },
-    { step: "06", title: "Smart Refill", desc: "Detects supply gaps & prompts reorder", icon: FiRefreshCw, color: "text-amber-600 bg-amber-50" },
-    { step: "07", title: "Continued Care", desc: "Sustained doctor-patient treatment loop", icon: FiCheckCircle, color: "text-indigo-600 bg-indigo-50" },
+    {
+      step: "01",
+      title: "Patient Consultation",
+      desc: "Connect directly with certified specialists through secure real-time messaging and appointment scheduling.",
+      icon: FiCalendar,
+    },
+    {
+      step: "02",
+      title: "Digital Prescription",
+      desc: "Doctors issue structured, tamper-proof electronic prescriptions with exact dosing schedules and durations.",
+      icon: FiFileText,
+    },
+    {
+      step: "03",
+      title: "Authentic Dispensing",
+      desc: "Licensed pharmacies fulfill authentic medications with batch tracking, verified stock, and transparent fulfillment.",
+      icon: FiPackage,
+    },
+    {
+      step: "04",
+      title: "Refill Gap Intelligence",
+      desc: "Deterministic arithmetic tracks supply days elapsed vs. days remaining, alerting patients before therapy gaps occur.",
+      icon: FiRefreshCw,
+    },
   ];
 
-  const features = [
+  const roleWorkspaces = [
     {
+      role: "patient",
+      title: "Patient Workspace",
+      desc: "Track medication supply progress, receive refill recommendations, access digital prescriptions, and chat with your doctor.",
+      icon: FiHeart,
+      action: "Launch Patient View",
+      badges: ["Supply Timeline", "Refill Alerts", "E-Prescriptions"],
+    },
+    {
+      role: "doctor",
+      title: "Doctor Clinical Portal",
+      desc: "MD-verified workspace for reviewing patient medical records, managing appointment queues, and generating digital prescriptions.",
       icon: FiUserCheck,
-      title: "Doctor & Patient Connection",
-      desc: "Direct coordination between certified medical specialists and patients for continuous clinical care.",
-      color: "border-teal-100 text-teal-600 bg-teal-50",
+      action: "Launch Doctor View",
+      badges: ["Clinical Queue", "Prescription Issuer", "Direct Chat"],
     },
     {
-      icon: FiFileText,
-      title: "Digital Prescriptions",
-      desc: "Structured, tamper-resistant digital prescriptions linked seamlessly from doctor consultation to medicine checkout.",
-      color: "border-sky-100 text-sky-600 bg-sky-50",
-    },
-    {
+      role: "pharmacy",
+      title: "Pharmacy Dispensing Network",
+      desc: "Real-time order fulfillment workflow with automated status transitions (Processing → Dispensed → Delivered) and inventory alerts.",
       icon: FiPackage,
-      title: "Medicine Management",
-      desc: "Verified pharmacy network dispensing authentic medicines with tracked quantities and batch accuracy.",
-      color: "border-purple-100 text-purple-600 bg-purple-50",
+      action: "Launch Pharmacy View",
+      badges: ["Live Queue", "Stock Tracking", "Order Verification"],
     },
     {
-      icon: FiActivity,
-      title: "Treatment Tracking",
-      desc: "Compare prescribed treatment duration against actual medicine quantity purchased to eliminate care gaps.",
-      color: "border-emerald-100 text-emerald-600 bg-emerald-50",
-    },
-    {
-      icon: FiClock,
-      title: "Smart Refill Alerts",
-      desc: "Timely reminders before your medicine runs low, allowing one-click 'Order Again' to maintain treatment continuity.",
-      color: "border-amber-100 text-amber-600 bg-amber-50",
-    },
-    {
+      role: "admin",
+      title: "Governance & Telemetry",
+      desc: "System-wide administrative center monitoring background scheduler heartbeats, WebSocket gateways, and platform user directories.",
       icon: FiShield,
-      title: "Healthcare Communication",
-      desc: "Secure, authenticated channels maintaining privacy for patient treatment logs and doctor instructions.",
-      color: "border-slate-100 text-slate-700 bg-slate-50",
+      action: "Launch Admin View",
+      badges: ["System Telemetry", "Audit Logs", "Directory"],
     },
   ];
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28 bg-gradient-to-b from-teal-950 via-slate-900 to-slate-900 text-white">
-        {/* Ambient Glows */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-brand-500/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-10 right-10 w-[300px] h-[300px] bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Left Content */}
+      <section className="relative pt-12 pb-16 lg:pt-20 lg:pb-24 border-b border-slate-200/80 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+            {/* Left Column: Positioning & Clear Explanation */}
             <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-300 text-xs font-semibold backdrop-blur-md">
-                <FiZap className="w-3.5 h-3.5 text-brand-400" />
-                <span>Next-Generation Healthcare Ecosystem</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-800 text-xs font-semibold">
+                <span className="w-2 h-2 rounded-full bg-brand-600"></span>
+                <span>Connected Healthcare Platform</span>
               </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
-                One Connected <br />
-                <span className="text-gradient-teal">Healthcare Journey</span>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.15]">
+                Connected Healthcare, <br />
+                <span className="text-brand-700">Simplified.</span>
               </h1>
 
-              <p className="text-base sm:text-lg text-slate-300 max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
-                TriMedi unifies doctors, patients, digital prescriptions, authentic medicines, and intelligent treatment tracking into one seamless platform.
+              <p className="text-base sm:text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
+                TriMedi connects patients, certified doctors, and licensed pharmacies through one intelligent healthcare ecosystem — unifying appointments, digital prescriptions, medicine dispensing, and proactive refill gap tracking.
               </p>
 
-              {/* CTAs */}
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
-                {user ? (
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    className="w-full sm:w-auto bg-brand-500 hover:bg-brand-400 text-slate-950 font-bold shadow-lg shadow-brand-500/20"
-                    onClick={() => navigate(`/app/${activeRole}/dashboard`)}
-                    icon={FiArrowRight}
-                    iconPosition="right"
-                  >
-                    Go to Your Dashboard
-                  </Button>
-                ) : (
-                  <>
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      className="w-full sm:w-auto bg-brand-500 hover:bg-brand-400 text-slate-950 font-bold shadow-lg shadow-brand-500/20"
-                      onClick={() => navigate("/auth?mode=register")}
-                      icon={FiArrowRight}
-                      iconPosition="right"
-                    >
-                      Get Started Free
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="lg"
-                      className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-md"
-                      onClick={() => navigate("/auth?mode=login")}
-                    >
-                      Sign In
-                    </Button>
-                  </>
-                )}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-2">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => {
+                    if (isAuthenticated && activeRole) {
+                      navigate(`/app/${activeRole}/dashboard`);
+                    } else {
+                      navigate("/auth?mode=login");
+                    }
+                  }}
+                  icon={FiArrowRight}
+                  iconPosition="right"
+                >
+                  {isAuthenticated ? "Go to Workspace" : "Access Workspace"}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => navigate("/products")}
+                >
+                  Browse Medicine Catalog
+                </Button>
               </div>
 
-              {/* Quick stats pills */}
-              <div className="grid grid-cols-3 gap-4 pt-6 border-t border-white/10 max-w-lg mx-auto lg:mx-0">
-                <div>
-                  <p className="text-xl sm:text-2xl font-bold text-white">4 Roles</p>
-                  <p className="text-xs text-slate-400">Patient • Doctor • Pharmacy • Admin</p>
-                </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-bold text-teal-400">100%</p>
-                  <p className="text-xs text-slate-400">Synchronized Digital Care</p>
-                </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-bold text-brand-300">Phase 1</p>
-                  <p className="text-xs text-slate-400">Product Foundation Ready</p>
-                </div>
+              {/* Quick Role Shortcuts */}
+              <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-center lg:justify-start gap-2 text-xs text-slate-500">
+                <span className="font-semibold text-slate-600">Instant Demo Login:</span>
+                {["patient", "doctor", "pharmacy", "admin"].map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => handleRoleLaunch(r)}
+                    className="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium capitalize transition-colors"
+                  >
+                    {r}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Right Visual Card Mockup */}
+            {/* Right Column: Clean Platform Visual */}
             <div className="lg:col-span-5">
-              <div className="relative rounded-3xl bg-gradient-to-tr from-slate-800/90 to-slate-900/90 border border-slate-700/70 p-6 shadow-2xl backdrop-blur-xl">
-                {/* Visual Header */}
-                <div className="flex items-center justify-between pb-4 border-b border-slate-700/60 mb-5">
+              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/50 p-5 shadow-card">
+                <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-slate-200/70">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-rose-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                  </div>
-                  <span className="text-[11px] font-mono text-slate-400">trimedi-care-hub.live</span>
-                </div>
-
-                {/* Floating Interactive Care Journey Card */}
-                <div className="space-y-3.5">
-                  {/* Doctor badge */}
-                  <div className="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold text-xs">
-                        MD
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-white">Dr. Sarah Jenkins</p>
-                        <p className="text-[10px] text-teal-400">Prescribed: 30 Days Cycle</p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded-full font-semibold">
-                      Verified Rx
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                    <span className="text-xs font-bold text-slate-800">
+                      Live Care Journey
                     </span>
                   </div>
+                  <Badge variant="brand" size="sm">
+                    Verified Sync
+                  </Badge>
+                </div>
 
-                  {/* Supply & Gap Visualizer */}
-                  <div className="p-4 rounded-2xl bg-brand-950/40 border border-brand-500/30 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-brand-200">Atorvastatin 20mg</span>
-                      <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full">
-                        Low Supply Warning
-                      </span>
+                {/* Simulated Care Loop Visual */}
+                <div className="space-y-3">
+                  <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-subtle">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                          Active Prescription
+                        </p>
+                        <h4 className="text-sm font-bold text-slate-900 mt-0.5">
+                          Atorvastatin 20mg • 30 Days
+                        </h4>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Issued by Dr. Sarah Jenkins, MD
+                        </p>
+                      </div>
+                      <Badge variant="success" size="sm">
+                        Active
+                      </Badge>
                     </div>
-                    <div className="text-[11px] text-slate-300 flex justify-between">
-                      <span>Prescribed: 30 Days</span>
-                      <span>Purchased: 15 Days (~4 left)</span>
+
+                    {/* Supply Progress Bar */}
+                    <div className="mt-3 pt-2.5 border-t border-slate-100">
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-slate-600 font-medium">Medication Supply</span>
+                        <span className="font-bold text-amber-700">12 Days Left</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-brand-600 h-2 rounded-full"
+                          style={{ width: "40%" }}
+                        ></div>
+                      </div>
                     </div>
-                    <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
-                      <div className="bg-amber-400 h-full rounded-full w-[28%]"></div>
-                    </div>
-                    <button
-                      onClick={() => navigate("/products")}
-                      className="w-full mt-1 bg-brand-500 text-slate-950 text-xs font-bold py-2 rounded-xl hover:bg-brand-400 transition-colors flex items-center justify-center gap-1.5"
-                    >
-                      <FiRefreshCw className="w-3.5 h-3.5" />
-                      <span>Order Again (Instant Refill)</span>
-                    </button>
                   </div>
 
-                  {/* Pharmacy Fulfillment */}
-                  <div className="p-3 rounded-2xl bg-slate-800/60 border border-slate-700 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 text-slate-300">
-                      <FiPackage className="w-4 h-4 text-purple-400" />
-                      <span>MedPlus Pharmacy Dispense</span>
+                  <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 flex items-start gap-3">
+                    <FiClock className="w-4 h-4 text-amber-700 mt-0.5 shrink-0" />
+                    <div className="text-xs">
+                      <p className="font-bold text-amber-900">
+                        Smart Refill Notification Triggered
+                      </p>
+                      <p className="text-amber-800/90 mt-0.5 leading-relaxed">
+                        Purchased quantity (15 days) creates a 15-day care gap against your 30-day course. Order Again ready in 1 click.
+                      </p>
                     </div>
-                    <span className="text-emerald-400 font-semibold text-[11px]">Ready for Delivery</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <FiPackage className="w-4 h-4 text-brand-700" />
+                      <span className="font-semibold text-slate-700">Fulfillment Status</span>
+                    </div>
+                    <span className="font-bold text-slate-800">Dispensed by MedPlus Prime</span>
                   </div>
                 </div>
               </div>
@@ -225,157 +231,113 @@ export function Landing() {
         </div>
       </section>
 
-      {/* 2. THE PROBLEM & TRIMEDI'S SOLUTION (Visually concise) */}
-      <section className="py-16 sm:py-24 bg-white border-b border-slate-100">
+      {/* 2. CONTINUOUS CARE JOURNEY (HOW IT WORKS) */}
+      <section className="py-14 sm:py-20 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-14">
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-600 bg-brand-50 px-3 py-1 rounded-full">
-              The Healthcare Disconnect
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3 tracking-tight">
-              Healthcare Information is Fragmented. <br className="hidden sm:inline" />
-              <span className="text-brand-700">TriMedi Connects the Journey.</span>
+          <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-brand-700 mb-2">
+              Continuous Treatment Journey
             </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
-            {/* Fragmented Healthcare (Before) */}
-            <div className="p-8 rounded-3xl bg-rose-50/40 border border-rose-100 flex flex-col justify-between">
-              <div>
-                <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-lg mb-4">
-                  ✕
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-3">Disconnected Traditional Care</h3>
-                <ul className="space-y-3 text-sm text-slate-600">
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-rose-500 font-bold">•</span>
-                    <span>Doctor consultations, paper prescriptions, and medicine orders exist in separate silos.</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-rose-500 font-bold">•</span>
-                    <span>Patients forget refill dates when medicine purchases do not match full prescription duration.</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-rose-500 font-bold">•</span>
-                    <span>Doctors have zero visibility into whether prescribed medicines are actually taken or reordered.</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="mt-6 pt-4 border-t border-rose-200/60 text-xs font-semibold text-rose-700">
-                Result: Treatment gaps, missed refills, and forgotten medical records.
-              </div>
-            </div>
-
-            {/* TriMedi Connected Ecosystem (After) */}
-            <div className="p-8 rounded-3xl bg-brand-50/40 border border-brand-200/80 flex flex-col justify-between shadow-subtle">
-              <div>
-                <div className="w-10 h-10 rounded-xl bg-brand-500 text-white flex items-center justify-center font-bold text-lg mb-4 shadow-sm">
-                  ✓
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-3">TriMedi Connected Ecosystem</h3>
-                <ul className="space-y-3 text-sm text-slate-700">
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-brand-600 font-bold">•</span>
-                    <span><b>Unified Care Loop:</b> Doctor, Patient, Digital Prescription, Pharmacy, and Treatment tracking in one place.</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-brand-600 font-bold">•</span>
-                    <span><b>Duration Intelligence:</b> Understands the difference between a 30-day prescription and a 15-day purchase.</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="text-brand-600 font-bold">•</span>
-                    <span><b>Continuous Care:</b> Proactive refill alerts and instant reorders keep patients consistently on schedule.</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="mt-6 pt-4 border-t border-brand-200 text-xs font-bold text-brand-800">
-                Result: Uninterrupted therapy, synchronized treatment records, and peace of mind.
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. HOW TRIMEDI WORKS (Visual 7-step Workflow) */}
-      <section className="py-16 sm:py-24 bg-slate-50 border-b border-slate-200/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <span className="text-xs font-bold uppercase tracking-widest text-teal-700 bg-teal-50 px-3 py-1 rounded-full">
-              Seamless Workflow
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3 tracking-tight">
-              How TriMedi Works
-            </h2>
-            <p className="text-sm text-slate-500 mt-2">
-              From the initial consultation to continuous refill management in 7 synchronized steps.
+            <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              One Unified Healthcare Workflow
+            </h3>
+            <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+              TriMedi eliminates fragmented healthcare by connecting consultations, e-prescriptions, pharmacy fulfillment, and therapy tracking into one continuous journey.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {workflowSteps.slice(0, 4).map((s) => {
-              const Icon = s.icon;
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {workflowSteps.map((item) => {
+              const Icon = item.icon;
               return (
-                <div key={s.step} className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-subtle hover:shadow-md transition-all">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-mono font-bold text-slate-400">{s.step}</span>
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${s.color}`}>
-                      <Icon className="w-5 h-5" />
+                <Card key={item.step} className="relative flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 border border-brand-100 flex items-center justify-center">
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-bold text-slate-400 font-mono">
+                        {item.step}
+                      </span>
                     </div>
+                    <h4 className="text-base font-bold text-slate-900 mb-1.5">
+                      {item.title}
+                    </h4>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      {item.desc}
+                    </p>
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 mb-1">{s.title}</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed">{s.desc}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mt-5">
-            {workflowSteps.slice(4).map((s) => {
-              const Icon = s.icon;
-              return (
-                <div key={s.step} className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-subtle hover:shadow-md transition-all">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-mono font-bold text-slate-400">{s.step}</span>
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${s.color}`}>
-                      <Icon className="w-5 h-5" />
-                    </div>
-                  </div>
-                  <h3 className="text-base font-bold text-slate-900 mb-1">{s.title}</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed">{s.desc}</p>
-                </div>
+                </Card>
               );
             })}
           </div>
         </div>
       </section>
 
-      {/* 4. CORE FEATURES */}
-      <section className="py-16 sm:py-24 bg-white border-b border-slate-100">
+      {/* 3. MULTI-ROLE WORKSPACES */}
+      <section className="py-14 sm:py-20 bg-white border-y border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-600 bg-brand-50 px-3 py-1 rounded-full">
-              Platform Capabilities
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3 tracking-tight">
-              Designed for Complete Healthcare Management
+          <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-brand-700 mb-2">
+              Role-Based Architecture
             </h2>
+            <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Tailored Portals, One Consistent System
+            </h3>
+            <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+              Every participant in the care cycle operates within an authenticated, role-specific environment designed for speed, safety, and clarity.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((f, i) => {
-              const Icon = f.icon;
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {roleWorkspaces.map((w) => {
+              const Icon = w.icon;
               return (
                 <div
-                  key={i}
-                  className="p-6 rounded-2xl border border-slate-200/80 bg-white hover:border-brand-200 hover:shadow-md transition-all duration-200 group"
+                  key={w.role}
+                  className="rounded-xl border border-slate-200/90 bg-white p-6 shadow-subtle hover:border-slate-300 hover:shadow-card transition-all duration-150 flex flex-col justify-between"
                 >
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 border ${f.color}`}>
-                    <Icon className="w-6 h-6" />
+                  <div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 border border-brand-100 flex items-center justify-center shrink-0">
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-base font-bold text-slate-900">
+                          {w.title}
+                        </h4>
+                        <span className="text-[11px] font-semibold text-brand-700 capitalize">
+                          {w.role} Portal
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs sm:text-sm text-slate-600 mb-4 leading-relaxed">
+                      {w.desc}
+                    </p>
+
+                    <div className="flex flex-wrap gap-1.5 mb-5">
+                      {w.badges.map((b) => (
+                        <span
+                          key={b}
+                          className="text-[11px] font-medium px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md border border-slate-200/60"
+                        >
+                          {b}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 mb-2 group-hover:text-brand-700 transition-colors">
-                    {f.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">{f.desc}</p>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-between"
+                    onClick={() => handleRoleLaunch(w.role)}
+                    icon={FiArrowRight}
+                    iconPosition="right"
+                  >
+                    {w.action}
+                  </Button>
                 </div>
               );
             })}
@@ -383,65 +345,43 @@ export function Landing() {
         </div>
       </section>
 
-      {/* 5. TRUST & SECURITY */}
-      <section className="py-16 bg-slate-900 text-white relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-8 space-y-3 text-center lg:text-left">
-              <span className="text-xs font-bold uppercase tracking-wider text-teal-400 bg-teal-900/50 px-3 py-1 rounded-full border border-teal-700">
-                Security & Data Integrity
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                Healthcare Information Handled with Care
-              </h2>
-              <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
-                TriMedi applies authenticated role-based access, encrypted sessions, and verified doctor-pharmacy linkages to ensure your medical history and prescriptions stay protected.
+      {/* 4. HEALTHCARE SAFETY & CLINICAL GOVERNANCE */}
+      <section className="py-14 sm:py-20 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-10 shadow-subtle">
+            <div className="max-w-3xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold mb-4">
+                <FiShield className="w-3.5 h-3.5 text-brand-700" />
+                <span>Clinical Governance & Safety Standards</span>
+              </div>
+              <h3 className="text-2xl font-bold text-slate-900 tracking-tight mb-3">
+                Built Around Patient Safety & Clinical Authority
+              </h3>
+              <p className="text-sm text-slate-600 leading-relaxed mb-6">
+                TriMedi incorporates automated intelligence strictly as an assistive tool. Certified doctors retain ultimate clinical decision-making authority over all prescriptions and dosing regimens.
               </p>
-            </div>
-            <div className="lg:col-span-4 flex justify-center lg:justify-end gap-3">
-              <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 text-center">
-                <FiLock className="w-6 h-6 text-brand-400 mx-auto mb-1" />
-                <span className="text-xs font-bold text-white block">Encrypted Access</span>
-                <span className="text-[10px] text-slate-400">JWT Authentication</span>
-              </div>
-              <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 text-center">
-                <FiUserCheck className="w-6 h-6 text-teal-400 mx-auto mb-1" />
-                <span className="text-xs font-bold text-white block">Role Separation</span>
-                <span className="text-[10px] text-slate-400">Strict Permissioning</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* 6. FINAL CALL TO ACTION */}
-      <section className="py-20 bg-gradient-to-tr from-brand-900 via-teal-800 to-slate-900 text-white text-center">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-4">
-            Take Control of Your Healthcare Journey
-          </h2>
-          <p className="text-base sm:text-lg text-slate-200 max-w-xl mx-auto mb-8 leading-relaxed">
-            Experience connected prescriptions, intelligent medication tracking, and seamless doctor consultations with TriMedi.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button
-              variant="primary"
-              size="lg"
-              className="bg-brand-400 hover:bg-brand-300 text-slate-950 font-bold px-8 shadow-xl"
-              onClick={() => navigate("/auth?mode=register")}
-              icon={FiArrowRight}
-              iconPosition="right"
-            >
-              Get Started with TriMedi
-            </Button>
-            <Button
-              variant="secondary"
-              size="lg"
-              className="bg-white/10 hover:bg-white/20 text-white border-white/20"
-              onClick={() => navigate("/products")}
-            >
-              Browse Medicine Catalog
-            </Button>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-100 text-xs">
+                <div>
+                  <h5 className="font-bold text-slate-900 mb-1">Human Verification</h5>
+                  <p className="text-slate-500 leading-relaxed">
+                    Prescriptions extracted with AI require explicit physician or pharmacist verification before submission.
+                  </p>
+                </div>
+                <div>
+                  <h5 className="font-bold text-slate-900 mb-1">Authoritative Pricing</h5>
+                  <p className="text-slate-500 leading-relaxed">
+                    Order totals, GST calculations, and refill drafts are computed strictly server-side to prevent price tampering.
+                  </p>
+                </div>
+                <div>
+                  <h5 className="font-bold text-slate-900 mb-1">Non-Alarmist Alerts</h5>
+                  <p className="text-slate-500 leading-relaxed">
+                    Refill alerts trigger at $\le 5$ days of remaining supply, keeping patients proactively informed without anxiety.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

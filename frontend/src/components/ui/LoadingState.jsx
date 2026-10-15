@@ -2,20 +2,20 @@ import React from "react";
 
 export function LoadingState({ message = "Loading healthcare data...", rows = 3 }) {
   return (
-    <div className="w-full p-6 space-y-4 animate-pulse">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-slate-200 rounded-xl"></div>
+    <div className="w-full p-6 space-y-4 rounded-xl border border-slate-200/80 bg-white shadow-subtle animate-pulse">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-9 h-9 bg-slate-100 rounded-lg"></div>
         <div className="space-y-2 flex-1">
-          <div className="h-4 bg-slate-200 rounded w-1/4"></div>
+          <div className="h-3.5 bg-slate-200 rounded w-1/4"></div>
           <div className="h-3 bg-slate-100 rounded w-1/3"></div>
         </div>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {Array.from({ length: rows }).map((_, idx) => (
-          <div key={idx} className="h-16 bg-slate-100 rounded-xl w-full"></div>
+          <div key={idx} className="h-12 bg-slate-50 border border-slate-100 rounded-lg w-full"></div>
         ))}
       </div>
-      <p className="text-xs text-center text-slate-400 font-medium pt-2">{message}</p>
+      <p className="text-xs text-center text-slate-400 font-medium pt-1">{message}</p>
     </div>
   );
 }
@@ -24,13 +24,13 @@ export function Spinner({ size = "md", className = "" }) {
   const sizes = {
     sm: "w-4 h-4",
     md: "w-6 h-6",
-    lg: "w-10 h-10",
+    lg: "w-8 h-8",
   };
 
   return (
     <div className={`flex justify-center items-center ${className}`}>
       <svg
-        className={`animate-spin text-brand-600 ${sizes[size]}`}
+        className={`animate-spin text-brand-700 ${sizes[size] || sizes.md}`}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"

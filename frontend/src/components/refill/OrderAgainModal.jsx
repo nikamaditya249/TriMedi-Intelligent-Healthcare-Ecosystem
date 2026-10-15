@@ -5,6 +5,7 @@ import { useCart } from "../../context/CartContext";
 import Modal from "../ui/Modal";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
+import { createOrderAgainDraft } from "../../api";
 
 const OrderAgainModal = ({ isOpen, onClose, refillItem }) => {
   const { user } = useAuth();
@@ -24,16 +25,11 @@ const OrderAgainModal = ({ isOpen, onClose, refillItem }) => {
       try {
         setLoading(true);
         setError("");
-        const res = await fetch("http://localhost:5001/api/refill/order-again-draft", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prescriptionId: refillItem.prescriptionId,
-            medicineName: refillItem.medicineName,
-            userEmail,
-          }),
+        const data = await createOrderAgainDraft({
+          prescriptionId: refillItem.prescriptionId,
+          medicineName: refillItem.medicineName,
+          userEmail,
         });
-        const data = await res.json();
         if (data.success && data.draft) {
           setDraft(data.draft);
         } else {

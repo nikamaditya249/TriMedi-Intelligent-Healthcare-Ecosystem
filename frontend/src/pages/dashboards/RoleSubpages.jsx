@@ -4,27 +4,21 @@ import {
   FiFileText,
   FiUserCheck,
   FiCalendar,
-  FiUsers,
   FiShoppingBag,
   FiLayers,
   FiSettings,
-  FiMessageSquare,
   FiPlus,
-  FiCheckCircle,
-  FiClock,
-  FiArrowLeft,
-  FiShield,
-  FiPackage,
-  FiZap,
-  FiCreditCard,
   FiCheck,
-  FiTrash2,
+  FiShield,
+  FiZap,
 } from "react-icons/fi";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 import EmptyState from "../../components/ui/EmptyState";
 import LoadingState from "../../components/ui/LoadingState";
+import { StatusBadge } from "../../components/ui/StatusBadge";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "../../components/ui/Table";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import {
@@ -86,7 +80,7 @@ export function MyDoctorsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Medical Specialists & Care Team</h1>
@@ -101,18 +95,18 @@ export function MyDoctorsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {doctors.map((doc) => (
-          <Card key={doc.id} className="flex flex-col justify-between hover:border-teal-300 transition-all">
+          <Card key={doc.id} className="flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-lg border border-teal-100">
-                  <FiUserCheck className="w-6 h-6" />
+                <div className="w-11 h-11 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center font-bold text-base border border-brand-100">
+                  <FiUserCheck className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">{doc.name}</h3>
-                  <p className="text-xs text-brand-600 font-semibold">{doc.specialty}</p>
+                  <p className="text-xs text-brand-700 font-semibold">{doc.specialty}</p>
                 </div>
               </div>
-              <div className="space-y-1.5 text-xs text-slate-500 py-2 border-y border-slate-100">
+              <div className="space-y-1.5 text-xs text-slate-500 py-2.5 border-y border-slate-100">
                 <p>📍 {doc.hospital}</p>
                 <p>⏳ {doc.experience} • {doc.rating}</p>
                 <p>
@@ -123,12 +117,12 @@ export function MyDoctorsPage() {
 
             <div className="pt-4 flex gap-2">
               <Button
-                variant="doctor"
+                variant="primary"
                 size="sm"
                 className="w-full text-xs"
                 onClick={() => handleOpenBook(doc)}
               >
-                Book Appointment
+                Book Visit
               </Button>
               <Button
                 variant="outline"
@@ -147,14 +141,14 @@ export function MyDoctorsPage() {
         isOpen={bookModalOpen}
         onClose={() => setBookModalOpen(false)}
         initialDoctor={selectedDoc}
-        onBooked={() => alert("✅ Consultation booked successfully! Added to your schedule.")}
+        onBooked={() => {}}
       />
     </div>
   );
 }
 
 // ==========================================
-// 2. PRESCRIPTIONS VIEW (Phase 2 Connected)
+// 2. PRESCRIPTIONS VIEW
 // ==========================================
 export function PrescriptionsPage() {
   const { user, activeRole } = useAuth();
@@ -188,11 +182,11 @@ export function PrescriptionsPage() {
 
   // Prescription-to-Order Cart Transfer Workflow
   const handleOrderFromPrescription = (rx) => {
-    rx.items.forEach((item) => {
+    (rx.items || []).forEach((item) => {
       addToCart({
         _id: item.medicineId || "med_" + Math.random(),
         name: item.medicineName,
-        price: item.dosage.includes("20mg") ? 180 : item.dosage.includes("500mg") ? 120 : 60,
+        price: item.dosage?.includes("20mg") ? 180 : item.dosage?.includes("500mg") ? 120 : 60,
         qty: item.quantityPrescribed ? Math.max(1, Math.round(item.quantityPrescribed / 30)) : 1,
         supplyDays: item.durationDays || 15,
         prescriptionRef: rx._id,
@@ -204,11 +198,11 @@ export function PrescriptionsPage() {
     setTimeout(() => {
       setOrderedRxId(null);
       navigate("/cart");
-    }, 600);
+    }, 500);
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-200">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Digital Prescriptions</h1>
@@ -221,7 +215,7 @@ export function PrescriptionsPage() {
 
         <div className="flex items-center gap-2 flex-wrap">
           <Button
-            variant="brandOutline"
+            variant="outline"
             size="sm"
             icon={FiZap}
             onClick={() => setAiModalOpen(true)}
@@ -231,12 +225,12 @@ export function PrescriptionsPage() {
 
           {activeRole === "doctor" && (
             <Button
-              variant="doctor"
+              variant="primary"
               size="sm"
               icon={FiPlus}
               onClick={() => setCreateModalOpen(true)}
             >
-              Issue Digital Prescription
+              Issue Prescription
             </Button>
           )}
         </div>
@@ -253,20 +247,18 @@ export function PrescriptionsPage() {
           onAction={() => setAiModalOpen(true)}
         />
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {prescriptions.map((rx) => {
             const isOrdered = orderedRxId === rx._id;
 
             return (
-              <Card key={rx._id} className="border-teal-100 bg-white">
+              <Card key={rx._id}>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 mb-4">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-bold text-slate-900">{rx._id}</span>
-                    <span className="text-xs text-slate-400">•</span>
-                    <span className="text-xs font-semibold text-teal-700">{rx.diagnosis}</span>
-                    <Badge variant="success" size="sm">
-                      {rx.status || "Active"}
-                    </Badge>
+                    <span className="text-xs sm:text-sm font-bold text-slate-900">{rx._id}</span>
+                    <span className="text-xs text-slate-300">•</span>
+                    <span className="text-xs font-semibold text-brand-800">{rx.diagnosis}</span>
+                    <StatusBadge type="prescription" status={rx.status || "active"} size="sm" />
                     {rx.aiExtracted && (
                       <Badge variant="brand" size="sm">
                         AI Verified
@@ -280,10 +272,10 @@ export function PrescriptionsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-1.5 text-xs text-slate-600">
-                    <p><b>Prescribing Doctor:</b> {rx.doctorName} ({rx.doctorSpecialty || "Internal Medicine"})</p>
-                    <p><b>Patient:</b> {rx.patientName} ({rx.patientEmail || "patient@trimedi.health"})</p>
+                    <p><strong>Doctor:</strong> {rx.doctorName} ({rx.doctorSpecialty || "Internal Medicine"})</p>
+                    <p><strong>Patient:</strong> {rx.patientName} ({rx.patientEmail || "patient@trimedi.health"})</p>
                     {rx.notes && (
-                      <div className="mt-2 p-2.5 rounded-xl bg-slate-50 text-slate-600 border border-slate-100">
+                      <div className="mt-2 p-2.5 rounded-lg bg-slate-50 text-slate-600 border border-slate-200/70">
                         <span className="font-bold block text-slate-700">Clinical Advice:</span>
                         {rx.notes}
                       </div>
@@ -291,10 +283,10 @@ export function PrescriptionsPage() {
                   </div>
 
                   <div>
-                    <p className="text-xs font-bold uppercase text-slate-500 mb-2">Prescribed Medication Schedule:</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Prescribed Medication Schedule:</p>
                     <div className="space-y-2">
                       {rx.items?.map((it, idx) => (
-                        <div key={idx} className="p-2.5 rounded-xl bg-teal-50/40 border border-teal-100 flex items-center justify-between text-xs">
+                        <div key={idx} className="p-2.5 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
                           <div>
                             <span className="font-bold text-slate-900">{it.medicineName}</span>
                             <span className="ml-2 font-semibold text-slate-600">{it.dosage}</span>
@@ -354,7 +346,7 @@ export function PrescriptionsPage() {
 }
 
 // ==========================================
-// 3. APPOINTMENTS VIEW (Phase 2 Connected)
+// 3. APPOINTMENTS VIEW
 // ==========================================
 export function AppointmentsPage() {
   const { user, activeRole } = useAuth();
@@ -391,7 +383,7 @@ export function AppointmentsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Clinical Consultations & Appointments</h1>
@@ -399,7 +391,7 @@ export function AppointmentsPage() {
             Scheduled consultations, telemedicine reviews, and prescription checkups.
           </p>
         </div>
-        <Button variant="doctor" size="sm" icon={FiPlus} onClick={() => setBookModalOpen(true)}>
+        <Button variant="primary" size="sm" icon={FiPlus} onClick={() => setBookModalOpen(true)}>
           Book Consultation
         </Button>
       </div>
@@ -420,21 +412,19 @@ export function AppointmentsPage() {
             <Card key={apt._id} className="flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <Badge variant={apt.type === "video" ? "brand" : "doctor"} size="sm">
-                    {apt.type.toUpperCase()} CONSULT
+                  <Badge variant="default" size="sm">
+                    {(apt.type || "In-Person").toUpperCase()}
                   </Badge>
-                  <span className={`text-xs font-bold ${apt.status === "confirmed" ? "text-emerald-600" : apt.status === "completed" ? "text-slate-600" : "text-amber-600"}`}>
-                    {apt.status.toUpperCase()}
-                  </span>
+                  <StatusBadge type="appointment" status={apt.status} size="sm" />
                 </div>
 
                 <h3 className="text-sm font-bold text-slate-900">{apt.patientName}</h3>
-                <p className="text-xs text-teal-700 font-semibold">{apt.doctorName}</p>
+                <p className="text-xs text-brand-700 font-semibold">{apt.doctorName}</p>
                 <p className="text-[11px] text-slate-400 mb-3">{apt.hospital}</p>
 
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-700 space-y-1 mb-3">
-                  <p>🗓️ Date: <span className="font-bold">{apt.appointmentDate}</span></p>
-                  <p>⏰ Slot: <span className="font-bold text-teal-700">{apt.timeSlot}</span></p>
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200/80 text-xs text-slate-700 space-y-1 mb-3">
+                  <p>🗓️ Date: <span className="font-bold">{apt.appointmentDate || apt.date}</span></p>
+                  <p>⏰ Slot: <span className="font-bold text-slate-900">{apt.timeSlot || apt.time}</span></p>
                   <p className="text-slate-500 text-[11px]">Reason: {apt.reason}</p>
                 </div>
               </div>
@@ -442,7 +432,7 @@ export function AppointmentsPage() {
               {activeRole === "doctor" && apt.status === "scheduled" && (
                 <div className="pt-3 border-t border-slate-100 flex gap-2">
                   <Button
-                    variant="doctor"
+                    variant="primary"
                     size="sm"
                     className="w-full text-xs"
                     onClick={() => handleStatusUpdate(apt._id, "confirmed")}
@@ -452,7 +442,7 @@ export function AppointmentsPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-xs text-rose-500"
+                    className="text-xs text-rose-600"
                     onClick={() => handleStatusUpdate(apt._id, "cancelled")}
                   >
                     Cancel
@@ -474,7 +464,7 @@ export function AppointmentsPage() {
 }
 
 // ==========================================
-// 4. INVENTORY VIEW (Pharmacy Phase 2)
+// 4. INVENTORY VIEW
 // ==========================================
 export function InventoryPage() {
   const navigate = useNavigate();
@@ -489,7 +479,7 @@ export function InventoryPage() {
   }, []);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Pharmacy Inventory & Stock SKUs</h1>
@@ -497,54 +487,50 @@ export function InventoryPage() {
             Real-time dispensing stock levels, pricing snapshots, and SKU replenishment thresholds.
           </p>
         </div>
-        <Button variant="pharmacy" size="sm" icon={FiPlus} onClick={() => navigate("/products")}>
+        <Button variant="primary" size="sm" icon={FiPlus} onClick={() => navigate("/products")}>
           Browse Catalog
         </Button>
       </div>
 
-      <Card>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-slate-100 text-slate-400 uppercase font-semibold">
-                <th className="pb-3">Medicine Name</th>
-                <th className="pb-3">Category</th>
-                <th className="pb-3">Unit Price</th>
-                <th className="pb-3">Dispensing Status</th>
-                <th className="pb-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {products.slice(0, 15).map((p) => (
-                <tr key={p._id} className="hover:bg-slate-50/50">
-                  <td className="py-3 font-semibold text-slate-900">{p.name}</td>
-                  <td className="py-3 text-slate-500">{p.category || "Medicine"}</td>
-                  <td className="py-3 font-bold text-slate-800">₹{p.price}</td>
-                  <td className="py-3">
-                    <Badge variant="success" size="sm">
-                      Verified Stock
-                    </Badge>
-                  </td>
-                  <td className="py-3 text-right">
-                    <button
-                      className="text-purple-600 font-semibold hover:underline"
-                      onClick={() => alert(`Stock updated for ${p.name}`)}
-                    >
-                      Adjust Units
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      <Table>
+        <TableHeader>
+          <tr>
+            <TableHead>Medicine Name</TableHead>
+            <TableHead>Category</TableHead>
+            <TableHead>Unit Price</TableHead>
+            <TableHead>Dispensing Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </tr>
+        </TableHeader>
+        <TableBody>
+          {products.slice(0, 15).map((p) => (
+            <TableRow key={p._id}>
+              <TableCell className="font-semibold text-slate-900">{p.name}</TableCell>
+              <TableCell className="text-slate-500">{p.category || "Medicine"}</TableCell>
+              <TableCell className="font-bold text-slate-800">₹{p.price}</TableCell>
+              <TableCell>
+                <Badge variant="success" size="sm">
+                  Verified Stock
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right">
+                <button
+                  className="text-brand-700 font-semibold hover:underline text-xs"
+                  onClick={() => alert(`Stock synchronized for ${p.name}`)}
+                >
+                  Adjust Units
+                </button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }
 
 // ==========================================
-// 5. ORDERS VIEW (Phase 2 Connected)
+// 5. ORDERS VIEW
 // ==========================================
 export function OrdersPage() {
   const { user, activeRole } = useAuth();
@@ -580,7 +566,7 @@ export function OrdersPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Medicine Orders & Refills</h1>
@@ -609,16 +595,14 @@ export function OrdersPage() {
             <Card key={ord._id || ord.orderId}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 mb-3">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-bold text-slate-900">{ord.orderId || ord._id}</span>
-                  <span className="text-xs text-slate-400">•</span>
-                  <Badge variant={ord.status === "delivered" ? "success" : "warning"} size="sm">
-                    Status: {ord.status.toUpperCase()}
-                  </Badge>
-                  <Badge variant={ord.paymentMethod === "paypal" ? "brand" : "default"} size="sm">
-                    {ord.paymentMethod.toUpperCase()} ({ord.paymentStatus || "PAID"})
+                  <span className="text-xs sm:text-sm font-bold text-slate-900">{ord.orderId || ord._id}</span>
+                  <span className="text-xs text-slate-300">•</span>
+                  <StatusBadge type="order" status={ord.status} size="sm" />
+                  <Badge variant="default" size="sm">
+                    {ord.paymentMethod?.toUpperCase()} ({ord.paymentStatus || "PAID"})
                   </Badge>
                   {ord.prescriptionRef && (
-                    <Badge variant="doctor" size="sm">
+                    <Badge variant="brand" size="sm">
                       Linked: {ord.prescriptionRef}
                     </Badge>
                   )}
@@ -632,22 +616,22 @@ export function OrdersPage() {
                   <ul className="space-y-1 text-slate-600">
                     {ord.items?.map((it, idx) => (
                       <li key={idx} className="flex justify-between">
-                        <span>• {it.name} (x{it.qty})</span>
-                        <span className="font-semibold text-slate-800">₹{it.price * it.qty}</span>
+                        <span>• {it.name} (x{it.qty || it.quantity || 1})</span>
+                        <span className="font-semibold text-slate-800">₹{(it.price || 0) * (it.qty || it.quantity || 1)}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
                 <div className="space-y-1 text-slate-500">
-                  <p><b>Recipient:</b> {ord.patientName} ({ord.patientPhone || "+91 98765 43210"})</p>
-                  <p><b>Estimated Supply:</b> {ord.supplyDaysEstimate || 15} Days</p>
-                  <p><b>Dispensing Pharmacy:</b> {ord.pharmacyName || "MedPlus Prime Pharmacy"}</p>
+                  <p><strong>Recipient:</strong> {ord.patientName} ({ord.patientPhone || "+91 98765 43210"})</p>
+                  <p><strong>Estimated Supply:</strong> {ord.supplyDaysEstimate || 15} Days</p>
+                  <p><strong>Dispensing Pharmacy:</strong> {ord.pharmacyName || "MedPlus Prime Pharmacy"}</p>
                 </div>
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <span className="text-base font-bold text-slate-900">
-                  Total Paid: <span className="text-brand-700">₹{ord.totalAmount}</span>
+                <span className="text-sm sm:text-base font-bold text-slate-900">
+                  Total Paid: <span className="text-brand-800 font-extrabold">₹{ord.totalAmount}</span>
                 </span>
 
                 {/* Pharmacy status progression buttons */}
@@ -664,7 +648,7 @@ export function OrdersPage() {
                       </Button>
                     )}
                     {ord.status === "dispensed" && (
-                      <Button variant="primary" size="sm" className="text-xs bg-emerald-600 hover:bg-emerald-700" onClick={() => handleUpdateStatus(ord.orderId || ord._id, "delivered")}>
+                      <Button variant="primary" size="sm" className="text-xs" onClick={() => handleUpdateStatus(ord.orderId || ord._id, "delivered")}>
                         Mark Delivered
                       </Button>
                     )}
@@ -686,60 +670,56 @@ export function OrdersPage() {
 }
 
 // ==========================================
-// 6. MESSAGES PLACEHOLDER (Phase 3 Roadmap)
-// ==========================================
-export function MessagesPlaceholderPage() {
-  return (
-    <div className="py-8">
-      <EmptyState
-        icon={FiMessageSquare}
-        title="TriMedi Real-Time Healthcare Messaging"
-        description="Encrypted real-time communication between patients and certified doctors is scheduled for implementation in Phase 3. The data models and message channels are structured and ready."
-        actionLabel="Return to Dashboard"
-        onAction={() => window.history.back()}
-      />
-    </div>
-  );
-}
-
-// ==========================================
-// 7. SYSTEM SETTINGS / ADMIN
+// 6. SYSTEM SETTINGS / ADMIN
 // ==========================================
 export function SystemManagementPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">System Governance & Health</h1>
-        <p className="text-xs text-slate-500">Database clusters, API telemetry, and platform security audits.</p>
+        <h1 className="text-2xl font-bold text-slate-900">System Governance & Telemetry</h1>
+        <p className="text-xs sm:text-sm text-slate-500 mt-1">Database clusters, API telemetry, and platform security audits.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <Card>
           <div className="flex items-center gap-2 mb-3">
-            <FiShield className="w-5 h-5 text-emerald-600" />
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+              <FiShield className="w-4 h-4" />
+            </div>
             <h3 className="text-sm font-bold text-slate-900">Database & Resilient Fallback</h3>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed mb-4">
             MongoDB Atlas connected with automatic fallback store ensuring 100% uptime for authentication, prescriptions, and order fulfillment.
           </p>
           <Badge variant="success" size="sm">
-            Status: Phase 2 Ecosystem Active
+            Status: Operational
           </Badge>
         </Card>
 
         <Card>
           <div className="flex items-center gap-2 mb-3">
-            <FiLayers className="w-5 h-5 text-brand-600" />
+            <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center">
+              <FiLayers className="w-4 h-4" />
+            </div>
             <h3 className="text-sm font-bold text-slate-900">Payment & AI Engine Status</h3>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed mb-4">
             PayPal Server-side Orders API, Gemini/NLP Medical Extraction Pipeline, and Deterministic Supply Gap Arithmetic are operational.
           </p>
           <Badge variant="brand" size="sm">
-            Architecture: Phase 2 Operational
+            Status: Active
           </Badge>
         </Card>
       </div>
     </div>
   );
 }
+
+export default {
+  MyDoctorsPage,
+  PrescriptionsPage,
+  AppointmentsPage,
+  InventoryPage,
+  OrdersPage,
+  SystemManagementPage,
+};

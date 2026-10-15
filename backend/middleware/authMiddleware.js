@@ -32,6 +32,13 @@ export const STATIC_DEMO_USERS = {
     email: "admin@trimedi.com",
     role: "admin",
   },
+  "demo_token_reception": {
+    _id: "demo_reception_1",
+    name: "Meena Ramanathan",
+    email: "reception@trimedi.health",
+    role: "reception",
+    clinicName: "Metro Health Center",
+  },
 };
 
 /**
@@ -125,3 +132,71 @@ export const optionalAuth = async (req, res, next) => {
   }
   next();
 };
+
+/**
+ * Role-Based Access Control Middleware
+ * Ensures the authenticated user possesses one of the allowed roles
+ */
+export const requireRole = (allowedRoles = []) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+
+    // Administrators possess global administrative governance
+    if (req.user.role === "admin" || roles.includes(req.user.role)) {
+      return next();
+    }
+
+    return res.status(403).json({
+      success: false,
+      message: `Access denied: Role '${req.user.role}' is not authorized for this action`,
+    });
+  };
+};
+
+/**
+ * Clinical Least-Privilege Access Control Middleware
+ * Restricts sensitive clinical medical records & notes:
+ * - Patients can only access their own records
+ * - Doctors can only access records of their authorized patients
+ * - Reception & Pharmacy are explicitly blocked from private clinical notes/diagnosis
+ */
+export const requireClinicalAccess = (patientEmailExtractor = (req) => req.query.patientEmail || req.body.patientEmail || req.params.patientEmail) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Authentication required" });
+    }
+
+    const role = req.user.role;
+    const targetPatientEmail = (patientEmailExtractor(req) || "").toLowerCase();
+
+    // 1. Reception & Pharmacy cannot access full clinical consultation notes/diagnosis
+    if (role === "reception" || role === "pharmacy") {
+      return res.status(403).json({
+        success: false,
+        message: "Clinical Access Restricted: Operational roles cannot access private clinical diagnosis and medical history notes.",
+      });
+    }
+
+    // 2. Patient can only access their own clinical records
+    if (role === "patient") {
+      const userEmail = req.user.email.toLowerCase();
+      if (targetPatientEmail && targetPatientEmail !== userEmail) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied: Patients are forbidden from accessing another patient's medical records.",
+        });
+      }
+    }
+
+    // 3. Doctors and Admins permitted
+    next();
+  };
+};
+

@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import Avatar from "../ui/Avatar";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
+import { getMessages, sendMessage, draftDoctorQuestionWithAI } from "../../api";
 
 const ChatWindow = ({ conversation, onBack }) => {
   const { user } = useAuth();
@@ -44,10 +45,7 @@ const ChatWindow = ({ conversation, onBack }) => {
     if (!conversation?._id) return;
     try {
       setLoading(true);
-      const res = await fetch(
-        `http://localhost:5001/api/chat/messages/${conversation._id}?userEmail=${encodeURIComponent(userEmail)}`
-      );
-      const data = await res.json();
+      const data = await getMessages(conversation._id, userEmail);
       if (data.success) {
         setMessages(data.messages || []);
       }
@@ -149,13 +147,7 @@ const ChatWindow = ({ conversation, onBack }) => {
         content: textToSend,
       };
 
-      const res = await fetch("http://localhost:5001/api/chat/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
+      const data = await sendMessage(payload);
       if (data.success && data.message) {
         setMessages((prev) => [...prev, data.message]);
         if (!customContent) setInputText("");
@@ -169,16 +161,11 @@ const ChatWindow = ({ conversation, onBack }) => {
   const handleGenerateAiDraft = async () => {
     try {
       setAiDrafting(true);
-      const res = await fetch("http://localhost:5001/api/ai/draft-doctor-question", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          symptomTopic: aiDraftPrompt || "medication timing and potential mild dizziness",
-          currentMedication: "Atorvastatin 20mg",
-          duration: "the last 3 days",
-        }),
+      const data = await draftDoctorQuestionWithAI({
+        symptomTopic: aiDraftPrompt || "medication timing and potential mild dizziness",
+        currentMedication: "Atorvastatin 20mg",
+        duration: "the last 3 days",
       });
-      const data = await res.json();
       if (data.success && data.draftedQuestion) {
         setInputText(data.draftedQuestion);
         setShowAiDraft(false);

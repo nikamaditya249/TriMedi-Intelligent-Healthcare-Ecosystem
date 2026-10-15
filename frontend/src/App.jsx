@@ -21,6 +21,7 @@ import PatientDashboard from "./pages/dashboards/PatientDashboard";
 import DoctorDashboard from "./pages/dashboards/DoctorDashboard";
 import PharmacyDashboard from "./pages/dashboards/PharmacyDashboard";
 import AdminDashboard from "./pages/dashboards/AdminDashboard";
+import ReceptionDashboard from "./pages/dashboards/ReceptionDashboard";
 
 // Subpages
 import {
@@ -237,6 +238,40 @@ function AppContent() {
           element={
             <AppShell>
               <SystemManagementPage />
+            </AppShell>
+          }
+        />
+
+        {/* RECEPTION ROUTES */}
+        <Route
+          path="/app/reception/dashboard"
+          element={
+            <AppShell>
+              <ReceptionDashboard />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/app/reception/queue"
+          element={
+            <AppShell>
+              <ReceptionDashboard />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/app/reception/appointments"
+          element={
+            <AppShell>
+              <ReceptionDashboard />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/app/reception/patients"
+          element={
+            <AppShell>
+              <ReceptionDashboard />
             </AppShell>
           }
         />

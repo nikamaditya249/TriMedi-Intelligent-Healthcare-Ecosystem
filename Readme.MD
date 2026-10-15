@@ -1,57 +1,86 @@
-# TriMedi — Connected Healthcare & Medication Intelligence Platform
+# TriMedi — Intelligent Healthcare Ecosystem
 
-[![TriMedi Live Demo](https://img.shields.io/badge/Live%20Demo-Netlify-teal?style=for-the-badge&logo=netlify)](https://trimedi.netlify.app/)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
-[![React](https://img.shields.io/badge/Frontend-React%20%7C%20Vite%20%7C%20TailwindCSS-38bdf8?style=for-the-badge&logo=react)](https://reactjs.org/)
-[![Node.js](https://img.shields.io/badge/Backend-Node.js%20%7C%20Express-22c55e?style=for-the-badge&logo=node.js)](https://nodejs.org/)
-[![Socket.IO](https://img.shields.io/badge/Real--Time-Socket.IO%20Gateway-010101?style=for-the-badge&logo=socket.io)](https://socket.io/)
-[![MongoDB](https://img.shields.io/badge/Database-MongoDB%20Atlas-47a248?style=for-the-badge&logo=mongodb)](https://www.mongodb.com/)
+[![TriMedi Live Demo](https://img.shields.io/badge/Live%20Demo-Netlify-0f766e?style=for-the-badge&logo=netlify)](https://trimedi.netlify.app/)
+[![License](https://img.shields.io/badge/License-MIT-slate?style=for-the-badge)](LICENSE)
+[![Design System](https://img.shields.io/badge/Design%20System-TriMedi%20Teal%20%7C%20Slate-0f766e?style=for-the-badge)](frontend/tailwind.config.js)
+[![React](https://img.shields.io/badge/Frontend-React%2018%20%7C%20Vite%20%7C%20TailwindCSS-0f766e?style=for-the-badge&logo=react)](https://reactjs.org/)
+[![Node.js](https://img.shields.io/badge/Backend-Node.js%20%7C%20Express-0f766e?style=for-the-badge&logo=node.js)](https://nodejs.org/)
+[![Socket.IO](https://img.shields.io/badge/Real--Time-Socket.IO%20Gateway-0f766e?style=for-the-badge&logo=socket.io)](https://socket.io/)
+[![MongoDB](https://img.shields.io/badge/Database-MongoDB%20Atlas-0f766e?style=for-the-badge&logo=mongodb)](https://www.mongodb.com/)
 
 ---
 
 ## 🌟 Executive Overview
 
-**TriMedi** is an intelligent, real-time healthcare ecosystem that unites patients, certified doctors, licensed pharmacies, and administrators into a continuous care journey. Rather than functioning as an isolated pharmacy or telemedicine app, TriMedi links every touchpoint of treatment into an automated, proactive care lifecycle:
+**TriMedi** is an intelligent, real-time healthcare ecosystem connecting patients, verified medical doctors, licensed pharmacies, and administrators through one unified digital care lifecycle:
 
 $$\text{Patient} \longleftrightarrow \text{Doctor} \longrightarrow \text{Appointment} \longrightarrow \text{Digital Prescription} \longrightarrow \text{Medicine} \longrightarrow \text{Checkout (PayPal/COD/UPI)} \longrightarrow \text{Supply Tracking} \longrightarrow \text{Refill Gap Detection} \longrightarrow \text{Order Again} \longrightarrow \text{Continued Care}$$
 
+TriMedi is engineered as a production-grade healthcare technology platform: minimal, trustworthy, calm, accessible, and structured with clinical clarity.
+
 ---
 
-## 🚀 Key Features
+## 🎨 Complete TriMedi Design System (Phase 1)
 
-### 1. Multi-Role Ecosystem & Workspaces
+TriMedi uses **ONE centralized visual language** across all role portals—eliminating visual fragmentation, rainbow role themes, neon gradients, and legacy starter boilerplate.
+
+### 1. Color System
+- **Primary Brand**: Healthcare Deep Teal (`#0F766E` / `brand-700`), Dark Teal (`#115E59` / `brand-800`), Soft Teal Accent (`#CCFBF1` / `brand-100`).
+- **Neutrals**: Professional Slate (`slate-50` through `slate-950`), providing crisp contrast and calm surfaces.
+- **Semantic Statuses**:
+  - `Success`: Restrained Emerald (`emerald-700` / `emerald-50`)
+  - `Warning`: Restrained Amber (`amber-700` / `amber-50`)
+  - `Danger / Destructive`: Restrained Rose/Red (`rose-700` / `rose-50`)
+  - `Info`: Restrained Blue/Teal (`sky-700` / `sky-50`)
+
+### 2. Standardized Component Library (`frontend/src/components/ui/`)
+- **`Button`**: Consistent heights, padding, rounded-lg radius, loading spinner, and variants (`primary`, `secondary`, `outline`, `ghost`, `danger`).
+- **`Card` & `StatCard`**: Clean borders (`border-slate-200/80`), restrained shadow (`shadow-sm`), and solid brand icon containers.
+- **`Badge` & `StatusBadge`**: Standardized domain status tags for Appointments (*Scheduled, Confirmed, Completed, Cancelled*), Orders (*Pending, Processing, Dispensed, Delivered, Cancelled*), and Prescriptions (*Active, Expired, Completed*).
+- **`Input` & `Select`**: Standard heights, clean focus rings (`focus:ring-brand-700`), helper text, and validation states.
+- **`Table`**: Structured clinical tables with clear headers, hover states, status badges, and empty/loading feedback.
+- **`Modal`**: Accessible dialogs with smooth backdrop transitions, header badges, and keyboard escape support.
+- **`LoadingState`, `EmptyState`, `ErrorState`**: Uniform feedback components preventing raw errors, blank screens, or layout shifts.
+
+### 3. Unified Application Shell
+All roles (Patient, Doctor, Pharmacy, Admin) share a single responsive application shell:
+- **Collapsible Sidebar**: Clean brand mark, role-specific workspace links, unified styling.
+- **Top Header**: Global search, real-time live connection status indicator, notification center drawer, and profile switcher.
+- **Mobile Responsive Drawer**: Clean hamburger navigation and responsive tables/grids across tablet and mobile viewport sizes.
+
+---
+
+## 🚀 Key Functional Capabilities
+
+### 1. Role-Based Healthcare Workspaces
 - **Patient Workspace**: Real-time medication supply bars, refill recommendations, digital prescription vault, appointment scheduling, consultation chat, and order tracking.
-- **Doctor Clinical Portal (MD-Verified)**: Digital prescription issuer with dosage/frequency schedules, appointment calendar manager, and direct patient chat.
+- **Doctor Clinical Portal**: Verified digital prescription issuer with dosage/frequency schedules, appointment queue management, and patient communication.
 - **Pharmacy Dispensing Network**: Live order fulfillment queue with real-time status transitions (*Processing $\rightarrow$ Dispensed $\rightarrow$ Shipped $\rightarrow$ Delivered*), inventory control, and low-stock alerts.
-- **Admin Governance Center**: System-wide telemetry, real-time WebSocket connection monitoring, background scheduler heartbeats, user directory, and audit logs.
+- **Admin Governance Center**: System-wide telemetry, user directory, real-time WebSocket connection monitoring, background scheduler heartbeats, and audit logs.
 
 ### 2. Medication Supply Intelligence & Smart Refill Gap Engine
-- **Deterministic Arithmetic Engine**: Evaluates prescribed duration (e.g., 30 Days) against actual purchased supply (e.g., 15 Days) on the backend to identify potential therapy shortage gaps.
-- **Dynamic Supply Visualizers**: In-app progress bars showing exact days elapsed, days remaining, and refill thresholds.
+- **Deterministic Arithmetic Engine**: Evaluates prescribed duration against actual purchased supply to identify potential therapy shortage gaps.
+- **Supply Visualizers**: In-app progress bars showing exact days elapsed, days remaining, and refill thresholds.
 - **Proactive Refill Alerts**: Generates non-alarmist notifications when medication supply approaches $\le 5$ days remaining.
 
 ### 3. Automated "Order Again" Engine
 - **Prescription Validation**: Verifies that the prescription exists, belongs to the authenticated patient, and is currently active.
 - **Authoritative Server Pricing**: Directly queries the live catalog database to compute subtotals, GST, and shipping—preventing client-side price tampering.
-- **Direct Checkout Transfer**: Seamlessly transitions validated refill drafts into the checkout workflow for patient review and payment via **PayPal**, **COD**, or **UPI**.
+- **Direct Checkout Transfer**: Seamlessly transitions validated refill drafts into checkout for payment via **PayPal**, **COD**, or **UPI**.
 
 ### 4. Real-Time Doctor-Patient Consultation Chat
 - **Socket.IO Gateway**: Authenticated real-time communication channel with room isolation (`user_${email}`, `conv_${conversationId}`).
 - **Features**: Live message exchange, typing indicators, read receipts, online/offline presence indicators, and message history persistence.
 - **Security**: Strict server-side validation ensuring users can only join conversations where they are authorized participants.
 
-### 5. Event-Driven Real-Time Notification System
-- **Centralized EventBus**: Internal domain event system (`APPOINTMENT_*`, `PRESCRIPTION_*`, `ORDER_*`, `REFILL_*`, `MESSAGE_*`).
-- **Multi-Category Alerts**: Supports Appointments, Prescriptions, Orders, Payments, Medications, Refills, and Chat.
-- **Notification Center Modal**: Live in-app toast popups, header unread badge counter, category filter pills, mark-as-read, and category preferences toggles.
-
-### 6. AI-Assisted Clinical Communication (Assistive Only)
+### 5. AI-Assisted Clinical Guidance (Assistive Only)
 - **Instruction Simplifier**: Translates complex clinical instructions and Latin dosing terms (e.g. *OD Nocte post cibus*) into clear daily routines.
 - **Doctor Query Drafter**: Helps patients clearly frame symptom questions and queries for doctor consultations.
 - **Consultation Summarizer**: Generates concise action items and key highlights from past consultations.
-- **Safety Boundaries**: Every AI response includes prominent medical disclaimers. AI never makes autonomous clinical decisions or alters prescriptions.
+- **Prescription Scanner**: OCR extraction with mandatory doctor/patient human review before finalizing digital prescriptions.
+- **Clinical Governance**: Prominent disclaimers clarify that AI recommendations are assistive and never replace licensed medical judgment.
 
-### 7. Background Healthcare Scheduler
+### 6. Background Healthcare Scheduler
 - **60-Second In-Process Timer**: Runs automated health checks for:
   - 24-hour and 1-hour upcoming appointment reminders
   - Medication supplies approaching the 3-day refill threshold
@@ -77,30 +106,36 @@ $$\text{Patient} \longleftrightarrow \text{Doctor} \longrightarrow \text{Appoint
 ```
 S73_AdityaNikam_TriMedi_Capstone/
 ├── backend/
+│   ├── .env.example            # Environment template for dev/staging/prod
 │   ├── data/                   # Default product catalog & seed data
 │   ├── middleware/             # JWT & Session Authentication middlewares
 │   ├── models/                 # Mongoose models (User, Order, Prescription, Appointment, Conversation, Message, Notification)
 │   ├── routes/                 # REST API endpoints (auth, products, orders, prescriptions, appointments, chat, notifications, refill, ai, paypal)
 │   ├── services/               # Socket.IO gateway, Domain EventBus, Background Scheduler
 │   ├── index.js                # Server entry point with HTTP & Socket.IO listener
-│   └── test_audit.js           # Automated Phase 3 security & persistence test suite
+│   └── test_audit.js           # Automated Phase 1 & 3 security, socket, and persistence test suite
 │
 ├── frontend/
+│   ├── .env.example            # Client environment template (VITE_API_URL, VITE_SOCKET_URL)
+│   ├── tailwind.config.js      # Centralized TriMedi design tokens (brand, slate, semantics)
 │   ├── src/
+│   │   ├── api.js              # Centralized resilient API client with friendly error handling
 │   │   ├── components/
 │   │   │   ├── ai/             # AI Assistant modal & AI Scanner modal
 │   │   │   ├── appointments/   # Booking consultation modals
 │   │   │   ├── chat/           # Real-time chat window & message bubbles
 │   │   │   ├── intelligence/   # Medication supply timeline & gap tracker
-│   │   │   ├── layout/         # AppShell, Navbar, Header, Sidebar
+│   │   │   ├── layout/         # AppShell, Navbar, Header, Sidebar, Footer
 │   │   │   ├── notifications/  # Notification center modal
 │   │   │   ├── prescriptions/  # Digital prescription creation modals
 │   │   │   ├── refill/         # Order Again validation modal
-│   │   │   └── ui/             # Reusable design tokens (Button, Card, Badge, Modal, Avatar)
+│   │   │   └── ui/             # Standardized Design Tokens: Button, Card, Badge, StatusBadge, Input, Select, Table, Modal, Avatar
 │   │   ├── context/            # AuthContext, CartContext, SocketContext
-│   │   ├── pages/              # Landing, Auth, Products, Cart, Checkout, Profile, ChatPage
-│   │   │   └── dashboards/     # PatientDashboard, DoctorDashboard, PharmacyDashboard, AdminDashboard
-│   │   ├── App.jsx             # Route registry & Provider wrapping
+│   │   ├── pages/              # Landing, Auth, Products, Cart, Checkout, Profile, RoleSubpages
+│   │   │   ├── dashboards/     # PatientDashboard, DoctorDashboard, PharmacyDashboard, AdminDashboard
+│   │   │   └── chat/           # ChatPage
+│   │   ├── App.jsx             # Route registry & Protected Routes
+│   │   ├── index.css           # Global typography, clean healthcare surfaces, utility classes
 │   │   └── main.jsx            # React root mount
 │   └── package.json
 └── Readme.MD
@@ -125,59 +160,88 @@ cd S73_AdityaNikam_TriMedi_Capstone
 ```bash
 cd backend
 npm install
-```
-
-Create a `.env` file in `backend/`:
-```env
-PORT=5001
-MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/trimedi?retryWrites=true&w=majority
-JWT_SECRET=trimedi_secure_jwt_secret_2026
-PAYPAL_CLIENT_ID=your_paypal_sandbox_client_id
-PAYPAL_CLIENT_SECRET=your_paypal_sandbox_secret
-GEMINI_API_KEY=your_gemini_api_key
-```
-
-Start the backend server:
-```bash
+cp .env.example .env
 npm start
 ```
+The backend server starts on port `5001`.
 
 ### 3. Frontend Setup
 ```bash
 cd ../frontend
 npm install
+cp .env.example .env
 npm run dev
 ```
-
-The frontend will start at `http://localhost:5173` and automatically connect to the backend Socket.IO gateway at `http://localhost:5001`.
+The frontend dev server starts at `http://localhost:5173`.
 
 ---
 
 ## 🧪 Running Automated Tests & Security Audit
 
-Run the Phase 3 security, persistence, and idempotency verification suite:
+Run the automated security, Socket.IO, and persistence audit suite:
 ```bash
 cd backend
 node test_audit.js
 ```
 
-### Audit Verification Checklist
-- [x] Socket.IO connection authentication with cryptographic JWT verification
-- [x] Prevention of role and identity spoofing
-- [x] Conversation room authorization checks (preventing unauthorized eavesdropping)
-- [x] REST API IDOR protection across conversations, prescriptions, and notifications
-- [x] Durable MongoDB persistence surviving server restarts
-- [x] Database-backed idempotent scheduler execution (0 duplicate alerts)
-- [x] Authoritative server-side price computation for PayPal and Order Again checkouts
-- [x] AI safety guardrails and clinical disclaimers
+### Phase 2 Real Healthcare Workflow & Clinical Operations Test Suite
+Run the end-to-end clinical workflow, least-privilege, and IDOR protection test suite:
+```bash
+cd backend
+node test_phase2_workflow.js
+```
+
+### Security & Clinical Audit Checklist Results
+- [x] **Socket.IO No-Token Rejection**: Rejected unauthorized handshake with `AUTH_REQUIRED`
+- [x] **Socket.IO Bad-Token Rejection**: Rejected forged/tampered tokens with `AUTH_INVALID`
+- [x] **Socket.IO Authenticated Connect**: Accepted valid JWT-signed user connections
+- [x] **Socket.IO Conversation Join Authorization**: Prevented unauthorized room joins (IDOR protection)
+- [x] **Durable MongoDB Persistence**: Verified durable persistence with cluster and resilient fallback
+- [x] **Scheduler Idempotency & Deduplication**: Verified 0 duplicate notifications generated across restarts
+- [x] **REST API IDOR Protection**: Blocked requests attempting to query other users' notification feeds (HTTP 403)
+- [x] **Appointment State Machine Enforcement**: Valid transitions succeed; invalid jumps rejected with HTTP 400
+- [x] **Idempotent Patient Check-In**: Duplicate check-in calls return existing queue token without duplicating entries
+- [x] **Live Clinic Waiting Queue**: Real-time queue ordering, token issuance, and doctor call/start/complete flow
+- [x] **Clinical Least Privilege**: Reception and Pharmacy strictly blocked from private clinical notes/diagnosis (HTTP 403)
+- [x] **Longitudinal Medical Record**: Append-only care ledger preserving consultations, vitals, and prescription history
+- [x] **Doctor Credential Verification**: Admin-controlled verification status (`verified`, `under_review`, `pending`) with audit log
+- [x] **Immutable Clinical Audit Trail**: Mongoose write-protection preventing update/delete of clinical audit records
 
 ---
 
-## 🌐 Live Deployment
+## 🔐 Demo Credentials
 
-- **Frontend Application**: [https://trimedi.netlify.app/](https://trimedi.netlify.app/)
+The platform includes built-in 1-click demo logins on the `/auth` page for all five healthcare roles:
+- **Patient**: `aditya@trimedi.health` / `patient@trimedi.health` (password: `password123`)
+- **Doctor**: `doctor@trimedi.health` (Verified MD Specialist) (password: `password123`)
+- **Reception**: `reception@trimedi.health` (Metro Health Front Desk) (password: `password123`)
+- **Pharmacy**: `pharmacy@trimedi.health` (password: `password123`)
+- **Admin**: `admin@trimedi.health` (password: `password123`)
+
+---
+
+## 📋 Feature Status Matrix
+
+| Feature Domain | Status | Notes |
+| :--- | :--- | :--- |
+| **TriMedi Design System** | **Implemented** | Centralized Deep Teal tokens, typography, cards, badges, inputs, buttons, tables, modals |
+| **Application Shell** | **Implemented** | Unified sidebar, header, role switcher, notification drawer, responsive layouts |
+| **Reception Desk Workflow** | **Implemented** | Today's appointments, walk-in registration, 1-click check-in, live queue management |
+| **Doctor Consultation Workspace** | **Implemented** | Patient header, vitals capture, clinical notes, diagnosis, longitudinal history, Rx builder |
+| **Longitudinal Medical Record** | **Implemented** | Append-only clinical timeline tracking consultations, vitals, and verified prescriptions |
+| **Clinic Waiting Room Queue** | **Implemented** | Token numbering, estimated wait, real-time Socket.IO triage synchronization |
+| **Prescription Lifecycle & MD Sign-off** | **Implemented** | Draft/reviewed/approved/active states; AI extractions require explicit MD sign-off |
+| **Clinical Least Privilege & IDOR** | **Implemented** | Reception/Pharmacy restricted from clinical notes; cross-patient IDOR blocked |
+| **Clinical Audit Trail** | **Implemented** | Immutable logging of check-ins, encounters, prescriptions, and credential changes |
+| **Doctor Credential Verification** | **Implemented** | State registry tracking (`verified`, `under_review`, `pending`) with admin control |
+| **Authentication & RBAC** | **Implemented** | JWT auth, demo accounts, role protected routes, zero frontend secret leaks |
+| **Medication Catalog & Cart**| **Implemented** | Product browsing, category pills, cart management, authoritative checkout |
+| **Orders & Payment Gateway** | **Implemented** | PayPal Orders API v2, Cash on Delivery, UPI direct simulation |
+| **Medication Refill Engine** | **Implemented** | Refill gap calculation, supply progress bars, Order Again draft builder |
+| **Socket.IO Consultation Chat**| **Implemented** | Real-time messages, typing indicators, read receipts, room authorization |
+| **Event-Driven Notifications** | **Implemented** | Centralized EventBus, category feeds, unread badge counter |
 
 ---
 
 ## 📄 License
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.# TriMedi-Intelligent-Healthcare-Ecosystem
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.

@@ -9,19 +9,19 @@ import {
   FiShield,
   FiCheckCircle,
   FiAlertCircle,
-  FiArrowRight,
   FiHeart,
   FiUserCheck,
   FiShoppingBag,
 } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import Button from "../components/ui/Button";
-import Input, { Select } from "../components/ui/Input";
+import Input from "../components/ui/Input";
+import Alert from "../components/ui/Alert";
 
 export function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { login, register, switchDemoRole, isAuthenticated, activeRole } = useAuth();
+  const { login, register, switchDemoRole } = useAuth();
 
   const [isLogin, setIsLogin] = useState(searchParams.get("mode") !== "register");
   const [role, setRole] = useState("patient");
@@ -68,11 +68,11 @@ export function Auth() {
         });
 
         if (res.success) {
-          setSuccessMessage("Login successful! Redirecting to care hub...");
+          setSuccessMessage("Login successful. Accessing your workspace...");
           const targetRole = res.user?.role || "patient";
           setTimeout(() => navigate(`/app/${targetRole}/dashboard`), 400);
         } else {
-          setErrorMessage(res.message || "Invalid credentials");
+          setErrorMessage(res.message || res.error || "Invalid credentials provided.");
         }
       } else {
         const payload = {
@@ -82,14 +82,14 @@ export function Auth() {
 
         const res = await register(payload);
         if (res.success) {
-          setSuccessMessage("Account created successfully! Redirecting...");
+          setSuccessMessage("Account created successfully. Redirecting to workspace...");
           setTimeout(() => navigate(`/app/${role}/dashboard`), 400);
         } else {
-          setErrorMessage(res.message || "Registration failed");
+          setErrorMessage(res.message || res.error || "Registration could not be completed.");
         }
       }
     } catch (err) {
-      setErrorMessage(err.message || "Network error. Please try again.");
+      setErrorMessage(err.message || "Unable to reach the server. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -101,34 +101,37 @@ export function Auth() {
   };
 
   const rolesList = [
-    { id: "patient", label: "Patient", icon: FiHeart, desc: "Connected care & refills" },
-    { id: "doctor", label: "Doctor", icon: FiUserCheck, desc: "Clinical & e-prescriptions" },
-    { id: "pharmacy", label: "Pharmacy", icon: FiShoppingBag, desc: "Fulfillment & dispensing" },
-    { id: "admin", label: "Admin", icon: FiShield, desc: "Platform governance" },
+    { id: "patient", label: "Patient", icon: FiHeart },
+    { id: "doctor", label: "Doctor", icon: FiUserCheck },
+    { id: "reception", label: "Reception", icon: FiClock },
+    { id: "pharmacy", label: "Pharmacy", icon: FiShoppingBag },
+    { id: "admin", label: "Admin", icon: FiShield },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       {/* Brand Top Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6">
-        <Link to="/" className="inline-flex items-center gap-2.5 font-bold text-2xl text-white">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-400 text-white flex items-center justify-center shadow-md">
+        <Link to="/" className="inline-flex items-center gap-2.5 font-bold text-2xl text-slate-900">
+          <div className="w-10 h-10 rounded-xl bg-brand-700 text-white flex items-center justify-center shadow-subtle border border-brand-800">
             <FiActivity className="w-5 h-5" />
           </div>
           <span className="tracking-tight">
-            Tri<span className="text-brand-400">Medi</span>
+            Tri<span className="text-brand-700">Medi</span>
           </span>
         </Link>
-        <p className="text-xs sm:text-sm text-slate-300 mt-2">
-          {isLogin ? "Sign in to access your synchronized healthcare workspace" : "Join TriMedi connected healthcare network"}
+        <p className="text-xs sm:text-sm text-slate-500 mt-2">
+          {isLogin
+            ? "Sign in to access your authenticated healthcare workspace"
+            : "Register for the synchronized healthcare care network"}
         </p>
       </div>
 
       {/* Main Auth Container */}
-      <div className="sm:mx-auto sm:w-full sm:max-w-xl">
-        <div className="bg-white/95 backdrop-blur-xl py-8 px-6 sm:px-10 shadow-2xl rounded-3xl border border-white/20">
+      <div className="sm:mx-auto sm:w-full sm:max-w-lg">
+        <div className="bg-white py-8 px-6 sm:px-10 shadow-card rounded-2xl border border-slate-200/90">
           {/* Tab Switcher: Login / Register */}
-          <div className="flex rounded-xl bg-slate-100 p-1 mb-6">
+          <div className="flex rounded-xl bg-slate-100 p-1 mb-6 border border-slate-200/70">
             <button
               type="button"
               onClick={() => {
@@ -137,7 +140,7 @@ export function Auth() {
               }}
               className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
                 isLogin
-                  ? "bg-white text-slate-900 shadow-xs"
+                  ? "bg-white text-slate-900 shadow-subtle border border-slate-200/60"
                   : "text-slate-500 hover:text-slate-800"
               }`}
             >
@@ -151,7 +154,7 @@ export function Auth() {
               }}
               className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
                 !isLogin
-                  ? "bg-white text-slate-900 shadow-xs"
+                  ? "bg-white text-slate-900 shadow-subtle border border-slate-200/60"
                   : "text-slate-500 hover:text-slate-800"
               }`}
             >
@@ -163,7 +166,7 @@ export function Auth() {
           {!isLogin && (
             <div className="mb-6">
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                Select Your Role in TriMedi
+                Select Your Role
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {rolesList.map((r) => {
@@ -174,14 +177,14 @@ export function Auth() {
                       key={r.id}
                       type="button"
                       onClick={() => setRole(r.id)}
-                      className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center gap-1.5 ${
+                      className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1.5 ${
                         isSelected
-                          ? "border-brand-600 bg-brand-50/60 text-brand-900 shadow-xs ring-2 ring-brand-500/20"
+                          ? "border-brand-700 bg-brand-50 text-brand-900 shadow-subtle font-semibold"
                           : "border-slate-200 hover:border-slate-300 text-slate-600 bg-white"
                       }`}
                     >
-                      <Icon className={`w-5 h-5 ${isSelected ? "text-brand-600" : "text-slate-400"}`} />
-                      <span className="text-xs font-bold">{r.label}</span>
+                      <Icon className={`w-4 h-4 ${isSelected ? "text-brand-700" : "text-slate-400"}`} />
+                      <span className="text-xs">{r.label}</span>
                     </button>
                   );
                 })}
@@ -191,16 +194,18 @@ export function Auth() {
 
           {/* Alert Messages */}
           {errorMessage && (
-            <div className="p-3.5 mb-5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center gap-2">
-              <FiAlertCircle className="w-4 h-4 shrink-0" />
-              <span>{errorMessage}</span>
+            <div className="mb-5">
+              <Alert variant="error" onClose={() => setErrorMessage("")}>
+                {errorMessage}
+              </Alert>
             </div>
           )}
 
           {successMessage && (
-            <div className="p-3.5 mb-5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium flex items-center gap-2">
-              <FiCheckCircle className="w-4 h-4 shrink-0" />
-              <span>{successMessage}</span>
+            <div className="mb-5">
+              <Alert variant="success">
+                {successMessage}
+              </Alert>
             </div>
           )}
 
@@ -275,7 +280,7 @@ export function Auth() {
                 {role === "pharmacy" && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                     <Input
-                      label="Pharmacy Store Name"
+                      label="Pharmacy Name"
                       name="pharmacyName"
                       placeholder="e.g., MedPlus Prime"
                       value={formData.pharmacyName}
@@ -298,43 +303,50 @@ export function Auth() {
               variant="primary"
               size="lg"
               loading={loading}
-              className="w-full mt-3 shadow-md"
+              className="w-full mt-3"
             >
               {isLogin ? "Sign In to TriMedi" : `Register as ${role.toUpperCase()}`}
             </Button>
           </form>
 
-          {/* Demo Quick Access Helper */}
-          <div className="mt-8 pt-6 border-t border-slate-100">
+          {/* Instant 1-Click Demo Logins */}
+          <div className="mt-8 pt-5 border-t border-slate-100">
             <p className="text-xs font-semibold text-slate-500 text-center mb-3">
-              ⚡ Instant Demo Workspace Access (Phase 1 Testing)
+              Instant 1-Click Demo Logins (Evaluation)
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               <button
                 type="button"
                 onClick={() => handleDemoLogin("patient")}
-                className="px-2 py-1.5 rounded-xl border border-sky-200 bg-sky-50/60 hover:bg-sky-100 text-sky-800 text-[11px] font-bold transition-all"
+                className="px-2 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-[11px] font-semibold transition-colors"
               >
                 Patient Demo
               </button>
               <button
                 type="button"
                 onClick={() => handleDemoLogin("doctor")}
-                className="px-2 py-1.5 rounded-xl border border-teal-200 bg-teal-50/60 hover:bg-teal-100 text-teal-800 text-[11px] font-bold transition-all"
+                className="px-2 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-[11px] font-semibold transition-colors"
               >
                 Doctor Demo
               </button>
               <button
                 type="button"
+                onClick={() => handleDemoLogin("reception")}
+                className="px-2 py-1.5 rounded-lg border border-brand-200 bg-brand-50/70 hover:bg-brand-100/70 text-brand-900 text-[11px] font-bold transition-colors"
+              >
+                Reception Demo
+              </button>
+              <button
+                type="button"
                 onClick={() => handleDemoLogin("pharmacy")}
-                className="px-2 py-1.5 rounded-xl border border-purple-200 bg-purple-50/60 hover:bg-purple-100 text-purple-800 text-[11px] font-bold transition-all"
+                className="px-2 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-[11px] font-semibold transition-colors"
               >
                 Pharmacy Demo
               </button>
               <button
                 type="button"
                 onClick={() => handleDemoLogin("admin")}
-                className="px-2 py-1.5 rounded-xl border border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold transition-all"
+                className="px-2 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-[11px] font-semibold transition-colors"
               >
                 Admin Demo
               </button>

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useCart } from "../context/CartContext";
-import { FiShoppingBag, FiSearch, FiCheck, FiPackage, FiFilter } from "react-icons/fi";
+import { FiShoppingBag, FiCheck, FiPackage } from "react-icons/fi";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
-import Badge from "../components/ui/Badge";
 import LoadingState from "../components/ui/LoadingState";
 import EmptyState from "../components/ui/EmptyState";
+import { getProducts } from "../api";
 
 function Products({ search = "" }) {
   const [products, setProducts] = useState([]);
@@ -15,8 +15,7 @@ function Products({ search = "" }) {
   const { addToCart } = useCart();
 
   useEffect(() => {
-    fetch("http://localhost:5001/api/products")
-      .then((res) => res.json())
+    getProducts()
       .then((data) => {
         if (Array.isArray(data)) {
           setProducts(data);
@@ -64,10 +63,10 @@ function Products({ search = "" }) {
             <button
               key={cat}
               onClick={() => setCategory(cat)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
                 category === cat
-                  ? "bg-brand-600 text-white shadow-xs"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  ? "bg-brand-700 text-white shadow-subtle"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
               }`}
             >
               {cat}
@@ -98,19 +97,19 @@ function Products({ search = "" }) {
             return (
               <Card
                 key={p._id}
-                className="flex flex-col justify-between hover:border-brand-200 transition-all group"
+                className="flex flex-col justify-between hover:border-slate-300 transition-all group"
               >
                 <div>
-                  <div className="relative h-44 w-full bg-slate-50 rounded-xl mb-3 overflow-hidden flex items-center justify-center p-3">
+                  <div className="relative h-40 w-full bg-slate-50 rounded-lg mb-3 overflow-hidden flex items-center justify-center p-3 border border-slate-100">
                     <img
                       src={p.image || "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300"}
                       alt={p.name}
-                      className="h-full w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                      className="h-full w-full object-contain"
                       onError={(e) => {
                         e.target.src = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300";
                       }}
                     />
-                    <span className="absolute top-2 right-2 text-[10px] font-bold bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-md text-slate-700 shadow-xs border border-slate-100">
+                    <span className="absolute top-2 right-2 text-[10px] font-bold bg-white px-2 py-0.5 rounded text-slate-700 border border-slate-200/80">
                       {p.category || "Medicine"}
                     </span>
                   </div>
@@ -121,14 +120,14 @@ function Products({ search = "" }) {
 
                 <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
                   <div>
-                    <span className="text-xs text-slate-400 block leading-none">Price</span>
+                    <span className="text-[11px] text-slate-400 block leading-none">Price</span>
                     <span className="text-base font-extrabold text-slate-900">₹{p.price}</span>
                   </div>
 
                   <Button
                     variant={isAdded ? "secondary" : "primary"}
                     size="sm"
-                    className={`text-xs ${isAdded ? "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold" : ""}`}
+                    className={`text-xs ${isAdded ? "bg-emerald-50 text-emerald-800 border-emerald-200 font-bold" : ""}`}
                     onClick={() => handleAdd(p)}
                     icon={isAdded ? FiCheck : FiShoppingBag}
                   >

@@ -3,15 +3,9 @@ import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import {
   FiUser,
-  FiMail,
-  FiPhone,
-  FiShield,
   FiCheckCircle,
   FiEdit2,
   FiSave,
-  FiShoppingBag,
-  FiActivity,
-  FiCalendar,
 } from "react-icons/fi";
 import Card from "../components/ui/Card";
 import Badge from "../components/ui/Badge";
@@ -51,7 +45,7 @@ export function Profile() {
       }
       updateUserProfile(formData);
       setEdit(false);
-      setMsg("Profile details saved successfully!");
+      setMsg("Profile details saved successfully.");
       setTimeout(() => setMsg(""), 3000);
     } catch (err) {
       console.error("Save error:", err);
@@ -78,31 +72,32 @@ export function Profile() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header Profile Card */}
-      <Card className="border-teal-100 bg-gradient-to-r from-teal-900 to-slate-900 text-white">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
-          <Avatar name={user.name} role={activeRole} size="xl" className="ring-4 ring-white/20" />
-          <div className="text-center sm:text-left flex-1">
+      <Card className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-5">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
+          <Avatar name={user.name} size="xl" />
+          <div>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
-              <h1 className="text-2xl font-bold tracking-tight">{user.name}</h1>
-              <Badge variant={activeRole} size="md">
-                {activeRole.toUpperCase()} ACCOUNT
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{user.name}</h1>
+              <Badge variant="brand" size="md">
+                {(activeRole || "Patient").toUpperCase()} ACCOUNT
               </Badge>
             </div>
-            <p className="text-xs text-teal-200">{user.email}</p>
-            <p className="text-xs text-slate-300 mt-2">
+            <p className="text-xs text-slate-500">{user.email}</p>
+            <p className="text-xs text-slate-400 mt-1">
               TriMedi Connected Identity • ID: {user._id || "verified-user-2026"}
             </p>
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="bg-white/15 hover:bg-white/25 text-white border-white/20 shrink-0"
-            onClick={() => setEdit(!edit)}
-            icon={edit ? FiSave : FiEdit2}
-          >
-            {edit ? "Cancel" : "Edit Profile"}
-          </Button>
         </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0"
+          onClick={() => setEdit(!edit)}
+          icon={edit ? FiSave : FiEdit2}
+        >
+          {edit ? "Cancel" : "Edit Profile"}
+        </Button>
       </Card>
 
       {msg && (
@@ -132,7 +127,7 @@ export function Profile() {
             name="email"
             disabled={true}
             value={formData.email}
-            helperText="Email is permanently bound to your authenticated account"
+            helperText="Email is permanently bound to your authenticated identity"
           />
 
           <Input
@@ -198,7 +193,7 @@ export function Profile() {
               Cancel
             </Button>
             <Button variant="primary" size="sm" loading={saving} onClick={handleSave}>
-              Save Profile Updates
+              Save Changes
             </Button>
           </div>
         )}
@@ -228,7 +223,7 @@ export function Profile() {
               ))}
               <div className="pt-2 flex justify-between font-bold text-sm text-slate-900">
                 <span>Total Amount</span>
-                <span>₹{total}</span>
+                <span className="text-brand-800">₹{total}</span>
               </div>
             </div>
           )}

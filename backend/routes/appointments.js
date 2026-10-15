@@ -2,10 +2,13 @@ import express from "express";
 import mongoose from "mongoose";
 import Appointment from "../models/Appointment.js";
 import eventBus from "../services/eventBus.js";
+import { checkInPatient } from "../services/queueService.js";
+import { logClinicalAudit } from "../services/auditService.js";
+import { optionalAuth } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-const fallbackAppointments = [
+export const fallbackAppointments = [
   {
     _id: "apt-101",
     patientName: "Aditya Nikam",
@@ -104,12 +107,15 @@ router.post("/", async (req, res) => {
       doctorEmail,
       doctorSpecialty,
       hospital,
-      appointmentDate,
+      appointmentDate: rawDate,
+      date,
       timeSlot,
       type = "video",
       reason,
       notes,
     } = req.body;
+
+    const appointmentDate = rawDate || date;
 
     if (!patientName || !doctorName || !appointmentDate || !timeSlot) {
       return res.status(400).json({
@@ -175,51 +181,180 @@ router.post("/", async (req, res) => {
   }
 });
 
-// PUT Update status (Confirm, Complete, Cancel)
-router.put("/:id/status", async (req, res) => {
+export const VALID_TRANSITIONS = {
+  requested: ["scheduled", "cancelled"],
+  scheduled: ["confirmed", "checked_in", "cancelled", "no_show"],
+  confirmed: ["checked_in", "waiting", "cancelled", "no_show"],
+  checked_in: ["waiting", "in_consultation", "cancelled", "no_show"],
+  waiting: ["in_consultation", "cancelled", "no_show"],
+  in_consultation: ["completed", "cancelled"],
+  completed: [], // Terminal state
+  cancelled: [], // Terminal state
+  no_show: [],   // Terminal state
+};
+
+// POST Check-in appointment (Idempotent, enqueues patient in clinic queue)
+router.post("/:id/check-in", optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, cancelledBy } = req.body;
+    const { priority = "normal", notes = "" } = req.body;
+    const actorEmail = req.user?.email || "reception@trimedi.health";
+    const actorRole = req.user?.role || "reception";
 
-    if (!["scheduled", "confirmed", "completed", "cancelled"].includes(status)) {
-      return res.status(400).json({ message: "Invalid appointment status" });
+    const result = await checkInPatient({
+      appointmentId: id,
+      checkedInBy: req.user?.name || "Reception Desk",
+      actorRole,
+      actorEmail,
+      priority,
+      notes,
+      req,
+    });
+
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// GET single appointment with IDOR validation
+router.get("/:id", optionalAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    let apt = null;
+
+    if (mongoose.connection.readyState === 1 && mongoose.isValidObjectId(id)) {
+      apt = await Appointment.findById(id);
+    } else {
+      apt = fallbackAppointments.find((a) => String(a._id) === String(id));
+    }
+
+    if (!apt) {
+      return res.status(404).json({ success: false, message: "Appointment not found" });
+    }
+
+    // IDOR Protection: Patient can only access their own appointment
+    if (req.user && req.user.role === "patient") {
+      const patientEmail = (apt.patientEmail || "").toLowerCase();
+      if (patientEmail && patientEmail !== req.user.email.toLowerCase()) {
+        await logClinicalAudit({
+          req,
+          action: "ACCESS_DENIED_IDOR",
+          resourceType: "appointment",
+          resourceId: String(id),
+          status: "DENIED",
+          details: { attempt: "cross_patient_appointment_query" },
+        });
+        return res.status(403).json({
+          success: false,
+          message: "Access denied: You are not authorized to view this appointment record.",
+        });
+      }
+    }
+
+    res.json({ success: true, appointment: apt });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// PUT Update status with State Machine Validation & Audit Log
+router.put("/:id/status", optionalAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status: targetStatus, reason = "", cancelledBy } = req.body;
+
+    const allowedStatuses = Object.keys(VALID_TRANSITIONS);
+    if (!allowedStatuses.includes(targetStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status '${targetStatus}'. Allowed statuses: ${allowedStatuses.join(", ")}`,
+      });
     }
 
     let apt = null;
     if (mongoose.connection.readyState === 1 && mongoose.isValidObjectId(id)) {
-      apt = await Appointment.findByIdAndUpdate(id, { status }, { new: true });
+      apt = await Appointment.findById(id);
     } else {
       apt = fallbackAppointments.find((a) => String(a._id) === String(id));
-      if (apt) apt.status = status;
     }
 
     if (!apt) {
-      return res.status(404).json({ message: "Appointment not found" });
+      return res.status(404).json({ success: false, message: "Appointment not found" });
     }
 
-    // Trigger domain events based on new status
-    if (status === "confirmed") {
+    const currentStatus = apt.status || "scheduled";
+
+    // Validate State Machine Transition
+    const allowedNext = VALID_TRANSITIONS[currentStatus] || [];
+    if (!allowedNext.includes(targetStatus) && currentStatus !== targetStatus) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid state transition: Cannot move appointment from '${currentStatus}' to '${targetStatus}'. Valid next states: [${allowedNext.join(", ")}]`,
+      });
+    }
+
+    const actorEmail = req.user?.email || "doctor@trimedi.com";
+    const actorRole = req.user?.role || "doctor";
+    const transitionTimestamp = new Date();
+
+    const historyEntry = {
+      fromStatus: currentStatus,
+      toStatus: targetStatus,
+      changedBy: actorEmail,
+      role: actorRole,
+      timestamp: transitionTimestamp,
+      reason: reason || `Status changed from ${currentStatus} to ${targetStatus}`,
+    };
+
+    if (mongoose.connection.readyState === 1 && mongoose.isValidObjectId(id)) {
+      const updateData = { status: targetStatus, $push: { statusHistory: historyEntry } };
+      if (targetStatus === "checked_in") updateData.checkInAt = transitionTimestamp;
+      if (targetStatus === "in_consultation") updateData.consultationStartedAt = transitionTimestamp;
+      if (targetStatus === "completed") updateData.consultationCompletedAt = transitionTimestamp;
+
+      apt = await Appointment.findByIdAndUpdate(id, updateData, { new: true });
+    } else {
+      apt.status = targetStatus;
+      if (targetStatus === "checked_in") apt.checkInAt = transitionTimestamp;
+      if (targetStatus === "in_consultation") apt.consultationStartedAt = transitionTimestamp;
+      if (targetStatus === "completed") apt.consultationCompletedAt = transitionTimestamp;
+      if (!apt.statusHistory) apt.statusHistory = [];
+      apt.statusHistory.push(historyEntry);
+    }
+
+    // Clinical Audit Log
+    await logClinicalAudit({
+      req,
+      action: "APPOINTMENT_STATUS_CHANGED",
+      resourceType: "appointment",
+      resourceId: String(id),
+      details: { fromStatus: currentStatus, toStatus: targetStatus, reason },
+    });
+
+    // Trigger Domain Events
+    if (targetStatus === "confirmed") {
       eventBus.emit("APPOINTMENT_CONFIRMED", {
-        appointmentId: apt._id?.toString(),
+        appointmentId: String(apt._id),
         patientEmail: apt.patientEmail,
         doctorName: apt.doctorName,
         date: apt.appointmentDate,
         time: apt.timeSlot,
       });
-    } else if (status === "cancelled") {
+    } else if (targetStatus === "cancelled") {
       eventBus.emit("APPOINTMENT_CANCELLED", {
-        appointmentId: apt._id?.toString(),
+        appointmentId: String(apt._id),
         patientEmail: apt.patientEmail,
         doctorEmail: apt.doctorEmail,
         date: apt.appointmentDate,
         time: apt.timeSlot,
-        cancelledBy: cancelledBy || "doctor",
+        cancelledBy: cancelledBy || actorRole,
       });
     }
 
-    res.json({ message: "Appointment updated", appointment: apt });
+    res.json({ success: true, message: "Appointment updated successfully", appointment: apt });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
