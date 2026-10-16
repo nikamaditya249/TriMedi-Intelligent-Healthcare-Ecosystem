@@ -11,25 +11,25 @@ export const STATIC_DEMO_USERS = {
   "demo_token_patient": {
     _id: "demo_patient_1",
     name: "Aditya Nikam",
-    email: "patient@trimedi.com",
+    email: "aditya@trimedi.health",
     role: "patient",
   },
   "demo_token_doctor": {
     _id: "demo_doctor_1",
     name: "Dr. Sarah Jenkins, MD",
-    email: "doctor@trimedi.com",
+    email: "doctor@trimedi.health",
     role: "doctor",
   },
   "demo_token_pharmacy": {
     _id: "demo_pharmacy_1",
     name: "MedPlus Prime Pharmacy",
-    email: "pharmacy@trimedi.com",
+    email: "pharmacy@trimedi.health",
     role: "pharmacy",
   },
   "demo_token_admin": {
     _id: "demo_admin_1",
     name: "System Administrator",
-    email: "admin@trimedi.com",
+    email: "admin@trimedi.health",
     role: "admin",
   },
   "demo_token_reception": {
@@ -47,14 +47,16 @@ export const STATIC_DEMO_USERS = {
 export const verifyAuthToken = async (token) => {
   if (!token) return null;
 
-  // 1. Check known static demo tokens
-  if (STATIC_DEMO_USERS[token]) {
-    return STATIC_DEMO_USERS[token];
+  const raw = typeof token === "string" ? token.trim() : "";
+  const cleanToken = raw.startsWith("Bearer ") ? raw.slice(7).trim() : raw;
+
+  // 1. Check known static demo tokens (with or without Bearer prefix)
+  if (STATIC_DEMO_USERS[cleanToken] || STATIC_DEMO_USERS[raw]) {
+    return STATIC_DEMO_USERS[cleanToken] || STATIC_DEMO_USERS[raw];
   }
 
   // 2. Cryptographic JWT verification
   try {
-    const cleanToken = token.startsWith("Bearer ") ? token.slice(7) : token;
     let decoded = null;
 
     try {
@@ -122,13 +124,9 @@ export const optionalAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization || req.query.token || req.headers["x-access-token"];
   if (authHeader) {
     const user = await verifyAuthToken(authHeader);
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid or expired authorization token",
-      });
+    if (user) {
+      req.user = user;
     }
-    req.user = user;
   }
   next();
 };
