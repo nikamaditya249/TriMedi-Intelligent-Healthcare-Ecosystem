@@ -2,6 +2,7 @@ import Appointment from "../models/Appointment.js";
 import Prescription from "../models/Prescription.js";
 import Order from "../models/Order.js";
 import Notification from "../models/Notification.js";
+import Medication from "../models/Medication.js";
 import eventBus from "./eventBus.js";
 import mongoose from "mongoose";
 
@@ -203,6 +204,60 @@ export const startHealthcareScheduler = () => {
         }
       } catch (rxErr) {
         console.warn("Scheduler refill check notice:", rxErr.message);
+      }
+
+      // 3. NORMALIZED MEDICATION REFILL INTELLIGENCE (Idempotent Refill Alerts)
+      try {
+        let activeMedications = [];
+        if (mongoose.connection.readyState === 1) {
+          activeMedications = await Medication.find({ status: "active" }).limit(100).lean();
+        }
+
+        for (const med of activeMedications) {
+          const depletionDate = med.refillInfo?.estimatedDepletionDate ? new Date(med.refillInfo.estimatedDepletionDate) : null;
+          if (!depletionDate || isNaN(depletionDate.getTime())) continue;
+
+          const daysRemaining = Math.ceil((depletionDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+          // If supply depleted or <= 5 days remaining
+          if (daysRemaining <= 5) {
+            const notifType = daysRemaining <= 1 ? "MEDICATION_REFILL_DUE" : "MEDICATION_REFILL_APPROACHING";
+            const alreadySent = await wasNotificationAlreadySent({
+              userEmail: med.patientEmail,
+              type: notifType,
+              relatedEntityType: "medication",
+              relatedEntityId: med._id,
+              withinHours: 120, // 5 days idempotency window
+            });
+
+            if (!alreadySent) {
+              const memKey = `${notifType}_${med._id}_${med.patientEmail}`;
+              processedRefillAlerts.add(memKey);
+
+              eventBus.emit(notifType, {
+                patientEmail: med.patientEmail,
+                medicineName: med.medicationName,
+                daysRemaining: Math.max(0, daysRemaining),
+                medicationId: med._id.toString(),
+                prescribedQuantity: med.prescribedQuantity,
+                remainingQuantity: med.remainingQuantity,
+              });
+
+              console.log(`⏰ Triggered ${notifType} for ${med.patientEmail} on ${med.medicationName}`);
+
+              // Update last reminder timestamp in DB
+              if (mongoose.connection.readyState === 1) {
+                await Medication.findByIdAndUpdate(med._id, {
+                  "refillInfo.refillDue": true,
+                  "refillInfo.lastReminderSentAt": now,
+                  $inc: { "refillInfo.reminderCount": 1 },
+                });
+              }
+            }
+          }
+        }
+      } catch (medErr) {
+        console.warn("Scheduler medication refill check notice:", medErr.message);
       }
     } catch (err) {
       console.error("Scheduler run error:", err.message);

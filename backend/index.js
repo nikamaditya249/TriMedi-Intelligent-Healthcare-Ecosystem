@@ -19,6 +19,7 @@ import refillRoutes from "./routes/refill.js";
 import queueRoutes from "./routes/queue.js";
 import consultationRoutes from "./routes/consultations.js";
 import receptionRoutes from "./routes/reception.js";
+import medicationRoutes from "./routes/medication.js";
 
 import { initSocketIO } from "./services/socketService.js";
 import { startHealthcareScheduler } from "./services/scheduler.js";
@@ -64,6 +65,7 @@ app.use("/api/refill", refillRoutes);
 app.use("/api/queue", queueRoutes);
 app.use("/api/consultations", consultationRoutes);
 app.use("/api/reception", receptionRoutes);
+app.use("/api/medications", medicationRoutes);
 
 /* ================= DB CONNECT ================= */
 const mongoURI = process.env.MONGO_URI || process.env.URL;

@@ -8,6 +8,7 @@ import { optionalAuth, requireRole, requireClinicalAccess } from "../middleware/
 import { logClinicalAudit } from "../services/auditService.js";
 import { completeEncounter } from "../services/queueService.js";
 import eventBus from "../services/eventBus.js";
+import medicationService from "../services/medicationService.js";
 
 const router = express.Router();
 
@@ -273,6 +274,11 @@ router.post("/:id/complete", optionalAuth, async (req, res) => {
         resourceId: String(issuedPrescription._id),
         details: { patientEmail: consult.patientEmail, itemsCount: prescriptionData.items.length },
       });
+
+      // Synchronize normalized active medications
+      await medicationService.syncMedicationsFromPrescription(issuedPrescription).catch((e) =>
+        console.warn("Medication sync warning on consult completion:", e.message)
+      );
     }
 
     // 2. Mark Consultation Completed
@@ -434,12 +440,19 @@ router.get("/patient-record", optionalAuth, requireClinicalAccess(), async (req,
     // Sort timeline descending (most recent first)
     timeline.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+    // Phase 3: Pagination / Windowing for high-volume longitudinal records
+    const totalEvents = timeline.length;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || (req.query.page ? 20 : 100)));
+    const startIndex = (page - 1) * limit;
+    const paginatedTimeline = timeline.slice(startIndex, startIndex + limit);
+
     await logClinicalAudit({
       req,
       action: "PATIENT_MEDICAL_RECORD_VIEWED",
       resourceType: "patient",
       resourceId: patientEmail,
-      details: { timelineEventsCount: timeline.length },
+      details: { timelineEventsCount: totalEvents, page, limit },
     });
 
     res.json({
@@ -455,7 +468,14 @@ router.get("/patient-record", optionalAuth, requireClinicalAccess(), async (req,
         existingConditions: patientUser.existingConditions || [],
         currentMedications: patientUser.currentMedications || [],
       },
-      timeline,
+      timeline: paginatedTimeline,
+      pagination: {
+        page,
+        limit,
+        total: totalEvents,
+        totalPages: Math.ceil(totalEvents / limit) || 1,
+        hasMore: startIndex + limit < totalEvents,
+      },
       counts: {
         appointments: appointments.length,
         consultations: consultations.length,

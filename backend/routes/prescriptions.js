@@ -4,6 +4,7 @@ import Prescription from "../models/Prescription.js";
 import eventBus from "../services/eventBus.js";
 import { optionalAuth, requireRole } from "../middleware/authMiddleware.js";
 import { logClinicalAudit } from "../services/auditService.js";
+import medicationService from "../services/medicationService.js";
 
 const router = express.Router();
 
@@ -193,16 +194,16 @@ router.post("/", optionalAuth, async (req, res) => {
 
     const items = rawItems || medicines || [];
     const diagnosis = rawDiagnosis || reason || "Clinical Assessment & Prescription";
+    const dName = doctorName || (req.user?.role === "doctor" ? req.user.name : "Dr. Sarah Jenkins, MD");
 
-    if (!patientName || !doctorName || !diagnosis || !items || !items.length) {
+    if (!patientName || !diagnosis || !items || !items.length) {
       return res.status(400).json({
-        message: "Missing required fields: patientName, doctorName, diagnosis, and at least 1 medicine item are required",
+        message: "Missing required fields: patientName, diagnosis, and at least 1 medicine item are required",
       });
     }
 
-    const pEmail = (patientEmail || "patient@trimedi.com").toLowerCase();
-    const dEmail = (doctorEmail || req.user?.email || "doctor@trimedi.com").toLowerCase();
-    const dName = doctorName || req.user?.name || "Dr. Sarah Jenkins, MD";
+    const pEmail = (patientEmail || req.user?.email || "patient@trimedi.com").toLowerCase();
+    const dEmail = (doctorEmail || (req.user?.role === "doctor" ? req.user?.email : "doctor@trimedi.com")).toLowerCase();
 
     // AI-Assisted Safety Guardrail: AI extracted prescriptions require human review before becoming active
     const initialStatus = aiExtracted ? "draft" : status || "active";
@@ -267,7 +268,7 @@ router.post("/", optionalAuth, async (req, res) => {
       details: { patientEmail: pEmail, aiExtracted, status: initialStatus },
     });
 
-    // Notify Patient only if active
+    // Notify Patient & Sync Medications only if active
     if (initialStatus === "active") {
       eventBus.emit("PRESCRIPTION_ISSUED", {
         prescriptionId: String(createdRx._id),
@@ -275,6 +276,11 @@ router.post("/", optionalAuth, async (req, res) => {
         doctorName: dName,
         diagnosis,
       });
+
+      // Synchronize normalized active medications
+      await medicationService.syncMedicationsFromPrescription(createdRx).catch((e) =>
+        console.warn("Medication sync warning on creation:", e.message)
+      );
     }
 
     res.status(201).json({
@@ -291,6 +297,15 @@ router.post("/", optionalAuth, async (req, res) => {
 router.post("/:id/approve", optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Phase 3 Security: Only authorized medical doctors and admins can approve prescriptions
+    if (req.user && req.user.role !== "doctor" && req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: Only authorized medical doctors can clinically approve prescriptions.",
+      });
+    }
+
     const { approvalNotes = "Reviewed and approved by physician" } = req.body;
     const doctorEmail = req.user?.email || "doctor@trimedi.com";
     const doctorName = req.user?.name || "Dr. Sarah Jenkins, MD";
@@ -351,6 +366,11 @@ router.post("/:id/approve", optionalAuth, async (req, res) => {
       doctorName,
       diagnosis: rx.diagnosis,
     });
+
+    // Synchronize normalized active medications for patient schedule and adherence tracking
+    await medicationService.syncMedicationsFromPrescription(rx).catch((e) =>
+      console.warn("Medication sync warning on approval:", e.message)
+    );
 
     res.json({ success: true, message: "Prescription clinically reviewed and approved", prescription: rx });
   } catch (err) {

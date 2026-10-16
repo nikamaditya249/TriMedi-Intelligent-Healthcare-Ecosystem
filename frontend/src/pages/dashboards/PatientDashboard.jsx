@@ -34,6 +34,8 @@ import BookAppointmentModal from "../../components/appointments/BookAppointmentM
 import OrderAgainModal from "../../components/refill/OrderAgainModal";
 import AIAssistantModal from "../../components/ai/AIAssistantModal";
 import MedicalRecordTimeline from "../../components/medical-records/MedicalRecordTimeline";
+import TodayMedicationSchedule from "../../components/medications/TodayMedicationSchedule";
+import MedicationTimelineView from "../../components/medications/MedicationTimelineView";
 
 export function PatientDashboard() {
   const { user } = useAuth();
@@ -99,6 +101,8 @@ export function PatientDashboard() {
     socket.on("consultation:completed", handleSync);
     socket.on("prescription:issued", handleSync);
     socket.on("queue:updated", handleSync);
+    socket.on("medication:adherence_updated", handleSync);
+    socket.on("notification:new", handleSync);
 
     return () => {
       socket.off("appointment:updated", handleSync);
@@ -107,6 +111,8 @@ export function PatientDashboard() {
       socket.off("consultation:completed", handleSync);
       socket.off("prescription:issued", handleSync);
       socket.off("queue:updated", handleSync);
+      socket.off("medication:adherence_updated", handleSync);
+      socket.off("notification:new", handleSync);
     };
   }, [socket]);
 
@@ -163,6 +169,14 @@ export function PatientDashboard() {
         </div>
 
         <div className="flex flex-wrap gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setAiModalOpen(true)}
+            icon={FiFileText}
+          >
+            Scan Prescription
+          </Button>
           <Button
             variant="primary"
             size="sm"
@@ -229,8 +243,8 @@ export function PatientDashboard() {
         </div>
       )}
 
-      {/* Workflow Tabs: Overview vs Longitudinal Medical Record */}
-      <div className="flex border-b border-slate-200 gap-6 text-sm font-semibold">
+      {/* Workflow Tabs: Overview vs My Medications vs Longitudinal Medical Record */}
+      <div className="flex border-b border-slate-200 gap-6 text-sm font-semibold flex-wrap">
         <button
           onClick={() => setActiveTab("overview")}
           className={`pb-3 px-1 border-b-2 transition-colors flex items-center gap-2 ${
@@ -241,6 +255,17 @@ export function PatientDashboard() {
         >
           <FiActivity className="w-4 h-4" />
           Care Overview & Prescriptions
+        </button>
+        <button
+          onClick={() => setActiveTab("medications")}
+          className={`pb-3 px-1 border-b-2 transition-colors flex items-center gap-2 ${
+            activeTab === "medications"
+              ? "border-brand-700 text-brand-800"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <FiPackage className="w-4 h-4" />
+          My Medications & Adherence
         </button>
         <button
           onClick={() => setActiveTab("medical_record")}
@@ -257,6 +282,14 @@ export function PatientDashboard() {
 
       {activeTab === "medical_record" ? (
         <MedicalRecordTimeline patientEmail={userEmail} />
+      ) : activeTab === "medications" ? (
+        <div className="space-y-6">
+          <TodayMedicationSchedule
+            onDoseUpdated={loadAllData}
+            onOrderAgain={(med) => handleOpenOrderAgain(med, med.prescriptionId)}
+          />
+          <MedicationTimelineView patientEmail={userEmail} />
+        </div>
       ) : (
         <>
       {/* 2. Metric Cards Row */}
@@ -286,6 +319,12 @@ export function PatientDashboard() {
           icon={FiRefreshCw}
         />
       </div>
+
+      {/* Today's Medication Schedule & Adherence */}
+      <TodayMedicationSchedule
+        onDoseUpdated={loadAllData}
+        onOrderAgain={(med) => handleOpenOrderAgain(med, med.prescriptionId)}
+      />
 
       {/* 3. Proactive Refill Alert Box */}
       <div className="p-4 sm:p-5 rounded-xl border border-amber-200/90 bg-amber-50/60 flex flex-col md:flex-row md:items-center justify-between gap-4">

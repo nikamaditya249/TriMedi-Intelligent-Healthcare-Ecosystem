@@ -215,10 +215,64 @@ class HealthcareEventBus extends EventEmitter {
         message: `Reminder: Please take your prescribed dose of ${data.medicineName} (${data.dosage || "as prescribed"}).`,
         category: "medication",
         priority: "medium",
-        relatedEntityType: "prescription",
-        relatedEntityId: data.prescriptionId || "",
+        relatedEntityType: "medication",
+        relatedEntityId: data.medicationId || data.prescriptionId || "",
         linkUrl: "/app/patient/dashboard",
       });
+    });
+
+    this.on("MEDICATION_REFILL_APPROACHING", async (data) => {
+      await this.createNotification({
+        userEmail: data.patientEmail,
+        userRole: "patient",
+        type: "MEDICATION_REFILL_APPROACHING",
+        title: `Refill Approaching: ${data.medicineName}`,
+        message: `Your estimated supply for ${data.medicineName} runs low in approximately ${data.daysRemaining || 5} days. You can review your routine and request a refill.`,
+        category: "refill",
+        priority: "high",
+        relatedEntityType: "medication",
+        relatedEntityId: data.medicationId || "",
+        linkUrl: "/app/patient/dashboard",
+      });
+    });
+
+    this.on("MEDICATION_REFILL_DUE", async (data) => {
+      await this.createNotification({
+        userEmail: data.patientEmail,
+        userRole: "patient",
+        type: "MEDICATION_REFILL_DUE",
+        title: `Refill Due: ${data.medicineName}`,
+        message: `Estimated supply for ${data.medicineName} is depleted or due today. Order Again is ready for your confirmation.`,
+        category: "refill",
+        priority: "urgent",
+        relatedEntityType: "medication",
+        relatedEntityId: data.medicationId || "",
+        linkUrl: "/app/patient/dashboard",
+      });
+    });
+
+    this.on("MEDICATION_ADHERENCE_UPDATED", (data) => {
+      const io = getSocketIO();
+      if (io && data.patientEmail) {
+        io.to(`user_${data.patientEmail.toLowerCase()}`).emit("medication:adherence_updated", data);
+      }
+    });
+
+    this.on("AI_REVIEW_REQUIRED", async (data) => {
+      if (data.doctorEmail) {
+        await this.createNotification({
+          userEmail: data.doctorEmail,
+          userRole: "doctor",
+          type: "AI_REVIEW_REQUIRED",
+          title: "Prescription OCR Draft Ready",
+          message: `AI extracted a prescription draft for ${data.patientName || "a patient"}. Doctor review and sign-off required.`,
+          category: "prescription",
+          priority: "high",
+          relatedEntityType: "prescription",
+          relatedEntityId: data.prescriptionId || "",
+          linkUrl: "/app/doctor/dashboard",
+        });
+      }
     });
 
     // 5. CHAT MESSAGES

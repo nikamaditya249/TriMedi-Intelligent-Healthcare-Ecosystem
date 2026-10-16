@@ -244,6 +244,50 @@ export const summarizeConsultationWithAI = async (payload) => {
   });
 };
 
+export const getDoctorQuestionsWithAI = async (payload) => {
+  return request("/ai/doctor-questions", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const getAIAudits = async () => {
+  return request("/ai/audits");
+};
+
+// -------------------------------------------------------------
+// 9B. MEDICATION INTELLIGENCE & ADHERENCE
+// -------------------------------------------------------------
+export const getMedications = async (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  const endpoint = query ? `/medications?${query}` : `/medications`;
+  return request(endpoint);
+};
+
+export const getTodayDoseSchedule = async () => {
+  return request("/medications/schedule/today");
+};
+
+export const recordDose = async (medicationId, dosePayload) => {
+  return request(`/medications/${medicationId}/dose`, {
+    method: "POST",
+    body: JSON.stringify(dosePayload),
+  });
+};
+
+export const getMedicationTimeline = async (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  const endpoint = query ? `/medications/timeline?${query}` : `/medications/timeline`;
+  return request(endpoint);
+};
+
+export const checkMedicationSafety = async (safetyPayload) => {
+  return request("/medications/safety-check", {
+    method: "POST",
+    body: JSON.stringify(safetyPayload),
+  });
+};
+
 // -------------------------------------------------------------
 // 10. REAL-TIME NOTIFICATIONS & CHAT
 // -------------------------------------------------------------
@@ -427,6 +471,13 @@ export default {
   simplifyInstructionsWithAI,
   draftDoctorQuestionWithAI,
   summarizeConsultationWithAI,
+  getDoctorQuestionsWithAI,
+  getAIAudits,
+  getMedications,
+  getTodayDoseSchedule,
+  recordDose,
+  getMedicationTimeline,
+  checkMedicationSafety,
   getNotifications,
   markNotificationRead,
   markAllNotificationsRead,
