@@ -470,67 +470,146 @@ export function InventoryPage() {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  const fetchInventory = async () => {
+    try {
+      setLoading(true);
+      const res = await getProducts();
+      setProducts(Array.isArray(res) ? res : []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    getProducts()
-      .then((data) => setProducts(Array.isArray(data) ? data : []))
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+    fetchInventory();
   }, []);
+
+  const handleAdjustUnits = async (id, currentStock, name) => {
+    const qty = prompt(`Enter units to add to stock for "${name}" (Current Stock: ${currentStock}):`, "50");
+    if (!qty || isNaN(qty)) return;
+
+    try {
+      await updateProductStock(id, { stockAdjustment: Number(qty) });
+      await fetchInventory();
+    } catch (err) {
+      alert("Failed to update stock: " + err.message);
+    }
+  };
+
+  const filtered = products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      (p.sku && p.sku.toLowerCase().includes(search.toLowerCase())) ||
+      (p.category && p.category.toLowerCase().includes(search.toLowerCase()))
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Pharmacy Inventory & Stock SKUs</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Pharmacy Inventory & SKU Stock Control</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Real-time dispensing stock levels, pricing snapshots, and SKU replenishment thresholds.
+            Real-time stock reservation, GST configurations, batch numbers, and replenishment thresholds.
           </p>
         </div>
-        <Button variant="primary" size="sm" icon={FiPlus} onClick={() => navigate("/products")}>
-          Browse Catalog
-        </Button>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Search SKU or medicine..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-56 text-xs"
+          />
+          <Button variant="primary" size="sm" icon={FiPlus} onClick={() => navigate("/products")}>
+            Catalog
+          </Button>
+        </div>
       </div>
 
-      <Table>
-        <TableHeader>
-          <tr>
-            <TableHead>Medicine Name</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Unit Price</TableHead>
-            <TableHead>Dispensing Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </tr>
-        </TableHeader>
-        <TableBody>
-          {products.slice(0, 15).map((p) => (
-            <TableRow key={p._id}>
-              <TableCell className="font-semibold text-slate-900">{p.name}</TableCell>
-              <TableCell className="text-slate-500">{p.category || "Medicine"}</TableCell>
-              <TableCell className="font-bold text-slate-800">₹{p.price}</TableCell>
-              <TableCell>
-                <Badge variant="success" size="sm">
-                  Verified Stock
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <button
-                  className="text-brand-700 font-semibold hover:underline text-xs"
-                  onClick={() => alert(`Stock synchronized for ${p.name}`)}
-                >
-                  Adjust Units
-                </button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      {loading ? (
+        <LoadingState message="Loading dispensary inventory records..." rows={4} />
+      ) : (
+        <Table>
+          <TableHeader>
+            <tr>
+              <TableHead>SKU & Medicine</TableHead>
+              <TableHead>Category / Rx</TableHead>
+              <TableHead>Selling Price & MRP</TableHead>
+              <TableHead>GST Rate</TableHead>
+              <TableHead>Stock (Total / Reserved)</TableHead>
+              <TableHead>Available</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </tr>
+          </TableHeader>
+          <TableBody>
+            {filtered.slice(0, 20).map((p) => {
+              const stock = p.stockQuantity !== undefined ? p.stockQuantity : 100;
+              const reserved = p.reservedQuantity !== undefined ? p.reservedQuantity : 0;
+              const available = p.availableQuantity !== undefined ? p.availableQuantity : stock - reserved;
+              const isLow = available <= (p.lowStockThreshold || 15);
+
+              return (
+                <TableRow key={p._id}>
+                  <TableCell>
+                    <div className="font-semibold text-slate-900">{p.name}</div>
+                    <div className="text-[10px] text-slate-400 font-mono">
+                      {p.sku || `SKU-${p._id.toString().slice(-6)}`} • Batch: {p.batchNumber || "B-2026"}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-xs text-slate-600">{p.category || "Medicine"}</div>
+                    {p.prescriptionRequired && (
+                      <Badge variant="brand" size="sm" className="mt-0.5 text-[9px]">
+                        Rx Required
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-bold text-slate-800">₹{p.price}</div>
+                    <div className="text-[10px] text-slate-400">MRP: ₹{p.mrp || Math.round(p.price * 1.15)}</div>
+                  </TableCell>
+                  <TableCell className="text-xs text-slate-600">
+                    {Math.round((p.taxRate || 0.12) * 100)}% GST
+                  </TableCell>
+                  <TableCell className="text-xs text-slate-700">
+                    <span>{stock} units</span>
+                    {reserved > 0 && (
+                      <span className="text-[10px] text-amber-700 block">({reserved} reserved)</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <span className={`text-xs font-bold ${isLow ? "text-amber-700" : "text-emerald-700"}`}>
+                      {available} units
+                    </span>
+                    {isLow && (
+                      <Badge variant="warning" size="sm" className="ml-1 text-[9px]">
+                        Low
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <button
+                      className="text-brand-700 font-semibold hover:underline text-xs"
+                      onClick={() => handleAdjustUnits(p._id, stock, p.name)}
+                    >
+                      + Adjust Stock
+                    </button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
 }
 
 // ==========================================
-// 5. ORDERS VIEW
+// 5. ORDERS VIEW WITH MULTI-STAGE TRACKING
 // ==========================================
 export function OrdersPage() {
   const { user, activeRole } = useAuth();
@@ -559,19 +638,41 @@ export function OrdersPage() {
   const handleUpdateStatus = async (orderId, newStatus) => {
     try {
       await updateOrderStatus(orderId, { status: newStatus });
-      fetchOrders();
+      await fetchOrders();
     } catch (err) {
-      console.error(err);
+      alert(err.message || "Status update failed");
     }
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    const reason = prompt("Please provide a reason for cancelling this order:", "Patient cancelled");
+    if (!reason) return;
+
+    try {
+      await cancelOrder(orderId, reason);
+      await fetchOrders();
+    } catch (err) {
+      alert("Cancellation failed: " + err.message);
+    }
+  };
+
+  // 7-Stage Visual Fulfillment Progress Tracker
+  const STAGES = ["NEW", "PRESCRIPTION_REVIEW", "ACCEPTED", "PREPARING", "PACKED", "DISPATCHED", "DELIVERED"];
+  const getStageIndex = (status) => {
+    const s = (status || "").toUpperCase();
+    if (s === "OUT_FOR_DELIVERY") return 5;
+    if (s === "COMPLETED") return 6;
+    const idx = STAGES.indexOf(s);
+    return idx >= 0 ? idx : 0;
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Medicine Orders & Refills</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Healthcare Orders & Fulfillment Tracking</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Prescription-linked orders, payment verifications, and medication supply tracking.
+            Prescription-linked orders, payment verifications, and real-time fulfillment progression.
           </p>
         </div>
         <Button variant="primary" size="sm" icon={FiShoppingBag} onClick={() => navigate("/products")}>
@@ -590,84 +691,182 @@ export function OrdersPage() {
           onAction={() => navigate("/products")}
         />
       ) : (
-        <div className="space-y-4">
-          {orders.map((ord) => (
-            <Card key={ord._id || ord.orderId}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 mb-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs sm:text-sm font-bold text-slate-900">{ord.orderId || ord._id}</span>
-                  <span className="text-xs text-slate-300">•</span>
-                  <StatusBadge type="order" status={ord.status} size="sm" />
-                  <Badge variant="default" size="sm">
-                    {ord.paymentMethod?.toUpperCase()} ({ord.paymentStatus || "PAID"})
-                  </Badge>
-                  {ord.prescriptionRef && (
-                    <Badge variant="brand" size="sm">
-                      Linked: {ord.prescriptionRef}
+        <div className="space-y-5">
+          {orders.map((ord) => {
+            const currentStatus = (ord.status || "NEW").toUpperCase();
+            const stageIdx = getStageIndex(currentStatus);
+            const canCancel = activeRole === "patient" && ["NEW", "PRESCRIPTION_REVIEW", "ACCEPTED", "PENDING"].includes(currentStatus);
+
+            return (
+              <Card key={ord._id || ord.orderId} className="space-y-4">
+                {/* Header row */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-bold text-slate-900">{ord.orderId || ord._id}</span>
+                    <span className="text-xs text-slate-300">•</span>
+                    <Badge
+                      variant={
+                        currentStatus === "DELIVERED"
+                          ? "success"
+                          : currentStatus === "CANCELLED" || currentStatus === "REJECTED"
+                          ? "error"
+                          : "brand"
+                      }
+                      size="sm"
+                    >
+                      {currentStatus}
                     </Badge>
-                  )}
-                </div>
-                <p className="text-xs text-slate-500">Placed on: {new Date(ord.createdAt || Date.now()).toLocaleDateString()}</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs mb-3">
-                <div>
-                  <p className="font-bold text-slate-800 mb-1">Purchased Items:</p>
-                  <ul className="space-y-1 text-slate-600">
-                    {ord.items?.map((it, idx) => (
-                      <li key={idx} className="flex justify-between">
-                        <span>• {it.name} (x{it.qty || it.quantity || 1})</span>
-                        <span className="font-semibold text-slate-800">₹{(it.price || 0) * (it.qty || it.quantity || 1)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="space-y-1 text-slate-500">
-                  <p><strong>Recipient:</strong> {ord.patientName} ({ord.patientPhone || "+91 98765 43210"})</p>
-                  <p><strong>Estimated Supply:</strong> {ord.supplyDaysEstimate || 15} Days</p>
-                  <p><strong>Dispensing Pharmacy:</strong> {ord.pharmacyName || "MedPlus Prime Pharmacy"}</p>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <span className="text-sm sm:text-base font-bold text-slate-900">
-                  Total Paid: <span className="text-brand-800 font-extrabold">₹{ord.totalAmount}</span>
-                </span>
-
-                {/* Pharmacy status progression buttons */}
-                {activeRole === "pharmacy" && (
-                  <div className="flex gap-2">
-                    {ord.status === "pending" && (
-                      <Button variant="secondary" size="sm" className="text-xs" onClick={() => handleUpdateStatus(ord.orderId || ord._id, "processing")}>
-                        Mark Processing
-                      </Button>
+                    <Badge variant="default" size="sm">
+                      {ord.paymentMethod?.toUpperCase()} ({ord.paymentStatus || "PENDING"})
+                    </Badge>
+                    {ord.prescriptionRef && (
+                      <Badge variant="brand" size="sm">
+                        Linked: {ord.prescriptionRef}
+                      </Badge>
                     )}
-                    {ord.status === "processing" && (
-                      <Button variant="primary" size="sm" className="text-xs" onClick={() => handleUpdateStatus(ord.orderId || ord._id, "dispensed")}>
-                        Mark Dispensed
-                      </Button>
-                    )}
-                    {ord.status === "dispensed" && (
-                      <Button variant="primary" size="sm" className="text-xs" onClick={() => handleUpdateStatus(ord.orderId || ord._id, "delivered")}>
-                        Mark Delivered
-                      </Button>
-                    )}
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Placed: {new Date(ord.createdAt || Date.now()).toLocaleDateString()}
+                  </p>
+                </div>
+
+                {/* Multi-Stage Visual Tracking Bar */}
+                {currentStatus !== "CANCELLED" && currentStatus !== "REJECTED" && (
+                  <div className="py-2">
+                    <div className="flex items-center justify-between text-[10px] font-semibold text-slate-500 mb-1.5 flex-wrap gap-1">
+                      {["Placed", "Reviewed", "Accepted", "Preparing", "Packed", "Dispatched", "Delivered"].map(
+                        (label, idx) => (
+                          <span
+                            key={label}
+                            className={idx <= stageIdx ? "text-brand-800 font-bold" : "text-slate-400"}
+                          >
+                            {label}
+                          </span>
+                        )
+                      )}
+                    </div>
+                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden flex">
+                      <div
+                        className="bg-brand-600 h-full transition-all duration-500"
+                        style={{ width: `${Math.min(100, Math.round(((stageIdx + 1) / 7) * 100))}%` }}
+                      />
+                    </div>
                   </div>
                 )}
 
-                {activeRole === "patient" && (
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => navigate("/products")}>
-                    Reorder Medicines
-                  </Button>
-                )}
-              </div>
-            </Card>
-          ))}
+                {/* Items & Fulfillment details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <p className="font-bold text-slate-800 mb-1.5">Purchased Medicines:</p>
+                    <ul className="space-y-1.5 text-slate-600">
+                      {ord.items?.map((it, idx) => (
+                        <li key={idx} className="flex justify-between bg-slate-50 p-2 rounded-lg border border-slate-100">
+                          <span>
+                            • {it.nameSnapshot || it.name} (x{it.quantity || it.qty || 1})
+                          </span>
+                          <span className="font-semibold text-slate-800">
+                            ₹{(it.unitPrice || it.price || 0) * (it.quantity || it.qty || 1)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="space-y-1.5 text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <p>
+                      <strong>Recipient:</strong> {ord.patientName} ({ord.patientPhone || "+91 98765 43210"})
+                    </p>
+                    <p>
+                      <strong>Delivery Destination:</strong> {ord.deliveryAddress?.street || "Address provided"}, {ord.deliveryAddress?.city || "Mumbai"} ({ord.deliveryAddress?.pincode || "400001"})
+                    </p>
+                    <p>
+                      <strong>Dispensing Pharmacy:</strong> {ord.pharmacyName || "MedPlus Prime Pharmacy"}
+                    </p>
+                    {ord.pricing && (
+                      <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-600 flex justify-between">
+                        <span>GST Breakup (CGST + SGST): ₹{ord.pricing.totalTax || 0}</span>
+                        <span>Delivery Fee: {ord.pricing.deliveryFee === 0 ? "FREE" : `₹${ord.pricing.deliveryFee}`}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <span className="text-sm sm:text-base font-bold text-slate-900">
+                    Authoritative Total: <span className="text-brand-800 font-extrabold">₹{ord.totalAmount}</span>
+                  </span>
+
+                  <div className="flex gap-2">
+                    {/* Patient cancellation */}
+                    {canCancel && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs text-rose-600 hover:bg-rose-50"
+                        onClick={() => handleCancelOrder(ord.orderId || ord._id)}
+                      >
+                        Cancel Order
+                      </Button>
+                    )}
+
+                    {activeRole === "patient" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => navigate("/products")}
+                      >
+                        Order Again
+                      </Button>
+                    )}
+
+                    {/* Pharmacy quick state actions */}
+                    {activeRole === "pharmacy" && (
+                      <>
+                        {currentStatus === "NEW" && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="text-xs"
+                            onClick={() => handleUpdateStatus(ord.orderId || ord._id, "ACCEPTED")}
+                          >
+                            Accept Order
+                          </Button>
+                        )}
+                        {currentStatus === "ACCEPTED" && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="text-xs"
+                            onClick={() => handleUpdateStatus(ord.orderId || ord._id, "PREPARING")}
+                          >
+                            Mark Preparing
+                          </Button>
+                        )}
+                        {currentStatus === "PREPARING" && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="text-xs"
+                            onClick={() => handleUpdateStatus(ord.orderId || ord._id, "PACKED")}
+                          >
+                            Mark Packed
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
+
 
 // ==========================================
 // 6. SYSTEM SETTINGS / ADMIN

@@ -212,7 +212,11 @@ router.post("/order-again-draft", async (req, res) => {
       ) || defaultProducts[0];
     }
 
-    if (!product || (product.stock !== undefined && product.stock <= 0)) {
+    const availableStock = product.availableQuantity !== undefined
+      ? product.availableQuantity
+      : (product.stockQuantity || 100) - (product.reservedQuantity || 0);
+
+    if (!product || availableStock <= 0) {
       return res.status(400).json({
         success: false,
         isEligible: false,
@@ -221,12 +225,15 @@ router.post("/order-again-draft", async (req, res) => {
     }
 
     // 3. Formulate Safe Order Again Draft with Authoritative Pricing
-    const refillQuantity = 15; // Refill batch
+    const refillQuantity = Math.min(15, availableStock);
     const authoritativePrice = product.price || 180;
     const subtotal = authoritativePrice * refillQuantity;
-    const tax = Math.round(subtotal * 0.05);
-    const shipping = subtotal > 500 ? 0 : 40;
-    const totalAmount = subtotal + tax + shipping;
+    const taxRate = product.taxRate || 0.12;
+    const totalTax = Math.round(subtotal * taxRate);
+    const cgst = Math.round(totalTax / 2);
+    const sgst = totalTax - cgst;
+    const shipping = subtotal >= 500 ? 0 : 40;
+    const totalAmount = subtotal + totalTax + shipping;
 
     const draft = {
       prescriptionId: rx._id,
@@ -238,14 +245,23 @@ router.post("/order-again-draft", async (req, res) => {
         category: product.category,
         dosage: product.dosage || "As prescribed",
         authoritativePrice,
+        unitPrice: authoritativePrice,
         quantity: refillQuantity,
+        taxRate,
         image: product.image,
       },
       pricing: {
         subtotal,
-        tax,
+        taxableAmount: subtotal,
+        cgst,
+        sgst,
+        igst: 0,
+        totalTax,
         shipping,
+        deliveryFee: shipping,
         totalAmount,
+        grandTotal: totalAmount,
+        currency: "INR",
       },
       prescriptionValid: true,
       requiresReview: true,

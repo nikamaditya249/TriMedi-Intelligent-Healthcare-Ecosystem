@@ -170,6 +170,13 @@ export const updateOrderStatus = async (id, statusData) => {
   });
 };
 
+export const cancelOrder = async (id, note = "") => {
+  return request(`/orders/${id}/status`, {
+    method: "PUT",
+    body: JSON.stringify({ status: "CANCELLED", note }),
+  });
+};
+
 // -------------------------------------------------------------
 // 7. SMART REFILL INTELLIGENCE & ORDER AGAIN
 // -------------------------------------------------------------
@@ -193,8 +200,44 @@ export const getMedicationSupplyIntelligence = async (patientEmail) => {
 };
 
 // -------------------------------------------------------------
-// 8. PAYPAL PAYMENTS
+// 8. PAYMENTS (RAZORPAY INDIA-FIRST + PAYPAL + REFUNDS)
 // -------------------------------------------------------------
+export const getPaymentConfig = async () => {
+  return request("/payment/config");
+};
+
+export const createRazorpayOrder = async (orderPayload) => {
+  return request("/payment/razorpay/create-order", {
+    method: "POST",
+    body: JSON.stringify(orderPayload),
+  });
+};
+
+export const verifyRazorpayPayment = async (verifyPayload) => {
+  return request("/payment/razorpay/verify", {
+    method: "POST",
+    body: JSON.stringify(verifyPayload),
+  });
+};
+
+export const processOrderRefund = async (refundPayload) => {
+  return request("/payment/refund", {
+    method: "POST",
+    body: JSON.stringify(refundPayload),
+  });
+};
+
+export const getPharmacyInventory = async () => {
+  return request("/products/inventory");
+};
+
+export const updateProductStock = async (id, payload) => {
+  return request(`/products/${id}/stock`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+};
+
 export const getPayPalConfig = async () => {
   return request("/paypal/config");
 };
@@ -212,6 +255,7 @@ export const capturePayPalOrder = async (capturePayload) => {
     body: JSON.stringify(capturePayload),
   });
 };
+
 
 // -------------------------------------------------------------
 // 9. ASSISTIVE HEALTHCARE AI

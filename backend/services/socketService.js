@@ -2,6 +2,9 @@ import { Server } from "socket.io";
 import mongoose from "mongoose";
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
+import Order from "../models/Order.js";
+import { fallbackOrders } from "../routes/orders.js";
+import eventBus from "./eventBus.js";
 import { verifyAuthToken } from "../middleware/authMiddleware.js";
 
 let io = null;
@@ -16,6 +19,46 @@ export const initSocketIO = (httpServer) => {
     },
     pingTimeout: 60000,
     pingInterval: 25000,
+  });
+
+  // Bridge EventBus commerce events to authorized Socket.IO rooms
+  eventBus.on("ORDER_CREATED", (data) => {
+    if (io) {
+      if (data.patientEmail) io.to(`user_${data.patientEmail.toLowerCase()}`).emit("order.created", data);
+      io.to("role_pharmacy").emit("order.created", data);
+      io.to("role_admin").emit("order.created", data);
+    }
+  });
+
+  eventBus.on("ORDER_STATUS_CHANGED", (data) => {
+    if (io) {
+      const eventName = `order.${(data.newStatus || "updated").toLowerCase()}`;
+      if (data.orderId) io.to(`order_${data.orderId}`).emit(eventName, data);
+      if (data.patientEmail) io.to(`user_${data.patientEmail.toLowerCase()}`).emit(eventName, data);
+      io.to("role_pharmacy").emit(eventName, data);
+      io.to("role_admin").emit(eventName, data);
+    }
+  });
+
+  eventBus.on("PAYMENT_UPDATED", (data) => {
+    if (io) {
+      if (data.orderId) io.to(`order_${data.orderId}`).emit("payment.updated", data);
+      if (data.patientEmail) io.to(`user_${data.patientEmail.toLowerCase()}`).emit("payment.updated", data);
+    }
+  });
+
+  eventBus.on("REFUND_UPDATED", (data) => {
+    if (io) {
+      if (data.orderId) io.to(`order_${data.orderId}`).emit("refund.updated", data);
+      if (data.patientEmail) io.to(`user_${data.patientEmail.toLowerCase()}`).emit("refund.updated", data);
+    }
+  });
+
+  eventBus.on("INVENTORY_LOW_STOCK", (data) => {
+    if (io) {
+      io.to("role_pharmacy").emit("inventory.low_stock", data);
+      io.to("role_admin").emit("inventory.low_stock", data);
+    }
   });
 
   // 1. Connection Authentication Middleware (Strict Token Verification)
@@ -177,7 +220,55 @@ export const initSocketIO = (httpServer) => {
       }
     });
 
-    // 5. Disconnect Handler
+    // 5. Order Tracking Room Join with Strict IDOR Defense
+    socket.on("order:join", async ({ orderId }) => {
+      if (!orderId) return;
+
+      try {
+        let isAuthorized = false;
+
+        // Admins and Pharmacy staff have fulfillment access to orders
+        if (socket.userRole === "admin" || socket.userRole === "pharmacy") {
+          isAuthorized = true;
+        } else {
+          // Patient can only join their OWN order room
+          if (mongoose.connection.readyState === 1) {
+            const order = await Order.findOne({ $or: [{ _id: mongoose.isValidObjectId(orderId) ? orderId : null }, { orderId }] }).lean();
+            if (order && order.patientEmail?.toLowerCase() === socket.userEmail) {
+              isAuthorized = true;
+            }
+          } else {
+            const fallback = fallbackOrders.find((o) => o._id === orderId || o.orderId === orderId);
+            if (fallback && fallback.patientEmail?.toLowerCase() === socket.userEmail.toLowerCase()) {
+              isAuthorized = true;
+            }
+          }
+        }
+
+        if (isAuthorized) {
+          socket.join(`order_${orderId}`);
+          socket.emit("order:joined", { orderId, success: true });
+          console.log(`📦 Authorized order join: ${socket.userEmail} joined order_${orderId}`);
+        } else {
+          console.warn(`🚫 Unauthorized order join blocked for ${socket.userEmail} on order_${orderId}`);
+          socket.emit("error:unauthorized", {
+            message: "Access denied: You do not possess authorization to subscribe to another patient's order status updates",
+            orderId,
+          });
+        }
+      } catch (err) {
+        console.error("Error authorizing order join:", err.message);
+        socket.emit("error:unauthorized", { message: "Error verifying order authorization" });
+      }
+    });
+
+    socket.on("order:leave", ({ orderId }) => {
+      if (orderId) {
+        socket.leave(`order_${orderId}`);
+      }
+    });
+
+    // 6. Disconnect Handler
     socket.on("disconnect", () => {
       if (socket.userEmail) {
         const userSockets = onlineUsers.get(socket.userEmail);

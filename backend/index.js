@@ -20,6 +20,7 @@ import queueRoutes from "./routes/queue.js";
 import consultationRoutes from "./routes/consultations.js";
 import receptionRoutes from "./routes/reception.js";
 import medicationRoutes from "./routes/medication.js";
+import paymentRoutes from "./routes/payment.js";
 
 import { initSocketIO } from "./services/socketService.js";
 import { startHealthcareScheduler } from "./services/scheduler.js";
@@ -44,7 +45,9 @@ app.get("/", (req, res) => {
   res.json({
     message: "TriMedi Healthcare Platform API is running 🚀",
     status: "OK",
-    phase: 3,
+    phase: 4,
+    commerce: "Razorpay + PayPal + COD + Authoritative GST",
+    fulfillment: "Authorized Pharmacy State Machine",
     realtime: "Socket.IO active",
     scheduler: "Active (60s intervals)",
   });
@@ -57,6 +60,7 @@ app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/paypal", paypalRoutes);
+app.use("/api/payment", paymentRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/intelligence", intelligenceRoutes);
 app.use("/api/chat", chatRoutes);

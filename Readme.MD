@@ -14,14 +14,58 @@
 
 **TriMedi** is an intelligent, real-time healthcare ecosystem connecting patients, verified medical doctors, licensed pharmacies, and administrators through one unified digital care lifecycle:
 
-$$\text{Patient} \longleftrightarrow \text{Doctor} \longrightarrow \text{Appointment} \longrightarrow \text{Digital Prescription} \longrightarrow \text{Medicine} \longrightarrow \text{Checkout (PayPal/COD/UPI)} \longrightarrow \text{Supply Tracking} \longrightarrow \text{Refill Gap Detection} \longrightarrow \text{Order Again} \longrightarrow \text{Continued Care}$$
+$$\text{Patient} \longleftrightarrow \text{Doctor} \longrightarrow \text{Appointment} \longrightarrow \text{Digital Prescription} \longrightarrow \text{Medication Tracking} \longrightarrow \text{Refill Intelligence} \longrightarrow \text{Order Again} \longrightarrow \text{Prescription & Stock Validation} \longrightarrow \text{Razorpay / PayPal / COD} \longrightarrow \text{Cryptographic Verification} \longrightarrow \text{Pharmacy Fulfillment} \longrightarrow \text{Delivery Completion}$$
 
-TriMedi is engineered as a production-grade healthcare technology platform: minimal, trustworthy, calm, accessible, and structured with clinical clarity.
+TriMedi is engineered as a production-grade healthcare technology platform: minimal, trustworthy, calm, accessible, and structured with clinical and commercial integrity.
 
 ---
 
-## 🎨 Complete TriMedi Design System (Phase 1)
+## 🚀 Phase 4: Pharmacy, Payments, Real Commerce & Fulfillment
 
+Phase 4 transforms TriMedi's medication ordering into an authoritative healthcare-commerce workflow:
+
+### 1. India-First Payment Architecture (Razorpay + PayPal + COD)
+- **Razorpay Integration**: Supports UPI, Net Banking, and Debit/Credit Cards.
+- **Cryptographic Signature Verification**: Server authoritatively verifies payment signatures via HMAC SHA-256 (`crypto.createHmac('sha256', secret).update(order_id + '|' + payment_id).digest('hex')`) with `crypto.timingSafeEqual` to prevent side-channel timing attacks.
+- **PayPal Provider**: Retained and standardized for international card payments.
+- **Cash on Delivery (COD)**: Explicitly separated from prepaid orders; order is confirmed with payment status `PENDING` until physical delivery, transitioning to `PAID` upon receipt.
+- **Webhook Replay Protection**: Processed event IDs ledger prevents duplicate orders, payments, stock deductions, or refunds on duplicate webhook deliveries.
+- **Provider-Backed Refunds**: Server-initiated refunds for pharmacy order rejection or cancellations.
+
+### 2. Authoritative Pricing & GST Taxation
+- **Zero Client Trust**: All client-supplied prices, taxes, and totals are ignored. The backend retrieves unit prices from the database catalog.
+- **Indian Healthcare GST Invoicing**: Configurable GST rates (5% and 12%) with automated intrastate split into **CGST** (50%) and **SGST** (50%), item price snapshots, and delivery fees.
+
+### 3. Concurrency Protection & Atomic Stock Reservation
+- **Safe Stock Lifecycle**: `Available -> Reserved -> Committed` (or `Released` on failure/cancellation).
+- **Zero Overselling Guarantee**: Uses atomic conditional updates (`$expr: { $gte: [{ $subtract: ["$stockQuantity", "$reservedQuantity"] }, requestedQty] }`). Two concurrent buyers attempting to purchase the last unit (Stock = 1) will see exactly 1 succeed and 1 fail with zero negative stock.
+
+### 4. Prescription Validation & Clinical Safety
+- **Mandatory Server Verification**: For prescription-required drugs, the backend verifies:
+  1. Prescription exists and is active/approved.
+  2. Prescription belongs to the ordering patient (**IDOR Defense**).
+  3. Prescription is not expired.
+  4. Prescribed medicine matches requested item.
+  5. Quantity does not exceed authorized duration.
+
+### 5. Authoritative 10-Stage Pharmacy Fulfillment State Machine
+$$\text{NEW} \longrightarrow \text{PRESCRIPTION\_REVIEW} \longrightarrow \text{ACCEPTED} \longrightarrow \text{PREPARING} \longrightarrow \text{PACKED} \longrightarrow \text{DISPATCHED} \longrightarrow \text{OUT\_FOR\_DELIVERY} \longrightarrow \text{DELIVERED} \longrightarrow \text{COMPLETED}$$
+- **Role Transition Security**: Patients can only cancel prior to fulfillment preparation. Pharmacy controls acceptance, preparation, and packing. Dispatch/delivery controls transit and delivery.
+- **Least-Privilege Clinical Privacy**: Pharmacy staff sees strictly dispensing-essential data (medicine name, strength, dosage, quantity, instructions). Private consultation notes, detailed psychiatric/diagnostic notes, and clinical histories are completely shielded.
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 18, Vite, Tailwind CSS, Socket.IO Client, React Router v6, React Icons, Context API |
+| **Backend** | Node.js, Express.js (ES Modules), Socket.IO, EventEmitter, BcryptJS, JWT, Node Crypto |
+| **Database** | MongoDB Atlas / Mongoose (with dual-mode resilient local fallback) |
+| **Payments** | Razorpay (UPI, Netbanking, Cards, HMAC SHA-256), PayPal Orders v2, Cash on Delivery (COD) |
+| **Taxation** | Indian Healthcare GST (CGST + SGST Breakdown, HSN Codes) |
+| **AI / NLP** | Google Gemini 1.5 Flash API / Deterministic Healthcare NLP Pipeline (Assistive Only) |
+| **Testing** | Phase 2 Clinical Suite, Phase 3 AI/Medication Suite, Phase 4 Commerce Suite, Security Audit |
 TriMedi uses **ONE centralized visual language** across all role portals—eliminating visual fragmentation, rainbow role themes, neon gradients, and legacy starter boilerplate.
 
 ### 1. Color System
