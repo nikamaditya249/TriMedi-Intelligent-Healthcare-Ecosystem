@@ -155,15 +155,15 @@ router.post("/razorpay/verify", requireAuth, paymentRateLimiter, async (req, res
       });
     }
 
-    // B. Idempotency Check: Prevent duplicate order creation on replay
     if (mongoose.connection.readyState === 1) {
-      const existingOrder = await Order.findOne({
-        $or: [
-          { "paymentDetails.paymentId": razorpayPaymentId },
-          { "paymentDetails.orderId": razorpayOrderId },
-          { idempotencyKey: idempotencyKey ? idempotencyKey : null },
-        ].filter(Boolean),
-      });
+      const matchConditions = [
+        { "paymentDetails.paymentId": razorpayPaymentId },
+        { "paymentDetails.orderId": razorpayOrderId },
+      ];
+      if (idempotencyKey && typeof idempotencyKey === "string" && idempotencyKey.trim().length > 0) {
+        matchConditions.push({ idempotencyKey: idempotencyKey.trim() });
+      }
+      const existingOrder = await Order.findOne({ $or: matchConditions });
 
       if (existingOrder) {
         return res.json({

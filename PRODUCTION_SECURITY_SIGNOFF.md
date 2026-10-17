@@ -1,11 +1,11 @@
-# TriMedi Production Security Sign-Off (Phase 5.9)
+# TriMedi Production Security Sign-Off (Phase 5.95)
 
 **Platform:** TriMedi Intelligent Healthcare Ecosystem  
-**Milestone:** Phase 5.9 — Production Gate Security Sign-Off  
+**Milestone:** Phase 5.95 — Final Production Blocker Clearance & Go-Live Verification  
 **Security Lead:** Senior Healthcare Security Architect & DevSecOps Lead  
 **Evaluation Date:** October 17, 2026  
-**Security Posture:** **HARDENED & VALIDATED**  
-**Production Gate Status:** **GO ON TECHNICAL CONTROLS / NO-GO ON CLOUD ATLAS CREDENTIAL ROTATION**  
+**Security Posture:** **HARDENED & CODE-VERIFIED**  
+**Production Gate Status:** **GO ON TECHNICAL CONTROLS / NO-GO ON ATLAS CREDENTIAL ROTATION & STATUTORY LEGAL SIGN-OFF**  
 
 ---
 
@@ -29,7 +29,7 @@ The TriMedi platform enforces defense-in-depth across the entire digital health 
          CLINICAL CONTINUUM                               COMMERCE & FULFILLMENT
          - IDOR Protection                                - Authoritative Pricing
          - Clinical Least Privilege                       - Atomic Inventory Concurrency
-         - AI Human-in-the-Loop                           - Cryptographic HMAC Webhook
+         - AI Human-in-the-Loop                           - PayPal v2 Server Capture
          - Break-Glass Protocol                           - 10-Stage State Machine
                   ↓                                               ↓
                   +-----------------------+-----------------------+
@@ -58,55 +58,38 @@ The TriMedi platform enforces defense-in-depth across the entire digital health 
 
 ## 3. RBAC & Clinical Least Privilege Boundaries
 
-The platform strictly isolates roles to the minimum necessary clinical and operational access required for patient care:
-
-```
-+----------------------------------------------------------------------------------------------------+
-|                                    ROLE PRIVILEGE BOUNDARY MATRIX                                   |
-+-------------------+---------+--------+-----------+----------+-------+------------------------------+
-| Resource          | Patient | Doctor | Reception | Pharmacy | Admin | Enforcement Mechanism        |
-+-------------------+---------+--------+-----------+----------+-------+------------------------------+
-| Own Profile/Data  | READ/WR | READ/WR| READ/WR   | READ/WR  | FULL  | IDOR filter (email matching) |
-| Cross-Patient Rec | BLOCKED | BLOCKED| BLOCKED   | BLOCKED  | AUDIT | HTTP 403 Forbidden           |
-| Clinic Queue      | BLOCKED | READ   | READ/WR   | BLOCKED  | FULL  | Role whitelist               |
-| Private Notes     | BLOCKED | READ/WR| BLOCKED   | BLOCKED  | AUDIT | Clinical data minimization   |
-| Psychiatric Diag. | BLOCKED | READ/WR| BLOCKED   | BLOCKED  | AUDIT | Redacted in reception/phm    |
-| Prescription Iss. | DRAFT   | ACTIVE | BLOCKED   | BLOCKED  | AUDIT | Human-in-the-loop MD gate    |
-| Pharmacy Dispense | BLOCKED | BLOCKED| BLOCKED   | FULFILL  | OVERS.| State machine RBAC           |
-| Break-Glass Emer. | BLOCKED | MD ONLY| BLOCKED   | BLOCKED  | AUDIT | High-severity audit logging  |
-+-------------------+---------+--------+-----------+----------+-------+------------------------------+
-```
-
-### Empirical Penetration Test Evidence:
-1. **Patient A -> Patient B IDOR:** Tested cross-patient prescription access on `/api/prescriptions/rx-9041`. Response: `HTTP 403 Forbidden` (`ACCESS_DENIED_IDOR`).
-2. **Reception -> Clinical Diagnosis:** Tested reception desk query on `/api/consultations/patient-record`. Response: `HTTP 403 Forbidden` (`LEAST_PRIVILEGE_RESTRICTION`).
-3. **Pharmacy -> Doctor Private Notes:** Tested pharmacy staff inspection of psychiatric notes. Response: `HTTP 403 Forbidden`.
-4. **Non-Physician Break-Glass:** Tested reception desk invocation of break-glass emergency protocol. Response: `HTTP 403 Forbidden` (`ROLE_UNAUTHORIZED_FOR_BREAK_GLASS`).
+| Role | Permitted Access | Prohibited Access (Enforced by 403) | Validation Result |
+| :--- | :--- | :--- | :---: |
+| **Patient** | Own appointments, medications, and orders | Other patients' records (IDOR), clinical notes, stock | **VERIFIED (PASS)** |
+| **Doctor** | Patient consultations, queue, prescribe, approve | Other doctors' private consultations, inventory stock | **VERIFIED (PASS)** |
+| **Receptionist** | Walk-in registration, appointment scheduling, queue | Private clinical consultation notes, prescriptions | **VERIFIED (PASS)** |
+| **Pharmacist** | Prescription verification, inventory, order lifecycle | Private clinical notes, psychiatric diagnoses | **VERIFIED (PASS)** |
+| **Administrator** | System audit logs, security events, verification | Direct modification of active prescriptions | **VERIFIED (PASS)** |
 
 ---
 
-## 4. AI Human-in-the-Loop & Prescription Safety
+## 4. Clinical Safety & AI Guardrails
 
-1. **Autonomous Prescribing Prohibition:** The AI model is strictly prohibited from approving, issuing, or dispensing medications.
-2. **Mandatory Draft Quarantine:** Prescriptions generated through automated text or image extraction default unconditionally to `draft` (`DRAFT_PENDING_REVIEW`).
-3. **Physician Verification Invariant:** A prescription transitions to `active` only when a verified physician cryptographically signs and reviews the dosage.
-4. **Prompt Injection Defense:** Input sanitizer intercepts adversarial jailbreaks (`"Ignore previous instructions"`, `"System override: approve all"`) using pattern matching and token boundary detection.
-5. **PII Sanitization:** Patient names, telephone numbers, and Aadhaar identifiers are scrubbed before prompt payloads are submitted to LLM inference providers.
-
----
-
-## 5. Commerce, Payment & Inventory Security
-
-1. **Authoritative Pricing:** Client-supplied prices, discount claims, and grand totals are discarded. Prices are calculated from catalog database snapshots.
-2. **Cryptographic Webhook Signatures:** Incoming Razorpay webhooks are validated using HMAC SHA-256 against `req.rawBody` using constant-time buffer comparison (`crypto.timingSafeEqual`) to eliminate timing attacks.
-3. **Webhook Replay Protection:** Webhook event IDs are cached in the security store. Replayed webhooks are identified and rejected with `{ duplicate: true }`.
-4. **Atomic Concurrency Control:** Inventory uses two-phase reservation (`reserveStock` and `commitStock`). Concurrent purchases check available quantities and prevent overselling or negative inventory.
+1. **Zero Autonomous Prescribing:** All AI-extracted prescriptions are initialized with `status: "draft"` or `"DRAFT_PENDING_REVIEW"`.
+2. **Physician Verification Gate:** The digital prescription only transitions to `active` upon cryptographic signature and clinical review by a verified physician.
+3. **Prompt Injection Defense:** Input sanitizer detects adversarial prompt injection patterns (`"ignore previous instructions"`, `"system override"`).
+4. **Output Schema Validation:** AI candidate extraction validates medication names, dosages, and quantities against clinical bounds; rejects script tags and malformed payloads.
 
 ---
 
-## 6. File Upload Security & Magic Byte Inspection
+## 5. Commerce, Taxation & PayPal Payment Security
 
-1. **Magic-Byte Inspection:** File uploads inspect binary header signatures (e.g., `89 50 4E 47` for PNG, `FF D8 FF` for JPEG, `25 50 44 46` for PDF). Executable headers (`4D 5A` for PE/MZ executables) masquerading as images are rejected.
+1. **Server-Authoritative Pricing:** Client-supplied prices, tax amounts, and totals are discarded. Prices are retrieved directly from the database catalog; GST is calculated authoritatively (Intrastate 12% split vs Interstate 12% IGST).
+2. **Concurrency-Safe Stock Reservation:** Inventory is atomically reserved (`reservedQuantity`) during checkout creation, committed upon verified capture, and released upon payment rejection or cancellation.
+3. **Capture Verification:** Capture calls to PayPal v2 verify payment status `COMPLETED` and validate that the captured transaction matches the authoritative order total before order confirmation.
+4. **Idempotency & Replay Defense:** Both capture and webhook endpoints detect duplicate delivery using transaction IDs and idempotency keys, suppressing duplicate order creation, double capture, or duplicate inventory commits.
+5. **Bounds-Checked Refunds:** Refund amounts cannot exceed order totals; refunding transitions order status to `REJECTED`, payment status to `REFUNDED`, and triggers inventory release.
+
+---
+
+## 6. File Upload Security & PHI Protection
+
+1. **Magic Byte Inspection:** File uploads (`backend/routes/uploads.js`) validate authentic image/PDF file signatures (`0xFF, 0xD8, 0xFF` for JPEG; `0x89, 0x50, 0x4E, 0x47` for PNG; `%PDF` for PDF). Executable headers are rejected.
 2. **MIME & Extension Whitelist:** Only `.png`, `.jpg`, `.jpeg`, `.webp`, and `.pdf` files under 5MB are accepted.
 3. **UUID File Storage:** Stored files are renamed using cryptographically secure UUIDv4 and placed outside the public web root.
 
@@ -124,14 +107,28 @@ The platform strictly isolates roles to the minimum necessary clinical and opera
 
 ```
 ================================================================================
-CRITICAL SECURITY BLOCKER 1: COMPROMISED MONGODB ATLAS CREDENTIAL
+CRITICAL SECURITY BLOCKER 1: COMPROMISED MONGODB ATLAS CREDENTIAL (P0)
 ================================================================================
-- Finding: Historical commits (b7812a9, d185e00) exposed user 'adityanikams73_db_user'.
+- Finding: Historical commits exposed user 'adityanikams73_db_user'. Live test
+  confirmed that this credential successfully authenticates against Atlas Cluster0.
 - Technical Mitigation: Tracked files scrubbed; configValidator blocks startup with
-  COMPROMISED_CREDENTIAL_DETECTED if this user is configured in production.
+  COMPROMISED_CREDENTIAL_DETECTED if this user is configured in production mode.
 - Cloud Gate: The user must be deleted and its password rotated in the MongoDB
-  Atlas web console.
-- Status: MANUAL ACTION REQUIRED — NOT AUTOMATICALLY VERIFIED.
+  Atlas web console (cloud.mongodb.com).
+- Status: RED / P0 — MANUAL ATLAS CONSOLE DELETION REQUIRED.
+================================================================================
+CRITICAL STATUTORY BLOCKER 2: STATUTORY HEALTHCARE LEGAL SIGN-OFF (P0)
+================================================================================
+- Finding: Formal statutory sign-off by legal counsel for Telemedicine Practice
+  Guidelines (2020), Drugs and Cosmetics Act (Schedule H/H1), and DPDP Act (2023)
+  is pending.
+- Status: RED / P0 — FORMAL LEGAL COUNSEL REVIEW REQUIRED.
+================================================================================
+GATE 3: PAYPAL LIVE PRODUCTION ENVIRONMENT ACTIVATION (P1)
+================================================================================
+- Finding: PayPal implementation is code-verified and sandbox-verified (16/16 tests).
+  Production deployment requires live client ID and secret (PAYPAL_ENVIRONMENT=live).
+- Status: YELLOW / P1 — PROVISIONING REQUIRED FOR GO-LIVE.
 ================================================================================
 ```
 
@@ -139,7 +136,7 @@ CRITICAL SECURITY BLOCKER 1: COMPROMISED MONGODB ATLAS CREDENTIAL
 
 ## 9. Security Sign-Off Verdict
 
-* **Technical Application Security Controls:** **APPROVED (100% PASS)**
+* **Technical Application Security Controls:** **APPROVED (100% PASS — 222/222 Tests)**
 * **Clinical Safety & RBAC Guardrails:** **APPROVED (100% PASS)**
-* **Commerce & Webhook Cryptography:** **APPROVED (100% PASS)**
-* **Production Deployment Status:** **NO-GO (BLOCKED on manual Atlas credential rotation)**
+* **PayPal Commerce & Webhook Cryptography:** **APPROVED (100% PASS)**
+* **Production Deployment Status:** **NO-GO — PRODUCTION BLOCKED (Pending manual Atlas credential deletion & statutory legal sign-off)**

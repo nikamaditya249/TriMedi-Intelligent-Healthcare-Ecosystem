@@ -26,9 +26,9 @@ Under Indian digital healthcare standards (Telemedicine Practice Guidelines 2020
 +---------------------+-------------------------+------------------------+-------------------+------------------+--------------------+
 | Vendor Name         | Service Purpose         | Data Processed         | Data Residency    | Security Certs   | Production Status  |
 +---------------------+-------------------------+------------------------+-------------------+------------------+--------------------+
-| MongoDB Atlas       | Primary Healthcare DB   | Encrypted PHI & Orders | AWS Mumbai (27)   | SOC 2, ISO 27001 | BLOCKED (Rotation) |
-| Razorpay Software   | INR Payment Gateway     | Order IDs, Amounts, UPI| India (RBI-Gov)   | PCI-DSS Level 1  | BLOCKED (Live KYC) |
-| PayPal Inc.         | International Payments  | Transaction IDs, USD   | USA / Global      | PCI-DSS Level 1  | PILOT ACTIVE       |
+| MongoDB Atlas       | Primary Healthcare DB   | Encrypted PHI & Orders | AWS Mumbai (27)   | SOC 2, ISO 27001 | AVAILABLE / CREDENTIAL ROTATION REQUIRED |
+| PayPal Inc.         | Production Gateway (v2) | Transaction IDs, Orders| Global / USA       | PCI-DSS Level 1  | SANDBOX VERIFIED (LIVE KEYS REQUIRED)     |
+| Razorpay Software   | Optional Domestic Gateway| Order IDs, UPI, Cards  | India (RBI-Gov)   | PCI-DSS Level 1  | OPTIONAL SECONDARY (NOT A GO-LIVE BLOCKER) |
 | Google Cloud / LLM  | Assistive OCR & AI      | Sanitized Rx Texts     | Global / India    | SOC 2, ISO 27017 | PENDING BAA/DPA    |
 | Redis Enterprise    | Distributed Security    | Token Hashes, Counters | AWS Mumbai        | SOC 2, HIPAA     | PROVISIONING       |
 | AWS Cloud Hosting   | App Container Hosting   | Ephemeral Docker nodes | ap-south-1 Mumbai | SOC 1/2/3, ISO   | READY FOR DEPLOY   |
@@ -44,16 +44,21 @@ Under Indian digital healthcare standards (Telemedicine Practice Guidelines 2020
 ### 3.1 MongoDB Atlas (Cloud Database)
 * **Purpose:** Primary durable persistence store for clinical records, prescriptions, and financial audit logs.
 * **Security Controls:** TLS 1.3 in-transit encryption, AES-256 at-rest encryption, automated VPC peering, and IP access whitelisting.
-* **Data Residency:** Configured for `ap-south-1` (Mumbai, India).
-* **Production Blocker:** Historical credential `adityanikams73_db_user` must be deleted in the Atlas UI and rotated before live production cluster cutover.  
-  *Status:* **`MANUAL ACTION REQUIRED — NOT AUTOMATICALLY VERIFIED`**
+* **Cluster Availability:** **AVAILABLE & ACTIVE** (Verified connected in 563ms, admin ping `{ ok: 1 }`, 9 collections, 72 products).
+* **Credential Security Blocker:** Historical credential `adityanikams73_db_user` remains active on the cluster and must be deleted via Atlas console (`cloud.mongodb.com`) with new production credential provisioned.  
+  *Status:* **`CREDENTIAL SECURITY P0 — CONSOLE DELETION REQUIRED`**
 
-### 3.2 Razorpay Software Pvt. Ltd. (Domestic Payment Gateway)
-* **Purpose:** UPI, Net Banking, and Credit Card processing for pharmacy commerce and consultation fees.
-* **Security Controls:** Cryptographic HMAC SHA-256 signature verification over incoming webhooks; PCI-DSS Level 1 compliance. Client prices strictly ignored by backend server.
-* **Data Residency:** India (RBI guidelines compliant).
-* **Production Blocker:** Razorpay live merchant account activation, commercial KYC, and live keys (`rzp_live_...`) required.  
-  *Status:* **`EXTERNAL PREREQUISITE — PENDING GATEWAY APPROVAL`**
+### 3.2 PayPal Inc. (Primary Production Payment Gateway)
+* **Purpose:** Primary production payment processing for pharmacy orders, consultation fees, and refunds via PayPal v2 REST APIs.
+* **Security Controls:** Server-authoritative GST pricing calculation, concurrency-safe inventory reservation, atomic capture commit, idempotent replay defense on webhooks and captures, strict bounds-checked refunds.
+* **Implementation Status:** Code-verified and sandbox-verified (16/16 test suite passed, 22-step smoke test passed).
+* **Production Blocker:** Production deployment requires live credentials (`PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENVIRONMENT=live`) and registered production webhook ID.  
+  *Status:* **`LIVE CREDENTIALS P1 — PROVISIONING REQUIRED FOR GO-LIVE`**
+
+### 3.3 Razorpay Software Pvt. Ltd. (Optional Secondary Provider)
+* **Purpose:** Optional domestic payment provider for UPI/Cards.
+* **Status:** De-scoped from mandatory go-live blocker; retained as optional secondary provider abstraction.  
+  *Status:* **`OPTIONAL / NON-BLOCKING`**
 
 ### 3.3 Google Cloud / Vertex AI (Assistive Clinical OCR)
 * **Purpose:** Optical Character Recognition (OCR) and structured drafting of patient-uploaded prescriptions.

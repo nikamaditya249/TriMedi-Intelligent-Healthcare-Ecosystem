@@ -123,7 +123,14 @@ router.post("/", requireDatabase, optionalAuth, async (req, res) => {
  */
 router.get("/encounter/:appointmentId", optionalAuth, async (req, res) => {
   try {
-    const { appointmentId } = req.params;
+    // Clinical Least Privilege: Pharmacy and Reception are forbidden from viewing private clinical encounter notes
+    if (req.user && (req.user.role === "pharmacy" || req.user.role === "reception")) {
+      return res.status(403).json({
+        success: false,
+        message: "Least Privilege Violation: Pharmacy and reception staff cannot view detailed clinical consultation notes.",
+      });
+    }
+
     let consultation = null;
 
     if (mongoose.connection.readyState === 1) {
@@ -134,14 +141,6 @@ router.get("/encounter/:appointmentId", optionalAuth, async (req, res) => {
 
     if (!consultation) {
       return res.status(404).json({ success: false, message: "No consultation record found for this appointment" });
-    }
-
-    // Clinical Least Privilege: Pharmacy and Reception are forbidden from viewing private clinical encounter notes
-    if (req.user && (req.user.role === "pharmacy" || req.user.role === "reception")) {
-      return res.status(403).json({
-        success: false,
-        message: "Least Privilege Violation: Pharmacy and reception staff cannot view detailed clinical consultation notes.",
-      });
     }
 
     // Role Security: Patient can only view their own consultation

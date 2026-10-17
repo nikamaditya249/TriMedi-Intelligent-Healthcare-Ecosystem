@@ -17,7 +17,7 @@ Before executing a production deployment, DevOps engineers must ensure the follo
 [ ] 2. Vite production frontend build completes with 0 errors (npm run build).
 [ ] 3. Production secrets provisioned in AWS Secrets Manager / Doppler.
 [ ] 4. MongoDB Atlas user rotated and old credential deleted.
-[ ] 5. Razorpay live merchant credentials configured.
+[ ] 5. PayPal live production credentials configured (PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_ENVIRONMENT=live).
 [ ] 6. Production domain DNS configured with TLS 1.3 certificates.
 [ ] 7. Dedicated Redis cluster online with password authentication and TLS.
 ```
@@ -35,9 +35,10 @@ Before executing a production deployment, DevOps engineers must ensure the follo
 | `JWT_SECRET` | Cryptographically random string ($\ge 32$ chars) | **HIGH** |
 | `MONGO_URI` | `mongodb+srv://<user>:<pwd>@cluster.mongodb.net/trimedi_production?retryWrites=true&w=majority` | **CRITICAL** |
 | `REDIS_URL` | `rediss://:<pwd>@redis.production.trimedi.internal:6379` | **HIGH** |
-| `RAZORPAY_KEY_ID` | `rzp_live_...` (Live merchant key) | Public |
-| `RAZORPAY_KEY_SECRET`| Live gateway secret key | **CRITICAL** |
-| `RAZORPAY_WEBHOOK_SECRET` | Secret configured on Razorpay dashboard | **HIGH** |
+| `PAYPAL_CLIENT_ID` | Live PayPal REST application Client ID | Public |
+| `PAYPAL_CLIENT_SECRET`| Live PayPal application Secret | **CRITICAL** |
+| `PAYPAL_ENVIRONMENT` | `live` (Production environment) | Public |
+| `PAYPAL_WEBHOOK_ID` | Registered PayPal production webhook ID | **HIGH** |
 | `ALLOW_TEST_MOCKS` | `false` (Strictly forbidden in production) | Internal |
 | `ALLOW_PILOT_MOCKS` | `false` (Strictly forbidden in production) | Internal |
 
@@ -121,7 +122,7 @@ docker rm trimedi-blue-legacy
 
 1. [ ] Check real-time application logs: `docker logs -f trimedi-green-v5.9`.
 2. [ ] Verify WebSocket connectivity on `wss://api.trimedi.health/socket.io/`.
-3. [ ] Verify payment webhook listener receives incoming Razorpay test ping.
+3. [ ] Verify payment webhook listener receives incoming PayPal test event ping.
 4. [ ] Verify Sentry error monitoring captures zero unhandled exceptions.
 5. [ ] Verify CloudWatch / Datadog CPU and memory utilization ($< 40\%$).
 6. [ ] Confirm database connection pool latency is $< 10\text{ms}$.

@@ -33,8 +33,19 @@ const productSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Pre-validate hook to clamp reservedQuantity >= 0
+productSchema.pre("validate", function (next) {
+  if (this.reservedQuantity === undefined || this.reservedQuantity < 0) {
+    this.reservedQuantity = 0;
+  }
+  next();
+});
+
 // Pre-save hook to ensure availableQuantity = stockQuantity - reservedQuantity
 productSchema.pre("save", function (next) {
+  if (this.reservedQuantity === undefined || this.reservedQuantity < 0) {
+    this.reservedQuantity = 0;
+  }
   this.availableQuantity = Math.max(0, (this.stockQuantity || 0) - (this.reservedQuantity || 0));
   if (!this.mrp || this.mrp < this.price) {
     this.mrp = Math.round(this.price * 1.15);

@@ -1,9 +1,9 @@
-# TriMedi Production Smoke Test Report (Phase 5.9)
+# TriMedi Production Smoke Test Report (Phase 5.95)
 
 **Platform:** TriMedi Intelligent Healthcare Ecosystem  
-**Milestone:** Phase 5.9 — Step 22 Production Smoke Test  
+**Milestone:** Phase 5.95 — Step 22 Production Smoke Test with PayPal Gateway  
 **Execution Script:** [`backend/scripts/production_smoke_test.js`](file:///Users/adityanikam/Desktop/TriMedi Capstone/S73_AdityaNikam_TriMedi_Capstone/backend/scripts/production_smoke_test.js)  
-**Execution Timestamp:** 2026-10-17T16:08:35.226Z  
+**Execution Timestamp:** 2026-10-17T17:30:04.716Z  
 **Base URL:** `http://localhost:5001`  
 **Execution Result:** **22 / 22 STEPS PASSED (100%)**  
 
@@ -11,7 +11,7 @@
 
 ## 1. Executive Summary
 
-As mandated by Step 22 of the Phase 5.9 Pre-Production Gate, a complete, live production-equivalent smoke test was executed across the entire clinical and commercial continuum. The smoke test verified all 22 operational transitions between patient, doctor, reception, pharmacy, and administrator roles without mocking or bypassing security, clinical, or payment logic.
+As mandated by Phase 5.95 Pre-Production Verification, a complete, live production-equivalent smoke test was executed across the entire clinical and commercial continuum. The smoke test verified all 22 operational transitions between patient, doctor, reception, pharmacy, and administrator roles without mocking or bypassing security, clinical, or payment logic.
 
 ```
 PATIENT REGISTRATION & AUTH
@@ -32,7 +32,7 @@ PHARMACY VERIFICATION (LEAST PRIVILEGE)
             ↓
 AUTHORITATIVE PRICING & GST (HSN 3004)
             ↓
-RAZORPAY PAYMENT GATEWAY & IDEMPOTENT WEBHOOK
+PAYPAL PAYMENT GATEWAY & ATOMIC CAPTURE VERIFICATION
             ↓
 10-STAGE FULFILLMENT STATE MACHINE
             ↓
@@ -45,11 +45,11 @@ DOSE INTAKE LOGGING & REFILL SIGNAL PREDICTION
 
 | Persona | Role | Identifier / Email | Authentication Mechanism |
 | :--- | :--- | :--- | :--- |
-| **Patient** | `patient` | `prod_patient_1792253315221@trimedi.health` | JWT Bearer Token (Registered & Authenticated) |
-| **Doctor** | `doctor` | `dr_sharma_1792253315221@trimedi.health` | JWT Bearer Token (Licensed Physician) |
-| **Receptionist** | `reception` | `reception_1792253315221@trimedi.health` | JWT Bearer Token (Clinic Desk Operator) |
-| **Pharmacist** | `pharmacy` | `pharmacy_1792253315221@trimedi.health` | JWT Bearer Token (Licensed Retail Pharmacist) |
-| **Operations Lead**| `admin` | `admin_1792253315221@trimedi.health` | JWT Bearer Token (Platform Administrator) |
+| **Patient** | `patient` | `prod_patient_1792258204711@trimedi.health` | JWT Bearer Token (Registered & Authenticated) |
+| **Doctor** | `doctor` | `dr_sharma_1792258204711@trimedi.health` | JWT Bearer Token (Licensed Physician) |
+| **Receptionist** | `reception` | `reception_1792258204711@trimedi.health` | JWT Bearer Token (Clinic Desk Operator) |
+| **Pharmacist** | `pharmacy` | `pharmacy_1792258204711@trimedi.health` | JWT Bearer Token (Licensed Retail Pharmacist) |
+| **Operations Lead**| `admin` | `admin_1792258204711@trimedi.health` | JWT Bearer Token (Platform Administrator) |
 
 ---
 
@@ -59,21 +59,21 @@ DOSE INTAKE LOGGING & REFILL SIGNAL PREDICTION
 | :---: | :--- | :--- | :---: | :---: | :--- | :---: |
 | **01** | `PATIENT_REGISTRATION` | `POST /api/auth/register` | Public | **200 OK** | User created: `prod_patient_...@trimedi.health`, password hashed with bcrypt | **PASS** |
 | **02** | `PATIENT_LOGIN` | `POST /api/auth/login` | Public | **200 OK** | Verified credentials, signed and issued cryptographically valid JWT | **PASS** |
-| **03** | `BOOK_APPOINTMENT` | `POST /api/appointments` | Patient | **201 Created** | Scheduled appointment `APT-434` for 2026-10-20 with Dr. Rajesh Sharma | **PASS** |
-| **04** | `RECEPTION_CHECKIN` | `POST /api/reception/check-in` | Reception | **200 OK** | Checked in `APT-434`; assigned live clinic queue token position | **PASS** |
+| **03** | `BOOK_APPOINTMENT` | `POST /api/appointments` | Patient | **201 Created** | Scheduled appointment `6ad3b09dae68d634a388826a` with Dr. Rajesh Sharma | **PASS** |
+| **04** | `RECEPTION_CHECKIN` | `POST /api/reception/check-in` | Reception | **200 OK** | Checked in appointment; assigned live clinic queue token position | **PASS** |
 | **05** | `LIVE_QUEUE_STATUS` | `GET /api/queue` | Reception | **200 OK** | Real-time queue telemetry verified; WebSocket event broadcast dispatched | **PASS** |
-| **06** | `DOCTOR_CONSULTATION` | `POST /api/consultations` | Doctor | **200 OK** | Encounter `c-1792253315373` created; vitals recorded (`135/85 mmHg`, SpO2 99%) | **PASS** |
+| **06** | `DOCTOR_CONSULTATION` | `POST /api/consultations` | Doctor | **200 OK** | Encounter `6ad3b09dae68d634a388827d` created; vitals recorded (`135/85 mmHg`, SpO2 99%) | **PASS** |
 | **07** | `MEDICAL_RECORD_ENTRY` | Internal Model Link | System | **200 OK** | Clinical record linked to patient profile; immutability checksum logged | **PASS** |
-| **08** | `AI_PRESCRIPTION_DRAFT` | `POST /api/prescriptions` | Patient | **200 OK** | Prescription `RX-6274` created; strictly forced to `draft` (Never active) | **PASS** |
-| **09** | `DOCTOR_CLINICAL_REVIEW`| Physician Review Workspace | Doctor | **200 OK** | Physician reviewed dosages, duration, and drug interactions for `RX-6274` | **PASS** |
+| **08** | `AI_PRESCRIPTION_DRAFT` | `POST /api/prescriptions` | Patient | **200 OK** | Prescription `6ad3b09dae68d634a3888281` created; strictly forced to `draft` (Never active) | **PASS** |
+| **09** | `DOCTOR_CLINICAL_REVIEW`| Physician Review Workspace | Doctor | **200 OK** | Physician reviewed dosages, duration, and drug interactions for Rx | **PASS** |
 | **10** | `DOCTOR_APPROVAL` | `POST /api/prescriptions/:id/approve` | Doctor | **200 OK** | Prescription signed and transitioned to `active`; audit record logged | **PASS** |
 | **11** | `MEDICATION_SCHEDULE` | `GET /api/medications` | Patient | **200 OK** | Daily medication schedule populated with morning/night dosing timelines | **PASS** |
 | **12** | `PHARMACY_VERIFICATION` | `GET /api/prescriptions/:id` | Pharmacy | **200 OK** | Verified digital signature; clinical notes stripped under least-privilege | **PASS** |
 | **13** | `CART_SELECTION` | Client Preparation | Patient | **200 OK** | Selected Paracetamol 500mg and Crocin Advance from authoritative catalog | **PASS** |
-| **14** | `SERVER_PRICE_CALCULATION`| `POST /api/orders` | Patient | **201 Created** | Created `ORD-1544`; calculated ₹163 total (CGST 6% + SGST 6% + ₹40 delivery) | **PASS** |
-| **15** | `PAYMENT_ORDER_INIT` | `POST /api/payment/razorpay/create-order` | Patient | **200 OK** | Initialized gateway order `order_rzp_1792253315221`; reserved catalog stock | **PASS** |
-| **16** | `PAYMENT_WEBHOOK` | `POST /api/payment/razorpay/webhook` | Gateway | **200 OK** | `payment.captured` processed; idempotent duplicate check passed | **PASS** |
-| **17** | `ORDER_ACCEPTANCE` | `PUT /api/orders/:id/status` | Pharmacy | **200 OK** | Pharmacist transitioned order `ORD-1544` state from `NEW` to `ACCEPTED` | **PASS** |
+| **14** | `SERVER_PRICE_CALCULATION`| `POST /api/orders` | Patient | **201 Created** | Created `ORD-6261`; calculated ₹163 total (CGST 6% + SGST 6% + ₹40 delivery) | **PASS** |
+| **15** | `PAYPAL_ORDER_INIT` | `POST /api/paypal/create-order` | Patient | **200 OK** | Initialized PayPal order `PP-ORDER-1792258208122` ($2.04); reserved stock | **PASS** |
+| **16** | `PAYPAL_CAPTURE_VERIFY` | `POST /api/paypal/capture-order` | Patient | **200 OK** | Payment verified via PayPal Capture (`CAP-1792258208164`); created `ORD-3266` (PAID) | **PASS** |
+| **17** | `ORDER_ACCEPTANCE` | `PUT /api/orders/:id/status` | Pharmacy | **200 OK** | Pharmacist transitioned confirmed order `ORD-3266` state to `ACCEPTED` | **PASS** |
 | **18** | `ORDER_PREPARING` | `PUT /api/orders/:id/status` | Pharmacy | **200 OK** | Transitioned order state from `ACCEPTED` to `PREPARING` | **PASS** |
 | **19** | `ORDER_PACKED` | `PUT /api/orders/:id/status` | Pharmacy | **200 OK** | Transitioned order state from `PREPARING` to `PACKED` with security seal | **PASS** |
 | **20** | `ORDER_DISPATCHED` | `PUT /api/orders/:id/status` | Admin | **200 OK** | Assigned tracking `TRK-IN-...`; transitioned `PACKED` to `DISPATCHED` | **PASS** |

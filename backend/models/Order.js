@@ -182,16 +182,16 @@ orderSchema.pre("validate", function (next) {
   }
   if (this.pricing && this.pricing.grandTotal !== undefined) {
     this.totalAmount = this.pricing.grandTotal;
-  } else if (this.totalAmount !== undefined && !this.pricing) {
+  } else if (this.totalAmount !== undefined) {
     this.pricing = {
-      subtotal: this.totalAmount,
-      taxableAmount: this.totalAmount,
-      cgst: 0,
-      sgst: 0,
-      igst: 0,
-      totalTax: 0,
-      deliveryFee: 0,
-      discount: 0,
+      subtotal: this.pricing?.subtotal !== undefined ? this.pricing.subtotal : this.totalAmount,
+      taxableAmount: this.pricing?.taxableAmount !== undefined ? this.pricing.taxableAmount : this.totalAmount,
+      cgst: this.pricing?.cgst || 0,
+      sgst: this.pricing?.sgst || 0,
+      igst: this.pricing?.igst || 0,
+      totalTax: this.pricing?.totalTax || 0,
+      deliveryFee: this.pricing?.deliveryFee || 0,
+      discount: this.pricing?.discount || 0,
       grandTotal: this.totalAmount,
       currency: "INR",
     };

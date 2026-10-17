@@ -58,24 +58,24 @@ export const validateStartupConfig = async () => {
     }
   }
 
-  // 3. Razorpay Payment Gateway Verification
-  const rzpKey = process.env.RAZORPAY_KEY_ID;
-  const rzpSecret = process.env.RAZORPAY_KEY_SECRET;
-  const rzpWebhook = process.env.RAZORPAY_WEBHOOK_SECRET;
+  // 3. Payment Gateway Verification (PayPal is Production Gateway)
+  const ppClientId = process.env.PAYPAL_CLIENT_ID;
+  const ppSecret = process.env.PAYPAL_CLIENT_SECRET;
+  const ppEnv = process.env.PAYPAL_ENVIRONMENT || "sandbox";
 
   if (isProduction) {
-    if (!rzpKey || rzpKey.includes("trimedi_key") || rzpKey.includes("replace_with") || rzpKey.startsWith("rzp_test_")) {
-      errors.push("RAZORPAY_KEY_ID is missing or configured with test credentials in production. Live merchant keys required.");
+    if (!ppClientId || ppClientId === "sb" || ppClientId.includes("replace_with")) {
+      errors.push("PAYPAL_CLIENT_ID is missing or set to placeholder in production. Live PayPal client ID required.");
     }
-    if (!rzpSecret || rzpSecret.includes("trimedi_secure") || rzpSecret.includes("replace_with")) {
-      errors.push("RAZORPAY_KEY_SECRET is missing or configured with test placeholder in production.");
+    if (!ppSecret || ppSecret.includes("replace_with")) {
+      errors.push("PAYPAL_CLIENT_SECRET is missing or set to placeholder in production.");
     }
-    if (!rzpWebhook || rzpWebhook.includes("trimedi_2026") || rzpWebhook.includes("replace_with")) {
-      errors.push("RAZORPAY_WEBHOOK_SECRET is required to verify incoming payment webhooks cryptographically.");
+    if (ppEnv !== "live") {
+      errors.push(`PAYPAL_ENVIRONMENT must be set to 'live' in production environment (currently set to '${ppEnv}').`);
     }
   } else if (isPilot) {
-    if (rzpKey && !rzpKey.startsWith("rzp_test_") && !rzpKey.includes("test")) {
-      warnings.push("RAZORPAY_KEY_ID does not appear to be a test key. Controlled pilot must use test/sandbox payment credentials.");
+    if (ppEnv === "live") {
+      warnings.push("PAYPAL_ENVIRONMENT is set to 'live' in controlled pilot mode. Consider using sandbox for testing.");
     }
   }
 

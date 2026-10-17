@@ -277,9 +277,9 @@ async function runProductionSmokeTest() {
     const serverTotal = orderCreateRes.data?.order?.pricing?.grandTotal || orderCreateRes.data?.order?.totalAmount || 163.2;
     recordTransition("SERVER_PRICE_CALCULATION", `Order ID: ${orderId}, Server Total: ₹${serverTotal} (CGST 6% + SGST 6% + Delivery)`, orderCreateRes.ok || orderCreateRes.status === 201 || orderCreateRes.status === 200);
 
-    // 15. PAYMENT ORDER INITIALIZATION
+    // 15. PAYPAL PAYMENT ORDER INITIALIZATION
     const paymentOrderRes = await callAPI(
-      "/api/payment/razorpay/create-order",
+      "/api/paypal/create-order",
       "POST",
       {
         items: cartItems,
@@ -294,35 +294,37 @@ async function runProductionSmokeTest() {
       },
       patientToken
     );
-    const gatewayOrderId = paymentOrderRes.data?.gatewayOrderId || paymentOrderRes.data?.razorpayOrderId || `order_rzp_${testId}`;
-    recordTransition("PAYMENT_ORDER_INITIALIZATION", `Gateway Order ID: ${gatewayOrderId}`, paymentOrderRes.ok || paymentOrderRes.status === 200);
+    const paypalOrderId = paymentOrderRes.data?.id || paymentOrderRes.data?.gatewayOrderId || `PP-ORDER-${testId}`;
+    const paypalTotalUSD = paymentOrderRes.data?.computedTotalUSD || "2.04";
+    recordTransition("PAYPAL_PAYMENT_ORDER_INITIALIZATION", `PayPal Order ID: ${paypalOrderId} ($${paypalTotalUSD})`, paymentOrderRes.ok || paymentOrderRes.status === 200);
 
-    // 16. PAYMENT SIGNATURE VERIFICATION & WEBHOOK PROCESSING
-    const webhookRes = await callAPI(
-      "/api/payment/razorpay/webhook",
+    // 16. PAYPAL PAYMENT VERIFICATION & ATOMIC CAPTURE
+    const captureRes = await callAPI(
+      "/api/paypal/capture-order",
       "POST",
       {
-        id: `evt_smoke_${testId}`,
-        event: "payment.captured",
-        payload: {
-          payment: {
-            entity: {
-              id: `pay_${testId}`,
-              order_id: gatewayOrderId,
-              amount: Math.round(serverTotal * 100),
-              status: "captured",
-              method: "upi",
-            },
-          },
+        paypalOrderId,
+        items: cartItems,
+        patientName: "Ananya Sharma",
+        patientEmail,
+        deliveryAddress: {
+          fullName: "Ananya Sharma",
+          street: "42 MG Road, Bandra West",
+          city: "Mumbai",
+          state: "Maharashtra",
+          pincode: "400050",
+          phone: "+91 98765 43210",
         },
       },
-      null
+      patientToken
     );
-    recordTransition("PAYMENT_VERIFICATION_WEBHOOK", `Payment captured, Webhook processed idempotently, HTTP ${webhookRes.status}`, webhookRes.ok || webhookRes.status === 200);
+    const captureId = captureRes.data?.captureId || `CAP-${testId}`;
+    const confirmedOrderId = captureRes.data?.order?.orderId || orderId;
+    recordTransition("PAYPAL_PAYMENT_CAPTURE_VERIFICATION", `Payment verified via PayPal Capture (${captureId}), Order: ${confirmedOrderId}`, captureRes.ok || captureRes.status === 200);
 
     // 17. PHARMACY ORDER ACCEPTANCE
     const acceptRes = await callAPI(
-      `/api/orders/${orderId}/status`,
+      `/api/orders/${confirmedOrderId}/status`,
       "PUT",
       { status: "ACCEPTED", notes: "Order accepted by pharmacist on duty" },
       pharmacyToken
@@ -331,7 +333,7 @@ async function runProductionSmokeTest() {
 
     // 18. PREPARING FULFILLMENT STATE
     const prepRes = await callAPI(
-      `/api/orders/${orderId}/status`,
+      `/api/orders/${confirmedOrderId}/status`,
       "PUT",
       { status: "PREPARING", notes: "Medicines dispensed from temperature-controlled storage" },
       pharmacyToken
@@ -340,7 +342,7 @@ async function runProductionSmokeTest() {
 
     // 19. PACKED STATE TRANSITION
     const packedRes = await callAPI(
-      `/api/orders/${orderId}/status`,
+      `/api/orders/${confirmedOrderId}/status`,
       "PUT",
       { status: "PACKED", notes: "Tamper-evident clinical security seal applied" },
       pharmacyToken
@@ -349,7 +351,7 @@ async function runProductionSmokeTest() {
 
     // 20. DISPATCHED STATE TRANSITION
     const dispatchRes = await callAPI(
-      `/api/orders/${orderId}/status`,
+      `/api/orders/${confirmedOrderId}/status`,
       "PUT",
       { status: "DISPATCHED", trackingNumber: `TRK-IN-${testId}`, carrier: "TriMedi Express Pharma" },
       adminToken
@@ -357,9 +359,9 @@ async function runProductionSmokeTest() {
     recordTransition("ORDER_DISPATCHED", `Order state updated to DISPATCHED (Tracking: TRK-IN-${testId})`, dispatchRes.ok || dispatchRes.status === 200);
 
     // 21. OUT_FOR_DELIVERY & DELIVERED
-    await callAPI(`/api/orders/${orderId}/status`, "PUT", { status: "OUT_FOR_DELIVERY" }, adminToken);
+    await callAPI(`/api/orders/${confirmedOrderId}/status`, "PUT", { status: "OUT_FOR_DELIVERY" }, adminToken);
     const deliveredRes = await callAPI(
-      `/api/orders/${orderId}/status`,
+      `/api/orders/${confirmedOrderId}/status`,
       "PUT",
       { status: "DELIVERED", deliveredAt: new Date().toISOString() },
       adminToken

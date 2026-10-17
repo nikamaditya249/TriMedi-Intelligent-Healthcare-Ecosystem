@@ -230,12 +230,12 @@ export const releaseStock = async (items = [], orderId = "", actor = null) => {
         const qty = Math.max(1, Number(item.quantity) || Number(item.qty) || 1);
 
         if (mongoose.isValidObjectId(prodId)) {
-          await Product.findOneAndUpdate(
-            { _id: prodId },
-            {
-              $inc: { reservedQuantity: -qty },
-            }
-          );
+          const prod = await Product.findById(prodId);
+          if (prod) {
+            prod.reservedQuantity = Math.max(0, (prod.reservedQuantity || 0) - qty);
+            prod.availableQuantity = Math.max(0, (prod.stockQuantity || 0) - prod.reservedQuantity);
+            await prod.save();
+          }
         }
       }
     } else {

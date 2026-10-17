@@ -246,10 +246,10 @@ curl -s http://localhost:5001/health
 
 ### 4. Final Production Deployment Gate (`APP_ENV=production` & `NODE_ENV=production`)
 - **Status:** **`NO-GO — PRODUCTION BLOCKED` (Pending External Manual & Statutory Gates)**
-- **Technical Validation:** **100% COMPLETE** (206/206 Automated Tests Passed, 22/22 Smoke Test Steps Passed, Vite Build 0 Errors).
+- **Technical Validation:** **100% COMPLETE** (222/222 Automated Tests Passed, 22/22 Smoke Test Steps Passed, Vite Build 0 Errors).
 - **Mandatory Gating Prerequisites (External / Manual):**
-  1. **MongoDB Atlas Manual User Deletion:** Delete compromised legacy user `adityanikams73_db_user` and rotate cluster password in `cloud.mongodb.com` console.
-  2. **Razorpay Live Merchant KYC Activation:** Complete business KYC and activate live merchant credentials (`rzp_live_...`).
+  1. **MongoDB Atlas Manual User Deletion:** Delete compromised legacy user `adityanikams73_db_user` and rotate cluster password in `cloud.mongodb.com` console (Cluster0 is active and healthy; credential security gate requires console deletion).
+  2. **PayPal Live Production Gateway Activation:** Provision live production credentials (`PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENVIRONMENT=live`) and register production webhook URL.
   3. **Statutory Healthcare Legal Sign-Off:** Execute formal legal compliance review of `LEGAL_REVIEW_CHECKLIST.md` under Telemedicine Guidelines (2020) and DPDP Act (2023).
   4. **Redis Multi-Instance Cluster:** Deploy managed Redis cluster (`REDIS_URL`) prior to scaling horizontally across multiple container replicas.
 
@@ -257,7 +257,7 @@ curl -s http://localhost:5001/health
 
 ## 🧪 Comprehensive Automated Test Suites
 
-TriMedi maintains 100% test coverage across **206 automated platform tests with zero regressions**:
+TriMedi maintains 100% test coverage across **222 automated platform tests with zero regressions**:
 
 ```bash
 cd backend
@@ -283,16 +283,19 @@ node test_phase5_5_production_readiness.js
 # Phase 5.75: Controlled Pilot Validation & Real-World Exit Gate (20 tests)
 node test_phase5_75_pilot_validation.js
 
-# Phase 5.9: Final Pre-Production Gate & Go-Live Readiness (20 tests)
+# Phase 5.9: Pre-Production Gate & Go-Live Readiness (20 tests)
 node test_phase5_9_production_gate.js
 
-# Step 22 Full Production-Equivalent Smoke Test (22 operational steps)
-node scripts/production_smoke_test.js
+# Phase 5.95: PayPal Production Payment Gateway & Clearances (16 tests)
+node test_phase5_95_paypal_production.js
 
 # Socket.IO & Persistence Audit (7 tests)
 node test_audit.js
 
-# Total Automated Suite: 206/206 PASSED (100%)
+# Step 22 Full Production-Equivalent Smoke Test (22 operational steps)
+node scripts/production_smoke_test.js
+
+# Total Automated Suite: 222/222 PASSED (100%)
 ```
 
 ---
