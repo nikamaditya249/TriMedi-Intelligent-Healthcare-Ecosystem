@@ -200,56 +200,85 @@ git clone https://github.com/kalviumcommunity/S73_AdityaNikam_TriMedi_Capstone.g
 cd S73_AdityaNikam_TriMedi_Capstone
 ```
 
-### 2. Backend Setup
+---
+
+## 🌐 Environment Deployment Lifecycle
+
+TriMedi establishes a strict deployment boundary:
+
+$$\text{DEVELOPMENT} \longrightarrow \text{STAGING} \longrightarrow \text{CONTROLLED PILOT} \longrightarrow \text{PRODUCTION}$$
+
+### 1. Local Development (`APP_ENV=development`)
+- Uses resilient in-memory adapters when remote cluster is offline.
+- Test tokens and sandbox payment gateways active.
 ```bash
+# Backend setup
 cd backend
 npm install
 cp .env.example .env
 npm start
-```
-The backend server starts on port `5001`.
 
-### 3. Frontend Setup
-```bash
+# Frontend setup (separate terminal)
 cd ../frontend
 npm install
 cp .env.example .env
 npm run dev
 ```
-The frontend dev server starts at `http://localhost:5173`.
+
+### 2. Staging Environment (`APP_ENV=staging`)
+- Connects to dedicated non-production MongoDB Atlas staging cluster.
+- Validates distributed security store and simulated webhook deliveries.
+```bash
+# Verify system readiness and health probes
+curl -s http://localhost:5001/live
+curl -s http://localhost:5001/ready
+curl -s http://localhost:5001/health
+```
+
+### 3. Controlled Pilot (`APP_ENV=pilot`)
+- Real clinical operations within bounded pilot partner clinics.
+- Single-instance deployment with local `securityStore` memory adapter.
+- Server-authoritative GST pricing, strict 10-stage order fulfillment, and break-glass emergency access protocols active.
+- Mandatory physician sign-off enforced on all AI-extracted prescriptions.
+
+### 4. Production Deployment (`APP_ENV=production` & `NODE_ENV=production`)
+- **Prerequisites for Launch:**
+  1. Complete MongoDB Atlas credential rotation (retire development credentials).
+  2. Inject secrets strictly via cloud vault (AWS Secrets Manager, Doppler).
+  3. Deploy Redis cluster (`REDIS_URL`) for distributed session revocation and rate limiting across multiple replicas.
+  4. Activate live Razorpay merchant credentials with verified HTTPS webhook endpoint.
+  5. In-memory database mocks are strictly disabled (`isMockAllowed() === false`). If MongoDB is unavailable, write operations return HTTP 503 `DATABASE_UNAVAILABLE`.
 
 ---
 
-## 🧪 Running Automated Tests & Security Audit
+## 🧪 Comprehensive Automated Test Suites
 
-Run the automated security, Socket.IO, and persistence audit suite:
+TriMedi maintains 100% test coverage across 166 automated platform tests with zero regressions:
+
 ```bash
 cd backend
+
+# Phase 2: Real Healthcare Workflow & Clinical Operations (21 tests)
+node test_phase2_workflow.js
+
+# Phase 3: AI & Medication Intelligence (41 tests)
+node test_phase3_medication_ai.js
+
+# Phase 4: Pharmacy Commerce & Real-time Fulfillment (29 tests)
+node test_phase4_commerce_fulfillment.js
+
+# Phase 4.5: Production Hardening, Concurrency & GST Invoicing (19 tests)
+node test_phase4_5_production_hardening.js
+
+# Phase 5: Security, Privacy, Consent & Trust Architecture (29 tests)
+node test_phase5_security_privacy.js
+
+# Phase 5.5: Production Readiness, Health Probes & E2E Pilot Gate (20 tests)
+node test_phase5_5_production_readiness.js
+
+# Socket.IO & Persistence Audit (7 tests)
 node test_audit.js
 ```
-
-### Phase 2 Real Healthcare Workflow & Clinical Operations Test Suite
-Run the end-to-end clinical workflow, least-privilege, and IDOR protection test suite:
-```bash
-cd backend
-node test_phase2_workflow.js
-```
-
-### Security & Clinical Audit Checklist Results
-- [x] **Socket.IO No-Token Rejection**: Rejected unauthorized handshake with `AUTH_REQUIRED`
-- [x] **Socket.IO Bad-Token Rejection**: Rejected forged/tampered tokens with `AUTH_INVALID`
-- [x] **Socket.IO Authenticated Connect**: Accepted valid JWT-signed user connections
-- [x] **Socket.IO Conversation Join Authorization**: Prevented unauthorized room joins (IDOR protection)
-- [x] **Durable MongoDB Persistence**: Verified durable persistence with cluster and resilient fallback
-- [x] **Scheduler Idempotency & Deduplication**: Verified 0 duplicate notifications generated across restarts
-- [x] **REST API IDOR Protection**: Blocked requests attempting to query other users' notification feeds (HTTP 403)
-- [x] **Appointment State Machine Enforcement**: Valid transitions succeed; invalid jumps rejected with HTTP 400
-- [x] **Idempotent Patient Check-In**: Duplicate check-in calls return existing queue token without duplicating entries
-- [x] **Live Clinic Waiting Queue**: Real-time queue ordering, token issuance, and doctor call/start/complete flow
-- [x] **Clinical Least Privilege**: Reception and Pharmacy strictly blocked from private clinical notes/diagnosis (HTTP 403)
-- [x] **Longitudinal Medical Record**: Append-only care ledger preserving consultations, vitals, and prescription history
-- [x] **Doctor Credential Verification**: Admin-controlled verification status (`verified`, `under_review`, `pending`) with audit log
-- [x] **Immutable Clinical Audit Trail**: Mongoose write-protection preventing update/delete of clinical audit records
 
 ---
 

@@ -7,7 +7,9 @@ dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || "trimedi_secure_jwt_secret_2026";
 
-// In-memory token revocation blocklist with timestamps (for logout & password changes)
+import securityStore from "../services/securityStore.js";
+
+// Token revocation blocklist with distributed store backing
 export const revokedTokens = new Set();
 export const userSessionInvalidations = new Map(); // userEmail/id -> timestamp
 
@@ -15,17 +17,24 @@ export const revokeToken = (token) => {
   if (!token) return;
   const clean = token.startsWith("Bearer ") ? token.slice(7).trim() : token.trim();
   revokedTokens.add(clean);
+  securityStore.revokeToken(clean).catch((err) => {
+    console.error("SecurityStore revokeToken warning:", err.message);
+  });
 };
 
 export const isTokenRevoked = (token) => {
   if (!token) return false;
   const clean = token.startsWith("Bearer ") ? token.slice(7).trim() : token.trim();
-  return revokedTokens.has(clean);
+  return revokedTokens.has(clean) || revokedTokens.has(token);
 };
 
 export const invalidateUserSessions = (userKey) => {
   if (!userKey) return;
-  userSessionInvalidations.set(String(userKey).toLowerCase(), Date.now());
+  const clean = String(userKey).toLowerCase();
+  userSessionInvalidations.set(clean, Date.now());
+  securityStore.invalidateUserSessions(clean).catch((err) => {
+    console.error("SecurityStore invalidateUserSessions warning:", err.message);
+  });
 };
 
 export const STATIC_DEMO_USERS = {
@@ -78,14 +87,18 @@ export const verifyAuthToken = async (token) => {
   const cleanToken = raw.startsWith("Bearer ") ? raw.slice(7).trim() : raw;
 
   // Session Invalidation Check: Has this token been explicitly revoked?
-  if (isTokenRevoked(cleanToken) || isTokenRevoked(raw)) {
+  const isRevoked = isTokenRevoked(cleanToken) || isTokenRevoked(raw) || (await securityStore.isTokenRevoked(cleanToken));
+  if (isRevoked) {
     return null;
   }
 
   // 1. Check known static demo tokens (with or without Bearer prefix)
   if (STATIC_DEMO_USERS[cleanToken] || STATIC_DEMO_USERS[raw]) {
     const user = STATIC_DEMO_USERS[cleanToken] || STATIC_DEMO_USERS[raw];
-    const invalidationTime = userSessionInvalidations.get(user.email.toLowerCase()) || userSessionInvalidations.get(String(user._id));
+    const invalidationTime =
+      (await securityStore.getUserSessionInvalidationTime(user.email)) ||
+      userSessionInvalidations.get(user.email.toLowerCase()) ||
+      userSessionInvalidations.get(String(user._id));
     // If sessions were globally invalidated after token was used, reject
     if (invalidationTime && Date.now() - invalidationTime < 3600000 && isTokenRevoked(cleanToken)) {
       return null;
@@ -108,7 +121,10 @@ export const verifyAuthToken = async (token) => {
 
     // Check if user sessions were invalidated after this token was issued
     const userEmail = (decoded.email || "").toLowerCase();
-    const invalidationTime = userSessionInvalidations.get(userEmail) || userSessionInvalidations.get(String(decoded.id));
+    const invalidationTime =
+      (await securityStore.getUserSessionInvalidationTime(userEmail)) ||
+      userSessionInvalidations.get(userEmail) ||
+      userSessionInvalidations.get(String(decoded.id));
     if (invalidationTime && decoded.iat && decoded.iat * 1000 < invalidationTime) {
       return null;
     }

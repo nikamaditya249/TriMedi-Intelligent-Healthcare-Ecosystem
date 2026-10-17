@@ -5,6 +5,7 @@ import eventBus from "../services/eventBus.js";
 import { optionalAuth, requireRole } from "../middleware/authMiddleware.js";
 import { logClinicalAudit } from "../services/auditService.js";
 import medicationService from "../services/medicationService.js";
+import { requireDatabase } from "../middleware/dbGuard.js";
 
 const router = express.Router();
 
@@ -165,7 +166,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
 });
 
 // POST Create new Digital Prescription (Doctor / Admin Only)
-router.post("/", optionalAuth, async (req, res) => {
+router.post("/", requireDatabase, optionalAuth, async (req, res) => {
   try {
     // Pharmacy or Patient cannot author clinical prescriptions
     if (req.user && (req.user.role === "pharmacy" || req.user.role === "reception")) {
@@ -294,7 +295,7 @@ router.post("/", optionalAuth, async (req, res) => {
 });
 
 // POST Doctor Review & Approve Prescription
-router.post("/:id/approve", optionalAuth, async (req, res) => {
+router.post("/:id/approve", requireDatabase, optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
 

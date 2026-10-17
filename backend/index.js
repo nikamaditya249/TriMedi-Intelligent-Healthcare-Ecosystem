@@ -32,6 +32,8 @@ import { defaultProducts } from "./data/defaultProducts.js";
 import validateStartupConfig from "./utils/configValidator.js";
 import errorHandler from "./middleware/errorHandler.js";
 import { authRateLimiter } from "./middleware/rateLimiter.js";
+import securityStore from "./services/securityStore.js";
+import { isMockAllowed } from "./middleware/dbGuard.js";
 
 dotenv.config();
 
@@ -100,7 +102,7 @@ app.get("/", (req, res) => {
   res.json({
     message: "TriMedi Healthcare Platform API is running 🚀",
     status: "OK",
-    phase: "5.0 Security, Privacy, Compliance & Trust",
+    phase: "5.5 Production Readiness, Secret Rotation & Pilot Gate",
     security: "CSP + HSTS + CORS + RBAC + Break-Glass Protocol Active",
     privacy: "Versioned Consent + Patient Data Export + Retention Lifecycle Active",
     commerce: "Authoritative Pricing + Razorpay + PayPal + COD + State-Aware GST",
@@ -108,6 +110,68 @@ app.get("/", (req, res) => {
     reconciliation: "Automated Payment & Inventory Synchronization Active",
     realtime: "Socket.IO active with RBAC room isolation",
     scheduler: "Active (60s idempotent intervals)",
+  });
+});
+
+// /live -> Process liveness probe
+app.get("/live", (req, res) => {
+  res.status(200).json({
+    status: "ALIVE",
+    uptimeSeconds: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// /ready -> Production traffic readiness probe
+app.get("/ready", (req, res) => {
+  const isDbConnected = mongoose.connection.readyState === 1;
+  const mockAllowed = isMockAllowed();
+
+  // In production, database readiness is an unconditional prerequisite
+  if (!isDbConnected && !mockAllowed) {
+    return res.status(503).json({
+      status: "NOT_READY",
+      code: "DATABASE_UNAVAILABLE",
+      message: "Database connection is not ready to serve production healthcare traffic.",
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  res.status(200).json({
+    status: "READY",
+    mode: process.env.APP_ENV || process.env.NODE_ENV || "development",
+    database: isDbConnected ? "connected" : "resilient_fallback",
+    securityStore: securityStore.getStatus().status,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// /health -> Sanitized detailed internal system telemetry
+app.get("/health", (req, res) => {
+  const isDbConnected = mongoose.connection.readyState === 1;
+  const storeStatus = securityStore.getStatus();
+  const isHealthy = isDbConnected || isMockAllowed();
+
+  res.status(isHealthy ? 200 : 503).json({
+    status: isHealthy ? "HEALTHY" : "DEGRADED",
+    environment: process.env.APP_ENV || process.env.NODE_ENV || "development",
+    uptimeSeconds: Math.floor(process.uptime()),
+    components: {
+      database: {
+        status: isDbConnected ? "UP" : isMockAllowed() ? "RESILIENT_MOCK" : "DOWN",
+        readyState: mongoose.connection.readyState,
+      },
+      securityStore: storeStatus,
+      scheduler: {
+        status: "UP",
+        intervalSeconds: 60,
+      },
+    },
+    system: {
+      memoryUsageMB: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+      nodeVersion: process.version,
+    },
+    timestamp: new Date().toISOString(),
   });
 });
 

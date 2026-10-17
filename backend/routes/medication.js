@@ -8,6 +8,7 @@ import medicationService from "../services/medicationService.js";
 import medicationSafetyService from "../services/medicationSafetyService.js";
 import { requireAuth, optionalAuth } from "../middleware/authMiddleware.js";
 import { logClinicalAudit } from "../services/auditService.js";
+import { requireDatabase } from "../middleware/dbGuard.js";
 
 const router = express.Router();
 
@@ -88,7 +89,7 @@ router.get("/schedule/today", optionalAuth, async (req, res) => {
  * POST /api/medications/:id/dose
  * Patient records dose outcome (TAKEN, MISSED, SKIPPED)
  */
-router.post("/:id/dose", optionalAuth, async (req, res) => {
+router.post("/:id/dose", requireDatabase, optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { status, date, timeSlot, notes } = req.body;

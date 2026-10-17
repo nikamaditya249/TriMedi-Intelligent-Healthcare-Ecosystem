@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import { optionalAuth, requireAuth, revokeToken, invalidateUserSessions } from "../middleware/authMiddleware.js";
 import { logClinicalAudit, logSecurityEvent } from "../services/auditService.js";
+import securityStore from "../services/securityStore.js";
 
 const router = express.Router();
 
@@ -409,6 +410,7 @@ router.post("/forgot-password", async (req, res) => {
       expiresAt,
       used: false,
     });
+    await securityStore.storeResetToken(tokenHash, { email: cleanEmail, expiresAt, used: false }, 900);
 
     await logClinicalAudit({
       req,
@@ -444,7 +446,10 @@ router.post("/reset-password", async (req, res) => {
     }
 
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
-    const resetEntry = passwordResetRegistry.get(tokenHash);
+    let resetEntry = passwordResetRegistry.get(tokenHash);
+    if (!resetEntry) {
+      resetEntry = await securityStore.getResetToken(tokenHash);
+    }
 
     if (!resetEntry || resetEntry.used || resetEntry.expiresAt < Date.now()) {
       return res.status(400).json({
@@ -456,6 +461,7 @@ router.post("/reset-password", async (req, res) => {
     // Mark token used (Single-use enforcement)
     resetEntry.used = true;
     passwordResetRegistry.delete(tokenHash);
+    await securityStore.consumeResetToken(tokenHash);
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 

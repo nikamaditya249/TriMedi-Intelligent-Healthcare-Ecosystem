@@ -9,6 +9,7 @@ import { logClinicalAudit, logSecurityEvent } from "../services/auditService.js"
 import { completeEncounter } from "../services/queueService.js";
 import eventBus from "../services/eventBus.js";
 import medicationService from "../services/medicationService.js";
+import { requireDatabase } from "../middleware/dbGuard.js";
 
 const router = express.Router();
 
@@ -49,7 +50,7 @@ export const fallbackConsultations = [
  * POST /api/consultations
  * Initialize or resume a consultation encounter for an appointment
  */
-router.post("/", optionalAuth, async (req, res) => {
+router.post("/", requireDatabase, optionalAuth, async (req, res) => {
   try {
     const { appointmentId, patientEmail, patientName, doctorEmail, doctorName, chiefComplaint } = req.body;
 
@@ -135,6 +136,14 @@ router.get("/encounter/:appointmentId", optionalAuth, async (req, res) => {
       return res.status(404).json({ success: false, message: "No consultation record found for this appointment" });
     }
 
+    // Clinical Least Privilege: Pharmacy and Reception are forbidden from viewing private clinical encounter notes
+    if (req.user && (req.user.role === "pharmacy" || req.user.role === "reception")) {
+      return res.status(403).json({
+        success: false,
+        message: "Least Privilege Violation: Pharmacy and reception staff cannot view detailed clinical consultation notes.",
+      });
+    }
+
     // Role Security: Patient can only view their own consultation
     if (req.user && req.user.role === "patient") {
       if (consultation.patientEmail.toLowerCase() !== req.user.email.toLowerCase()) {
@@ -152,7 +161,7 @@ router.get("/encounter/:appointmentId", optionalAuth, async (req, res) => {
  * PUT /api/consultations/:id
  * Save progress notes, vitals, diagnosis, and treatment plan
  */
-router.put("/:id", optionalAuth, async (req, res) => {
+router.put("/:id", requireDatabase, optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { vitals, chiefComplaint, clinicalNotes, diagnosis, treatmentPlan, followUpDate } = req.body;
@@ -205,7 +214,7 @@ router.put("/:id", optionalAuth, async (req, res) => {
  * POST /api/consultations/:id/complete
  * Conclude consultation encounter, optionally approve & issue prescription, and close queue
  */
-router.post("/:id/complete", optionalAuth, async (req, res) => {
+router.post("/:id/complete", requireDatabase, optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { prescriptionData, queueId } = req.body;
@@ -491,7 +500,7 @@ router.get("/patient-record", optionalAuth, requireClinicalAccess(), async (req,
  * POST /api/consultations/break-glass
  * Controlled emergency clinical access protocol (Requires Doctor/Admin, explicit reason, automatic critical audit)
  */
-router.post("/break-glass", requireAuth, async (req, res) => {
+router.post("/break-glass", requireDatabase, requireAuth, async (req, res) => {
   try {
     const caller = req.user;
     const { patientEmail, reason, emergencyType = "ACUTE_CLINICAL_EMERGENCY" } = req.body;

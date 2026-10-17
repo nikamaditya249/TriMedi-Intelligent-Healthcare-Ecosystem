@@ -5,6 +5,7 @@ import eventBus from "../services/eventBus.js";
 import { checkInPatient } from "../services/queueService.js";
 import { logClinicalAudit } from "../services/auditService.js";
 import { optionalAuth } from "../middleware/authMiddleware.js";
+import { requireDatabase } from "../middleware/dbGuard.js";
 
 const router = express.Router();
 
@@ -97,7 +98,7 @@ router.get("/", async (req, res) => {
 });
 
 // POST Book Consultation / Appointment
-router.post("/", async (req, res) => {
+router.post("/", requireDatabase, async (req, res) => {
   try {
     const {
       patientName,
@@ -194,7 +195,7 @@ export const VALID_TRANSITIONS = {
 };
 
 // POST Check-in appointment (Idempotent, enqueues patient in clinic queue)
-router.post("/:id/check-in", optionalAuth, async (req, res) => {
+router.post("/:id/check-in", requireDatabase, optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { priority = "normal", notes = "" } = req.body;
@@ -259,7 +260,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
 });
 
 // PUT Update status with State Machine Validation & Audit Log
-router.put("/:id/status", optionalAuth, async (req, res) => {
+router.put("/:id/status", requireDatabase, optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { status: targetStatus, reason = "", cancelledBy } = req.body;

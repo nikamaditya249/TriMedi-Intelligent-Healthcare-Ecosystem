@@ -307,10 +307,10 @@ A comprehensive repository audit identified all sensitive tokens and environment
 2. **Critical Repository Finding — Action Required:**
    - During the static scan, `backend/.env` was observed to contain an active MongoDB Atlas connection URI:
      ```
-     MONGO_URI=mongodb+srv://adityanikams73_db_user:F8MmWZt0kbP7vjLi@cluster0.lxxpoyn.mongodb.net/trimedi...
+     MONGO_URI=mongodb+srv://[REDACTED_DB_USER]:[REDACTED_DB_PASSWORD]@cluster0.lxxpoyn.mongodb.net/trimedi...
      ```
    - > [!CAUTION]
-     > **ROTATE REQUIRED:** The database credentials `adityanikams73_db_user:F8MmWZt0kbP7vjLi` have been stored in a local configuration file. Before production launch, this password must be rotated in the MongoDB Atlas console, removed from git tracking, and injected via a secure environment manager (e.g. AWS Secrets Manager, Doppler, or HashiCorp Vault).
+     > **ROTATE REQUIRED:** Live database credentials were found in the local configuration file and past commit history. Per production DevSecOps policy, this database credential is now marked as **COMPROMISED**. It must be rotated in the MongoDB Atlas console, purged from Git history, and injected strictly via a secure environment manager (e.g. AWS Secrets Manager, Doppler, or HashiCorp Vault).
 
 ---
 

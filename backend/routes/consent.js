@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import Consent from "../models/Consent.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
 import { logClinicalAudit } from "../services/auditService.js";
+import { requireDatabase } from "../middleware/dbGuard.js";
 
 const router = express.Router();
 
@@ -131,7 +132,7 @@ router.get("/", requireAuth, async (req, res) => {
  * POST /api/consent
  * Grant or update versioned consent
  */
-router.post("/", requireAuth, async (req, res) => {
+router.post("/", requireDatabase, requireAuth, async (req, res) => {
   try {
     const { consentType, purpose, version = "2026.1", source = "portal" } = req.body;
     const user = req.user;
@@ -200,7 +201,7 @@ router.post("/", requireAuth, async (req, res) => {
  * POST /api/consent/revoke
  * Revoke optional consent (e.g. AI assistance, marketing, SMS notifications)
  */
-router.post("/revoke", requireAuth, async (req, res) => {
+router.post("/revoke", requireDatabase, requireAuth, async (req, res) => {
   try {
     const { consentType, reason = "Withdrawn by user" } = req.body;
     const user = req.user;
