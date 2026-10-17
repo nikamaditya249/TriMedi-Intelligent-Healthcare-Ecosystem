@@ -40,6 +40,16 @@ export const validateStartupConfig = async () => {
     else if (isPilot) warnings.push("MONGO_URI not configured; pilot running with isolated in-memory storage");
     else warnings.push("MONGO_URI not configured; running in mock/offline development mode");
   } else {
+    // Security Guardrail: Block known compromised legacy MongoDB credential
+    if (mongoURI.toLowerCase().includes("adityanikams73_db_user")) {
+      const compMsg = "COMPROMISED_CREDENTIAL_DETECTED: Legacy MongoDB Atlas user 'adityanikams73_db_user' is permanently compromised. A rotated database credential must be provided.";
+      if (isProduction) {
+        errors.push(compMsg);
+      } else {
+        warnings.push(`[SECURITY WARNING] ${compMsg}`);
+      }
+    }
+
     if (isProduction && mongoURI.includes("localhost")) {
       warnings.push("MONGO_URI points to localhost in production mode. Ensure a resilient replica set is used.");
     }
@@ -54,8 +64,8 @@ export const validateStartupConfig = async () => {
   const rzpWebhook = process.env.RAZORPAY_WEBHOOK_SECRET;
 
   if (isProduction) {
-    if (!rzpKey || rzpKey.includes("trimedi_key") || rzpKey.includes("replace_with")) {
-      errors.push("RAZORPAY_KEY_ID is missing or configured with test placeholder in production.");
+    if (!rzpKey || rzpKey.includes("trimedi_key") || rzpKey.includes("replace_with") || rzpKey.startsWith("rzp_test_")) {
+      errors.push("RAZORPAY_KEY_ID is missing or configured with test credentials in production. Live merchant keys required.");
     }
     if (!rzpSecret || rzpSecret.includes("trimedi_secure") || rzpSecret.includes("replace_with")) {
       errors.push("RAZORPAY_KEY_SECRET is missing or configured with test placeholder in production.");
@@ -69,7 +79,14 @@ export const validateStartupConfig = async () => {
     }
   }
 
-  // 4. In Production / Pilot: Output fatal errors and halt startup if missing required configuration
+  // 4. Test Mock Guard in Production
+  if (isProduction) {
+    if (process.env.ALLOW_TEST_MOCKS === "true" || process.env.ALLOW_PILOT_MOCKS === "true") {
+      errors.push("PRODUCTION_MOCK_VIOLATION: In-memory fallback and test mocks are strictly forbidden when APP_ENV=production.");
+    }
+  }
+
+  // 5. In Production / Pilot: Output fatal errors and halt startup if missing required configuration
   if ((isProduction || isPilot) && errors.length > 0) {
     console.error("\n==================================================================");
     console.error(`🛑 [FATAL STARTUP ERROR] ${envMode.toUpperCase()} CONFIGURATION VALIDATION FAILED`);

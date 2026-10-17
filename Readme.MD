@@ -244,20 +244,20 @@ curl -s http://localhost:5001/health
 - Mandatory physician sign-off enforced on all AI-extracted prescriptions.
 - In-memory database fallback mocks disabled by default (`ALLOW_PILOT_MOCKS=false`). If the database disconnects, mutating operations return HTTP 503 `DATABASE_UNAVAILABLE`.
 
-### 4. Production Deployment Gate (`APP_ENV=production` & `NODE_ENV=production`)
-- **Status:** **BLOCKED (Pre-Production Conditions Required)**
-- **External Gating Prerequisites:**
-  1. Complete MongoDB Atlas cloud credential rotation (delete compromised user `adityanikams73_db_user` in `cloud.mongodb.com` console).
-  2. Inject secrets strictly via cloud secret manager (AWS Secrets Manager / Doppler).
-  3. Deploy managed Redis cluster (`REDIS_URL`) for multi-instance distributed session revocation and sliding window rate limiting.
-  4. Complete statutory healthcare legal review of `PRIVACY_POLICY.md` and `TERMS_OF_SERVICE.md` with qualified legal counsel.
-  5. Complete live production Razorpay merchant KYC activation.
+### 4. Final Production Deployment Gate (`APP_ENV=production` & `NODE_ENV=production`)
+- **Status:** **`NO-GO — PRODUCTION BLOCKED` (Pending External Manual & Statutory Gates)**
+- **Technical Validation:** **100% COMPLETE** (206/206 Automated Tests Passed, 22/22 Smoke Test Steps Passed, Vite Build 0 Errors).
+- **Mandatory Gating Prerequisites (External / Manual):**
+  1. **MongoDB Atlas Manual User Deletion:** Delete compromised legacy user `adityanikams73_db_user` and rotate cluster password in `cloud.mongodb.com` console.
+  2. **Razorpay Live Merchant KYC Activation:** Complete business KYC and activate live merchant credentials (`rzp_live_...`).
+  3. **Statutory Healthcare Legal Sign-Off:** Execute formal legal compliance review of `LEGAL_REVIEW_CHECKLIST.md` under Telemedicine Guidelines (2020) and DPDP Act (2023).
+  4. **Redis Multi-Instance Cluster:** Deploy managed Redis cluster (`REDIS_URL`) prior to scaling horizontally across multiple container replicas.
 
 ---
 
 ## 🧪 Comprehensive Automated Test Suites
 
-TriMedi maintains 100% test coverage across **186 automated platform tests with zero regressions**:
+TriMedi maintains 100% test coverage across **206 automated platform tests with zero regressions**:
 
 ```bash
 cd backend
@@ -283,10 +283,16 @@ node test_phase5_5_production_readiness.js
 # Phase 5.75: Controlled Pilot Validation & Real-World Exit Gate (20 tests)
 node test_phase5_75_pilot_validation.js
 
+# Phase 5.9: Final Pre-Production Gate & Go-Live Readiness (20 tests)
+node test_phase5_9_production_gate.js
+
+# Step 22 Full Production-Equivalent Smoke Test (22 operational steps)
+node scripts/production_smoke_test.js
+
 # Socket.IO & Persistence Audit (7 tests)
 node test_audit.js
 
-# Total Automated Suite: 186/186 PASSED (100%)
+# Total Automated Suite: 206/206 PASSED (100%)
 ```
 
 ---
