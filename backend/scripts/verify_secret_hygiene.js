@@ -112,6 +112,8 @@ async function runSecretHygieneVerification() {
           text.includes("mongodb+srv://") &&
           text.includes("@cluster0") &&
           !text.includes("[REDACTED") &&
+          !text.includes(":***@") &&
+          !text.includes("[PILOT_") &&
           !text.includes("<user>") &&
           !text.includes("<username>") &&
           !file.includes(".example")

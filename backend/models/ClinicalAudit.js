@@ -81,5 +81,6 @@ clinicalAuditSchema.pre("deleteMany", function () {
 
 clinicalAuditSchema.index({ actorEmail: 1, action: 1, timestamp: -1 });
 clinicalAuditSchema.index({ resourceType: 1, resourceId: 1, timestamp: -1 });
+clinicalAuditSchema.index({ "details.patientEmail": 1, timestamp: -1 });
 
 export default mongoose.models.ClinicalAudit || mongoose.model("ClinicalAudit", clinicalAuditSchema);

@@ -67,4 +67,10 @@ const prescriptionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("Prescription", prescriptionSchema);
+prescriptionSchema.index({ patientEmail: 1, createdAt: -1 });
+prescriptionSchema.index({ doctorEmail: 1, createdAt: -1 });
+prescriptionSchema.index({ patientId: 1 });
+prescriptionSchema.index({ doctorId: 1 });
+prescriptionSchema.index({ consultationId: 1 });
+
+export default mongoose.models.Prescription || mongoose.model("Prescription", prescriptionSchema);

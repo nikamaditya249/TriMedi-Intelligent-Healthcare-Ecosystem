@@ -103,7 +103,7 @@ const orderSchema = new mongoose.Schema(
     paymentMethod: {
       type: String,
       enum: ["razorpay", "paypal", "cod", "upi"],
-      default: "razorpay",
+      default: "paypal",
     },
     paymentStatus: {
       type: String,
@@ -112,7 +112,7 @@ const orderSchema = new mongoose.Schema(
       index: true,
     },
     paymentDetails: {
-      provider: { type: String, enum: ["razorpay", "paypal", "cod"], default: "razorpay" },
+      provider: { type: String, enum: ["razorpay", "paypal", "cod"], default: "paypal" },
       paymentId: { type: String, default: "" }, // rzp_payment_id or paypal captureId
       orderId: { type: String, default: "" }, // rzp_order_id or paypal orderId
       signature: { type: String, default: "" },
@@ -174,6 +174,13 @@ const orderSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+orderSchema.index({ patientEmail: 1, createdAt: -1 });
+orderSchema.index({ status: 1, createdAt: -1 });
+orderSchema.index({ "paymentDetails.paymentId": 1 });
+orderSchema.index({ "paymentDetails.orderId": 1 });
+orderSchema.index({ paypalOrderId: 1 });
+orderSchema.index({ paypalCaptureId: 1 });
 
 // Pre-save synchronization
 orderSchema.pre("validate", function (next) {

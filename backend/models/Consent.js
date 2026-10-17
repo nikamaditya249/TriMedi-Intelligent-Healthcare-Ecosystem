@@ -33,4 +33,4 @@ const consentSchema = new mongoose.Schema(
 
 consentSchema.index({ userEmail: 1, consentType: 1 });
 
-export default mongoose.model("Consent", consentSchema);
+export default mongoose.models.Consent || mongoose.model("Consent", consentSchema);

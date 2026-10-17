@@ -263,6 +263,22 @@ router.post("/capture-order", optionalAuth, async (req, res) => {
           isDuplicate: true,
         });
       }
+    } else {
+      const existing = fallbackOrders.find(
+        (o) =>
+          o.paypalOrderId === paypalOrderId ||
+          o.paymentDetails?.paymentId === paypalOrderId ||
+          (idempotencyKey && o.idempotencyKey === idempotencyKey)
+      );
+      if (existing) {
+        return res.json({
+          success: true,
+          message: "Order already confirmed (Idempotent response)",
+          order: existing,
+          captureId: existing.paypalCaptureId || existing.paymentDetails?.paymentId,
+          isDuplicate: true,
+        });
+      }
     }
 
     let captureId = "CAP-" + Date.now();

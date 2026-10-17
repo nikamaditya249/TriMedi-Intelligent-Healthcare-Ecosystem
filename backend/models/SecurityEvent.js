@@ -37,4 +37,7 @@ const securityEventSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("SecurityEvent", securityEventSchema);
+securityEventSchema.index({ actorEmail: 1, timestamp: -1 });
+securityEventSchema.index({ severity: 1, timestamp: -1 });
+
+export default mongoose.models.SecurityEvent || mongoose.model("SecurityEvent", securityEventSchema);

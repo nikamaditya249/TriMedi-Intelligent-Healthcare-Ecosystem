@@ -6,7 +6,10 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "seed": "node seed.js"
+    "seed": "node scripts/db_seed.js",
+    "db:init": "node scripts/db_init.js",
+    "db:seed": "node scripts/db_seed.js",
+    "db:verify": "node scripts/db_verify.js"
   },
   "keywords": [],
   "author": "Aditya",

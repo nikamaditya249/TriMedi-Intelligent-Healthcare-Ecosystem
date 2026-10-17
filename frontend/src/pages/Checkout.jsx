@@ -45,7 +45,7 @@ function Checkout() {
   });
 
   const [prescriptionRef, setPrescriptionRef] = useState(cart[0]?.prescriptionRef || "RX-9041");
-  const [payment, setPayment] = useState("razorpay"); // Default to India-First Razorpay
+  const [payment, setPayment] = useState("paypal"); // Default to Production PayPal Gateway
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [confirmedOrder, setConfirmedOrder] = useState(null);

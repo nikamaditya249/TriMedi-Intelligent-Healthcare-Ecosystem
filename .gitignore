@@ -26,6 +26,7 @@ pnpm-debug.log*
 
 # Local data
 backend/data/
+!backend/data/defaultProducts.js
 backend/uploads/
 !backend/uploads/prescriptions/.gitkeep
 
