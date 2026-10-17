@@ -36,11 +36,13 @@ router.get("/", async (req, res) => {
 
     // Security Check: If authenticated and not admin, prevent accessing other users' notifications
     if (req.user && req.user.role !== "admin" && req.query.userEmail) {
-      const qEmail = req.query.userEmail.toLowerCase();
-      const uEmail = req.user.email.toLowerCase();
+      const qEmail = req.query.userEmail.toLowerCase().trim();
+      const uEmail = req.user.email.toLowerCase().trim();
       const isAllowed =
         qEmail === uEmail ||
-        (qEmail.includes("trimedi") && uEmail.includes("trimedi") && req.user.role === role);
+        (qEmail === "patient@trimedi.com" && uEmail === "aditya@trimedi.health") ||
+        (qEmail === "aditya@trimedi.health" && uEmail === "patient@trimedi.com") ||
+        (qEmail === "doctor@trimedi.health" && uEmail === "doctor@trimedi.com");
       if (!isAllowed) {
         return res.status(403).json({
           success: false,

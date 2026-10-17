@@ -2,6 +2,7 @@ import crypto from "crypto";
 import dotenv from "dotenv";
 import { logClinicalAudit } from "./auditService.js";
 import eventBus from "./eventBus.js";
+import { isMockAllowed } from "../middleware/dbGuard.js";
 
 dotenv.config();
 
@@ -14,7 +15,7 @@ const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || "rzp_webh
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || "sb";
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || "";
 
-// In-memory ledger of processed webhook and payment event IDs to guarantee idempotency
+// In-memory ledger of processed webhook and payment event IDs to guarantee idempotency across single process
 const processedWebhookEvents = new Set();
 const processedPaymentCaptures = new Map();
 
@@ -122,14 +123,15 @@ export const RazorpayProvider = {
   },
 
   /**
-   * Verify Webhook Signature
+   * Verify Webhook Signature via HMAC SHA256 with constant-time equality
    */
   verifyWebhookSignature({ rawBody, signature }) {
     if (!rawBody || !signature) return false;
     try {
+      const bodyString = typeof rawBody === "string" ? rawBody : JSON.stringify(rawBody);
       const expected = crypto
         .createHmac("sha256", RAZORPAY_WEBHOOK_SECRET)
-        .update(typeof rawBody === "string" ? rawBody : JSON.stringify(rawBody))
+        .update(bodyString)
         .digest("hex");
 
       const expBuf = Buffer.from(expected, "utf8");
@@ -137,15 +139,32 @@ export const RazorpayProvider = {
       if (expBuf.length !== sigBuf.length) return false;
       return crypto.timingSafeEqual(expBuf, sigBuf);
     } catch (e) {
+      console.error("Webhook signature verification error:", e.message);
       return false;
     }
   },
 
   /**
-   * Initiate a server-side refund
+   * Helper: Generate a valid webhook signature for test verification
    */
-  async initiateRefund({ paymentId, amountINR, reason = "Customer cancellation" }) {
+  generateTestWebhookSignature(rawBody) {
+    const bodyString = typeof rawBody === "string" ? rawBody : JSON.stringify(rawBody);
+    return crypto
+      .createHmac("sha256", RAZORPAY_WEBHOOK_SECRET)
+      .update(bodyString)
+      .digest("hex");
+  },
+
+  /**
+   * Initiate a server-side refund with strict bounds checks
+   */
+  async initiateRefund({ paymentId, amountINR, reason = "Customer cancellation", maxAllowedRefund = null }) {
     if (!paymentId) throw new Error("Payment reference is required for refund processing");
+    if (!amountINR || amountINR <= 0) throw new Error("Refund amount must be greater than zero");
+
+    if (maxAllowedRefund !== null && amountINR > maxAllowedRefund) {
+      throw new Error(`Refund amount (₹${amountINR}) cannot exceed paid amount (₹${maxAllowedRefund})`);
+    }
 
     const refundId = `rfnd_${crypto.randomBytes(8).toString("hex")}`;
 
@@ -236,6 +255,7 @@ export const PaymentService = {
    * Check if a payment event has already been processed (Idempotency)
    */
   isEventProcessed(eventId) {
+    if (!eventId) return false;
     return processedWebhookEvents.has(eventId);
   },
 
@@ -243,6 +263,7 @@ export const PaymentService = {
    * Mark a payment event as processed
    */
   markEventProcessed(eventId, metadata = {}) {
+    if (!eventId) return;
     processedWebhookEvents.add(eventId);
     // Cap memory usage
     if (processedWebhookEvents.size > 2000) {

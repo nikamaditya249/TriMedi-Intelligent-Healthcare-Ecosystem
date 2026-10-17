@@ -3,8 +3,9 @@ import Product from "../models/Product.js";
 import { defaultProducts } from "../data/defaultProducts.js";
 import { logClinicalAudit } from "./auditService.js";
 import eventBus from "./eventBus.js";
+import { isMockAllowed, assertDatabaseAvailable } from "../middleware/dbGuard.js";
 
-// Concurrency lock for in-memory / fallback store operations
+// Concurrency lock for in-memory / fallback store operations in test suite
 let inMemoryLock = Promise.resolve();
 const acquireLock = () => {
   let release;
@@ -20,6 +21,10 @@ const acquireLock = () => {
  * Reserve stock atomically for order checkout
  * Ensures no two users can reserve the same last unit (concurrency safe).
  *
+ * Multi-Instance Safety:
+ * Uses atomic MongoDB document updates with conditional expression:
+ * stockQuantity - reservedQuantity >= requestedQty
+ *
  * @param {Array} items - List of order items [{ productId, quantity }]
  * @param {String} orderId - Associated TriMedi order ID
  * @param {Object} actor - Authenticated user identity
@@ -30,13 +35,13 @@ export const reserveStock = async (items = [], orderId = "DRAFT", actor = null) 
 
   try {
     if (mongoose.connection.readyState === 1) {
-      // 1. Database-backed atomic conditional update
+      // 1. Database-backed atomic conditional update (Multi-instance safe)
       for (const item of items) {
         const prodId = item.productId || item._id;
         const requestedQty = Math.max(1, Number(item.quantity) || Number(item.qty) || 1);
 
         if (!mongoose.isValidObjectId(prodId)) {
-          continue; // In-memory/fallback product check below
+          continue;
         }
 
         // Atomic update: only increment reservedQuantity if (stockQuantity - reservedQuantity) >= requestedQty
@@ -99,7 +104,10 @@ export const reserveStock = async (items = [], orderId = "DRAFT", actor = null) 
       return { success: true, reservedItems: reservedProducts };
     }
 
-    // 2. Resilient In-Memory with serialized concurrency lock
+    // 2. Production Failure Check: In-memory fallback is strictly blocked in production
+    assertDatabaseAvailable("Inventory stock reservation");
+
+    // 3. Resilient In-Memory for Test Mocks with serialized concurrency lock
     const release = await acquireLock();
     try {
       for (const item of items) {
@@ -109,7 +117,9 @@ export const reserveStock = async (items = [], orderId = "DRAFT", actor = null) 
         const prod = defaultProducts.find((p) => String(p._id) === prodId || p.name.toLowerCase() === (item.name || "").toLowerCase());
         if (!prod) continue;
 
-        const available = (prod.stockQuantity || 100) - (prod.reservedQuantity || 0);
+        const stock = prod.stockQuantity !== undefined ? prod.stockQuantity : 100;
+        const reserved = prod.reservedQuantity !== undefined ? prod.reservedQuantity : 0;
+        const available = stock - reserved;
         if (available < requestedQty) {
           // Roll back previously reserved in this batch
           for (const reserved of reservedProducts) {
@@ -174,6 +184,8 @@ export const commitStock = async (items = [], orderId = "", actor = null) => {
         }
       }
     } else {
+      assertDatabaseAvailable("Inventory stock commit");
+
       const release = await acquireLock();
       try {
         for (const item of items) {
@@ -227,6 +239,8 @@ export const releaseStock = async (items = [], orderId = "", actor = null) => {
         }
       }
     } else {
+      assertDatabaseAvailable("Inventory stock release");
+
       const release = await acquireLock();
       try {
         for (const item of items) {

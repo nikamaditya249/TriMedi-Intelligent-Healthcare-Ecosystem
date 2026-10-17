@@ -259,6 +259,16 @@ export const startHealthcareScheduler = () => {
       } catch (medErr) {
         console.warn("Scheduler medication refill check notice:", medErr.message);
       }
+
+      // 4. AUTOMATED PAYMENT & CHECKOUT RECONCILIATION (Every 5 minutes)
+      if (now.getMinutes() % 5 === 0) {
+        try {
+          const { ReconciliationService } = await import("./reconciliationService.js");
+          await ReconciliationService.runBatchReconciliation({ olderThanMinutes: 15, limit: 20 });
+        } catch (recErr) {
+          // Silent failure in scheduler to avoid interrupting clinical reminders
+        }
+      }
     } catch (err) {
       console.error("Scheduler run error:", err.message);
     }

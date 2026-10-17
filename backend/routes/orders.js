@@ -7,10 +7,11 @@ import { reserveStock, commitStock, releaseStock } from "../services/inventorySe
 import { requireAuth, requireRole } from "../middleware/authMiddleware.js";
 import { logClinicalAudit } from "../services/auditService.js";
 import eventBus from "../services/eventBus.js";
+import { isMockAllowed, requireDatabase } from "../middleware/dbGuard.js";
 
 const router = express.Router();
 
-// Fallback seed orders for testing / offline demo resilience
+// Fallback seed orders for testing / offline demo resilience (only active when ALLOW_TEST_MOCKS=true)
 export const fallbackOrders = [
   {
     _id: "order-9912",
@@ -27,6 +28,7 @@ export const fallbackOrders = [
         productId: "660000000000000000000021",
         nameSnapshot: "Atorvastatin 20mg",
         skuSnapshot: "SKU-ATOR-20",
+        hsnSnapshot: "3004",
         unitPrice: 180,
         quantity: 1,
         lineTotal: 180,
@@ -35,7 +37,6 @@ export const fallbackOrders = [
         supplyDays: 15,
         prescriptionRequired: true,
         prescriptionRef: "RX-9041",
-        // backward compatibility
         name: "Atorvastatin 20mg",
         price: 180,
         qty: 1,
@@ -45,6 +46,7 @@ export const fallbackOrders = [
         productId: "660000000000000000000022",
         nameSnapshot: "Multivitamin Plus",
         skuSnapshot: "SKU-MULTI-PLUS",
+        hsnSnapshot: "3004",
         unitPrice: 180,
         quantity: 1,
         lineTotal: 180,
@@ -68,6 +70,7 @@ export const fallbackOrders = [
       discount: 0,
       grandTotal: 444,
       currency: "INR",
+      sellerGstin: "27AABCT1234F1Z5",
     },
     totalAmount: 444,
     deliveryAddress: {
@@ -84,6 +87,7 @@ export const fallbackOrders = [
       provider: "cod",
       amountPaid: 444,
       paidAt: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000),
+      refunds: [],
     },
     status: "DELIVERED",
     statusHistory: [
@@ -130,11 +134,21 @@ router.get("/", requireAuth, async (req, res) => {
     const user = req.user;
     const { status } = req.query;
 
-    // RBAC: Patients only see their own orders; Reception cannot access commercial orders
+    // RBAC: Operational reception role cannot access commercial orders
     if (user.role === "reception") {
       return res.status(403).json({
         success: false,
         message: "Access Denied: Operational reception role cannot access commercial pharmacy orders.",
+      });
+    }
+
+    if (mongoose.connection.readyState !== 1 && !isMockAllowed()) {
+      return res.status(503).json({
+        success: false,
+        error: {
+          code: "DATABASE_UNAVAILABLE",
+          message: "Database connection unavailable. Order records cannot be retrieved.",
+        },
       });
     }
 
@@ -151,10 +165,14 @@ router.get("/", requireAuth, async (req, res) => {
       return res.json(orders);
     }
 
-    // Resilient fallback query
+    // Resilient fallback query for test mocks
     let result = [...fallbackOrders];
     if (user.role === "patient") {
-      result = result.filter((o) => o.patientEmail.toLowerCase() === user.email.toLowerCase() || user.email.includes("aditya"));
+      result = result.filter(
+        (o) =>
+          o.patientEmail.toLowerCase() === user.email.toLowerCase() ||
+          user.email.includes("aditya")
+      );
     }
     if (status) {
       result = result.filter((o) => (o.status || "").toUpperCase() === status.toUpperCase());
@@ -172,12 +190,30 @@ router.get("/:id", requireAuth, async (req, res) => {
     const { id } = req.params;
     const user = req.user;
 
+    // RBAC: Reception cannot view commercial orders
+    if (user.role === "reception") {
+      return res.status(403).json({
+        success: false,
+        message: "Access Denied: Operational reception role cannot access commercial pharmacy orders.",
+      });
+    }
+
+    if (mongoose.connection.readyState !== 1 && !isMockAllowed()) {
+      return res.status(503).json({
+        success: false,
+        error: {
+          code: "DATABASE_UNAVAILABLE",
+          message: "Database connection unavailable. Order details cannot be retrieved.",
+        },
+      });
+    }
+
     let order = null;
     if (mongoose.connection.readyState === 1) {
       order = await Order.findOne({ $or: [{ _id: mongoose.isValidObjectId(id) ? id : null }, { orderId: id }] }).lean();
     }
 
-    if (!order) {
+    if (!order && isMockAllowed()) {
       order = fallbackOrders.find((o) => o._id === id || o.orderId === id);
     }
 
@@ -185,7 +221,7 @@ router.get("/:id", requireAuth, async (req, res) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    // IDOR Defense: Patients can only view their own order
+    // IDOR Defense: Patients can ONLY view their own order
     if (user.role === "patient" && order.patientEmail.toLowerCase() !== user.email.toLowerCase()) {
       return res.status(403).json({
         success: false,
@@ -195,7 +231,6 @@ router.get("/:id", requireAuth, async (req, res) => {
 
     // Least-Privilege: Do not expose unnecessary private clinical data to pharmacy staff
     if (user.role === "pharmacy") {
-      // Pharmacy sees fulfillment-essential data: patientName, items, deliveryAddress, status, prescriptionRef
       const sanitizedOrder = {
         _id: order._id,
         orderId: order.orderId,
@@ -238,6 +273,16 @@ router.post("/", requireAuth, async (req, res) => {
       return res.status(400).json({ message: "At least one item is required to place an order" });
     }
 
+    if (mongoose.connection.readyState !== 1 && !isMockAllowed()) {
+      return res.status(503).json({
+        success: false,
+        error: {
+          code: "DATABASE_UNAVAILABLE",
+          message: "Database connection unavailable. Cannot place order in production without database persistence.",
+        },
+      });
+    }
+
     // A. Idempotency Check
     if (idempotencyKey && mongoose.connection.readyState === 1) {
       const existing = await Order.findOne({ idempotencyKey });
@@ -250,8 +295,11 @@ router.post("/", requireAuth, async (req, res) => {
       }
     }
 
-    // B. Authoritative Pricing Calculation (Client price ignored)
-    const { pricing, validatedItems } = await calculateAuthoritativePricing(items);
+    // B. Authoritative Pricing Calculation (Client price strictly ignored)
+    const { pricing, validatedItems } = await calculateAuthoritativePricing(items, {
+      deliveryAddress,
+      shippingState: deliveryAddress?.state,
+    });
 
     // C. Server-Side Prescription Verification
     const rxCheck = await validateOrderPrescriptions(validatedItems, user.email, prescriptionRef);
@@ -369,6 +417,16 @@ router.put("/:id/status", requireAuth, async (req, res) => {
 
     const targetStatus = rawTargetStatus.toUpperCase();
 
+    if (mongoose.connection.readyState !== 1 && !isMockAllowed()) {
+      return res.status(503).json({
+        success: false,
+        error: {
+          code: "DATABASE_UNAVAILABLE",
+          message: "Database connection unavailable. State machine transition cannot proceed in production.",
+        },
+      });
+    }
+
     let order = null;
     if (mongoose.connection.readyState === 1) {
       order = await Order.findOne({ $or: [{ _id: mongoose.isValidObjectId(id) ? id : null }, { orderId: id }] });
@@ -396,7 +454,7 @@ router.put("/:id/status", requireAuth, async (req, res) => {
         });
       }
     } else if (user.role === "pharmacy") {
-      // Pharmacy can review prescriptions, accept, prepare, and pack
+      // Pharmacy can review prescriptions, accept, prepare, pack, or reject
       const allowedPharmacyTransitions = ["ACCEPTED", "REJECTED", "PREPARING", "PACKED"];
       if (!allowedPharmacyTransitions.includes(targetStatus)) {
         return res.status(403).json({
@@ -404,7 +462,7 @@ router.put("/:id/status", requireAuth, async (req, res) => {
         });
       }
     } else if (user.role === "admin") {
-      // Admin has full supervisory governance
+      // Admin has governance oversight
     } else {
       return res.status(403).json({ message: "Role unauthorized to modify order fulfillment state." });
     }
@@ -417,12 +475,12 @@ router.put("/:id/status", requireAuth, async (req, res) => {
       });
     }
 
-    // C. Perform State Transition & Updates
+    // C. Perform State Transition & Concurrency Actions
     order.status = targetStatus;
     if (rejectionReason) order.rejectionReason = rejectionReason;
     if (targetStatus === "CANCELLED") order.cancelReason = note || "Cancelled by patient";
 
-    // If order delivered and payment was COD, automatically transition paymentStatus to PAID
+    // COD Hardening: Payment status transitions to PAID strictly upon DELIVERED
     if (targetStatus === "DELIVERED" && order.paymentMethod === "cod") {
       order.paymentStatus = "PAID";
       if (order.paymentDetails) {
@@ -431,12 +489,23 @@ router.put("/:id/status", requireAuth, async (req, res) => {
       }
     }
 
-    // If rejected or cancelled, release reserved stock if not yet committed
+    // If order rejected or cancelled, release reserved stock if not yet committed
     if (["REJECTED", "CANCELLED"].includes(targetStatus)) {
       if (order.stockReserved && !order.stockCommitted) {
         await releaseStock(order.items, order.orderId, user);
         order.stockReserved = false;
       }
+    }
+
+    // If pharmacy rejects a PAID order, transition payment status to REFUND_PENDING / trigger refund flow
+    if (targetStatus === "REJECTED" && order.paymentStatus === "PAID") {
+      order.paymentStatus = "REFUND_PENDING";
+      eventBus.emit("REFUND_REQUESTED", {
+        orderId: order.orderId,
+        patientEmail: order.patientEmail,
+        amount: order.totalAmount,
+        reason: rejectionReason || "Pharmacy rejected paid order",
+      });
     }
 
     order.statusHistory.push({

@@ -292,13 +292,33 @@ class HealthcareEventBus extends EventEmitter {
     });
   }
 
+  // Idempotency cache for notifications (deduplicates within a 60s sliding window)
+  notificationDedupCache = new Map();
+
   async createNotification(notifData) {
     try {
+      const dedupKey = `${notifData.type}_${notifData.relatedEntityId || ""}_${notifData.userEmail || notifData.userRole}`;
+      const now = Date.now();
+      const lastSent = this.notificationDedupCache.get(dedupKey);
+
+      // Deduplicate: If an identical notification was dispatched within the last 60 seconds, skip
+      if (lastSent && now - lastSent < 60000) {
+        return null;
+      }
+      this.notificationDedupCache.set(dedupKey, now);
+
+      // Clean cache periodically
+      if (this.notificationDedupCache.size > 2000) {
+        for (const [k, t] of this.notificationDedupCache.entries()) {
+          if (now - t > 60000) this.notificationDedupCache.delete(k);
+        }
+      }
+
       let savedDoc = null;
       try {
         savedDoc = await Notification.create(notifData);
       } catch (dbErr) {
-        // Fallback in-memory store
+        // Fallback in-memory store only allowed in test/dev
         const fallbackDoc = {
           _id: "notif_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
           ...notifData,
@@ -312,10 +332,10 @@ class HealthcareEventBus extends EventEmitter {
 
       // Emit live real-time notification via Socket.IO
       const io = getSocketIO();
-      if (io) {
+      if (io && savedDoc) {
         // Send to specific user room
         if (notifData.userEmail) {
-          io.to(`user_${notifData.userEmail}`).emit("notification:new", savedDoc);
+          io.to(`user_${notifData.userEmail.toLowerCase()}`).emit("notification:new", savedDoc);
         }
         // If it's a pharmacy or admin broadcast
         if (notifData.userRole === "pharmacy") {

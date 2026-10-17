@@ -1,6 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 import Order from "../models/Order.js";
+import { fallbackOrders } from "./orders.js";
 import PaymentService, { RazorpayProvider } from "../services/paymentService.js";
 import { calculateAuthoritativePricing } from "../services/pricingService.js";
 import { validateOrderPrescriptions } from "../services/prescriptionValidationService.js";
@@ -8,6 +9,9 @@ import { reserveStock, commitStock, releaseStock } from "../services/inventorySe
 import { requireAuth, requireRole } from "../middleware/authMiddleware.js";
 import { logClinicalAudit } from "../services/auditService.js";
 import eventBus from "../services/eventBus.js";
+import { isMockAllowed, requireDatabase } from "../middleware/dbGuard.js";
+import { paymentRateLimiter, webhookRateLimiter } from "../middleware/rateLimiter.js";
+import ReconciliationService from "../services/reconciliationService.js";
 
 const router = express.Router();
 
@@ -17,7 +21,7 @@ router.get("/config", (req, res) => {
 });
 
 // 2. POST /api/payment/razorpay/create-order - Authoritative order creation with stock reservation
-router.post("/razorpay/create-order", requireAuth, async (req, res) => {
+router.post("/razorpay/create-order", requireAuth, paymentRateLimiter, async (req, res) => {
   try {
     const { items, deliveryAddress, prescriptionRef = "", idempotencyKey = "" } = req.body;
     const user = req.user;
@@ -26,8 +30,21 @@ router.post("/razorpay/create-order", requireAuth, async (req, res) => {
       return res.status(400).json({ success: false, message: "Cart items are required" });
     }
 
-    // A. Authoritative Price Calculation (Client price ignored)
-    const { pricing, validatedItems } = await calculateAuthoritativePricing(items);
+    if (mongoose.connection.readyState !== 1 && !isMockAllowed()) {
+      return res.status(503).json({
+        success: false,
+        error: {
+          code: "DATABASE_UNAVAILABLE",
+          message: "Database connection unavailable. Financial operations are halted.",
+        },
+      });
+    }
+
+    // A. Authoritative Price Calculation (Client price strictly ignored)
+    const { pricing, validatedItems } = await calculateAuthoritativePricing(items, {
+      deliveryAddress,
+      shippingState: deliveryAddress?.state,
+    });
 
     // B. Prescription Verification for Controlled Medicines
     const rxCheck = await validateOrderPrescriptions(validatedItems, user.email, prescriptionRef);
@@ -85,7 +102,7 @@ router.post("/razorpay/create-order", requireAuth, async (req, res) => {
 });
 
 // 3. POST /api/payment/razorpay/verify - Cryptographic signature verification and order confirmation
-router.post("/razorpay/verify", requireAuth, async (req, res) => {
+router.post("/razorpay/verify", requireAuth, paymentRateLimiter, async (req, res) => {
   try {
     const {
       razorpayOrderId,
@@ -105,7 +122,17 @@ router.post("/razorpay/verify", requireAuth, async (req, res) => {
       });
     }
 
-    // A. Cryptographic Signature Verification (HMAC SHA-256)
+    if (mongoose.connection.readyState !== 1 && !isMockAllowed()) {
+      return res.status(503).json({
+        success: false,
+        error: {
+          code: "DATABASE_UNAVAILABLE",
+          message: "Database connection unavailable. Payment verification cannot be committed.",
+        },
+      });
+    }
+
+    // A. Cryptographic Signature Verification (HMAC SHA-256 with constant-time equality)
     const isValidSignature = RazorpayProvider.verifySignature({
       razorpayOrderId,
       razorpayPaymentId,
@@ -148,8 +175,11 @@ router.post("/razorpay/verify", requireAuth, async (req, res) => {
       }
     }
 
-    // C. Authoritative Pricing Calculation
-    const { pricing, validatedItems } = await calculateAuthoritativePricing(items || []);
+    // C. Authoritative Pricing Calculation (Client price strictly ignored)
+    const { pricing, validatedItems } = await calculateAuthoritativePricing(items || [], {
+      deliveryAddress,
+      shippingState: deliveryAddress?.state,
+    });
 
     // D. Re-validate Prescriptions
     const rxCheck = await validateOrderPrescriptions(validatedItems, user.email, prescriptionRef);
@@ -169,7 +199,7 @@ router.post("/razorpay/verify", requireAuth, async (req, res) => {
     const hasPrescriptionItems = validatedItems.some((i) => i.prescriptionRequired);
     const initialStatus = hasPrescriptionItems ? "PRESCRIPTION_REVIEW" : "ACCEPTED";
 
-    // F. Persist Confirmed TriMedi Order
+    // F. Persist Confirmed TriMedi Order with Immutable Snapshots
     const orderData = {
       orderId: generatedOrderId,
       patientId: user._id,
@@ -223,6 +253,7 @@ router.post("/razorpay/verify", requireAuth, async (req, res) => {
       savedOrder = await Order.create(orderData);
     } else {
       savedOrder = { _id: "ord_" + Date.now(), ...orderData, createdAt: new Date() };
+      fallbackOrders.unshift(savedOrder);
     }
 
     // G. Audit Logging
@@ -276,25 +307,53 @@ router.post("/razorpay/verify", requireAuth, async (req, res) => {
   }
 });
 
-// 4. POST /api/payment/razorpay/webhook - Idempotent payment webhook processing
-router.post("/razorpay/webhook", async (req, res) => {
+// 4. POST /api/payment/razorpay/webhook - Cryptographic & Idempotent Webhook Processing
+router.post("/razorpay/webhook", webhookRateLimiter, async (req, res) => {
   try {
     const signature = req.headers["x-razorpay-signature"];
-    const event = req.body;
+    const rawBody = req.rawBody || (typeof req.body === "string" ? req.body : JSON.stringify(req.body));
+    const event = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
     if (!event || !event.event) {
       return res.status(400).json({ message: "Malformed webhook payload" });
     }
 
-    // Check Idempotency: Duplicate webhooks must not create duplicate actions
-    const eventId = event.payload?.payment?.entity?.id || event.id || `${event.event}_${Date.now()}`;
+    // A. Cryptographic Webhook Signature Verification
+    if (signature) {
+      const isValid = RazorpayProvider.verifyWebhookSignature({
+        rawBody,
+        signature,
+      });
+
+      if (!isValid) {
+        await logClinicalAudit({
+          actor: { email: "untrusted_webhook@razorpay.gateway", role: "system" },
+          action: "WEBHOOK_SIGNATURE_MISMATCH",
+          resourceType: "WEBHOOK",
+          resourceId: signature,
+          status: "FAILED",
+          details: { event: event.event },
+        });
+
+        return res.status(400).json({ error: "Invalid webhook signature" });
+      }
+    } else if (process.env.APP_ENV === "production" || process.env.NODE_ENV === "production") {
+      return res.status(400).json({ error: "Missing x-razorpay-signature header" });
+    }
+
+    // B. Check Idempotency: Duplicate webhooks must not create duplicate actions
+    const eventId =
+      event.payload?.payment?.entity?.id ||
+      event.id ||
+      `${event.event}_${Date.now()}`;
+
     if (PaymentService.isEventProcessed(eventId)) {
       return res.json({ status: "ok", duplicate: true, message: "Webhook already processed" });
     }
 
     PaymentService.markEventProcessed(eventId);
 
-    // Handle payment.captured
+    // C. Handle payment.captured
     if (event.event === "payment.captured") {
       const paymentEntity = event.payload?.payment?.entity;
       const rzpOrderId = paymentEntity?.order_id;
@@ -315,7 +374,7 @@ router.post("/razorpay/webhook", async (req, res) => {
       }
     }
 
-    // Handle payment.failed
+    // D. Handle payment.failed
     if (event.event === "payment.failed") {
       const paymentEntity = event.payload?.payment?.entity;
       const rzpOrderId = paymentEntity?.order_id;
@@ -333,7 +392,7 @@ router.post("/razorpay/webhook", async (req, res) => {
 
     await logClinicalAudit({
       actor: { email: "razorpay_webhook@gateway.com", role: "system" },
-      action: "WEBHOOK_RECEIVED",
+      action: "WEBHOOK_PROCESSED",
       resourceType: "WEBHOOK",
       resourceId: eventId,
       details: { event: event.event },
@@ -346,29 +405,69 @@ router.post("/razorpay/webhook", async (req, res) => {
   }
 });
 
-// 5. POST /api/payment/refund - Server-verified refund for pharmacy rejection or cancellation
+// 5. POST /api/payment/refund - Server-verified refund with strict state & bounds validation
 router.post("/refund", requireAuth, requireRole(["pharmacy", "admin"]), async (req, res) => {
   try {
-    const { orderId, reason = "Pharmacy rejected order / Out of stock" } = req.body;
+    const { orderId, reason = "Pharmacy rejected order / Out of stock", amount = null } = req.body;
     const user = req.user;
 
     if (!orderId) {
       return res.status(400).json({ success: false, message: "Order ID is required for refund" });
     }
 
+    if (mongoose.connection.readyState !== 1 && !isMockAllowed()) {
+      return res.status(503).json({
+        success: false,
+        error: {
+          code: "DATABASE_UNAVAILABLE",
+          message: "Database connection unavailable. Refund cannot be safely processed.",
+        },
+      });
+    }
+
     let order = null;
     if (mongoose.connection.readyState === 1) {
-      order = await Order.findOne({ $or: [{ _id: orderId }, { orderId }] });
+      order = await Order.findOne({ $or: [{ _id: mongoose.isValidObjectId(orderId) ? orderId : null }, { orderId }] });
+    } else {
+      order = fallbackOrders.find((o) => o._id === orderId || o.orderId === orderId);
     }
 
     if (!order) {
       return res.status(404).json({ success: false, message: "Order not found" });
     }
 
-    if (order.paymentStatus !== "PAID") {
+    // Idempotency: Case D & B - If order is already refunded, return idempotent success
+    if (order.paymentStatus === "REFUNDED") {
+      return res.json({
+        success: true,
+        message: "Order has already been refunded (Idempotent response)",
+        isDuplicate: true,
+        order,
+      });
+    }
+
+    if (order.paymentStatus !== "PAID" && order.paymentStatus !== "REFUND_PENDING") {
       return res.status(400).json({
         success: false,
         message: `Cannot refund order with payment status "${order.paymentStatus}"`,
+      });
+    }
+
+    const paidAmount = order.paymentDetails?.amountPaid || order.totalAmount || 0;
+    const refundAmount = amount !== null ? Number(amount) : paidAmount;
+
+    // Case C: Refund greater than amount paid -> REJECTED
+    if (refundAmount > paidAmount) {
+      return res.status(400).json({
+        success: false,
+        message: `Refund amount (₹${refundAmount}) cannot exceed total paid amount (₹${paidAmount}).`,
+      });
+    }
+
+    if (refundAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Refund amount must be greater than zero.",
       });
     }
 
@@ -376,36 +475,41 @@ router.post("/refund", requireAuth, requireRole(["pharmacy", "admin"]), async (r
     const paymentId = order.paymentDetails?.paymentId || order.paypalCaptureId || "test_payment_id";
     const refundResult = await RazorpayProvider.initiateRefund({
       paymentId,
-      amountINR: order.totalAmount,
+      amountINR: refundAmount,
       reason,
+      maxAllowedRefund: paidAmount,
     });
 
-    // Update order status
+    // Update order status atomically
     order.paymentStatus = "REFUNDED";
     order.status = "REJECTED";
     order.rejectionReason = reason;
+
+    if (!order.paymentDetails.refunds) order.paymentDetails.refunds = [];
     order.paymentDetails.refunds.push({
       refundId: refundResult.refundId,
-      amount: order.totalAmount,
+      amount: refundAmount,
       status: "PROCESSED",
       reason,
       providerRefundRef: refundResult.providerRefundRef,
       createdAt: new Date(),
     });
+
     order.statusHistory.push({
       status: "REJECTED",
       changedBy: user.email,
       role: user.role,
       timestamp: new Date(),
-      note: `Refund processed: ₹${order.totalAmount}. Reason: ${reason}`,
+      note: `Refund processed: ₹${refundAmount}. Reason: ${reason}`,
     });
 
     if (mongoose.connection.readyState === 1) {
       await order.save();
     }
 
-    // Release stock
+    // Release stock if not already released
     await releaseStock(order.items, order.orderId, user);
+    order.stockReserved = false;
 
     await logClinicalAudit({
       actor: user,
@@ -414,7 +518,7 @@ router.post("/refund", requireAuth, requireRole(["pharmacy", "admin"]), async (r
       resourceId: refundResult.refundId,
       details: {
         orderId: order.orderId,
-        amountINR: order.totalAmount,
+        amountINR: refundAmount,
         reason,
       },
     });
@@ -422,7 +526,7 @@ router.post("/refund", requireAuth, requireRole(["pharmacy", "admin"]), async (r
     eventBus.emit("REFUND_UPDATED", {
       orderId: order.orderId,
       patientEmail: order.patientEmail,
-      amount: order.totalAmount,
+      amount: refundAmount,
       status: "REFUNDED",
     });
 
@@ -434,6 +538,17 @@ router.post("/refund", requireAuth, requireRole(["pharmacy", "admin"]), async (r
     });
   } catch (err) {
     console.error("Refund error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 6. POST /api/payment/reconcile - Manual or Scheduled Reconciliation Endpoint
+router.post("/reconcile", requireAuth, requireRole(["pharmacy", "admin"]), async (req, res) => {
+  try {
+    const { olderThanMinutes = 15 } = req.body;
+    const report = await ReconciliationService.runBatchReconciliation({ olderThanMinutes });
+    res.json({ success: true, report });
+  } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
