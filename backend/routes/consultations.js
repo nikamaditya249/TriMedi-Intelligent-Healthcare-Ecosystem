@@ -4,8 +4,8 @@ import Consultation from "../models/Consultation.js";
 import Prescription from "../models/Prescription.js";
 import Appointment from "../models/Appointment.js";
 import User from "../models/User.js";
-import { optionalAuth, requireRole, requireClinicalAccess } from "../middleware/authMiddleware.js";
-import { logClinicalAudit } from "../services/auditService.js";
+import { optionalAuth, requireAuth, requireRole, requireClinicalAccess } from "../middleware/authMiddleware.js";
+import { logClinicalAudit, logSecurityEvent } from "../services/auditService.js";
 import { completeEncounter } from "../services/queueService.js";
 import eventBus from "../services/eventBus.js";
 import medicationService from "../services/medicationService.js";
@@ -480,6 +480,94 @@ router.get("/patient-record", optionalAuth, requireClinicalAccess(), async (req,
         appointments: appointments.length,
         consultations: consultations.length,
         prescriptions: prescriptions.length,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * POST /api/consultations/break-glass
+ * Controlled emergency clinical access protocol (Requires Doctor/Admin, explicit reason, automatic critical audit)
+ */
+router.post("/break-glass", requireAuth, async (req, res) => {
+  try {
+    const caller = req.user;
+    const { patientEmail, reason, emergencyType = "ACUTE_CLINICAL_EMERGENCY" } = req.body;
+
+    // Only doctors and admins may invoke break-glass protocols
+    if (caller.role !== "doctor" && caller.role !== "admin") {
+      await logSecurityEvent({
+        type: "UNAUTHORIZED_CLINICAL_ACCESS",
+        severity: "HIGH",
+        actor: caller,
+        req,
+        targetResource: patientEmail || "unknown",
+        details: { reason: "Non-clinical role attempted break-glass access" },
+      });
+
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: Break-Glass emergency access is restricted to licensed physicians and authorized clinical administrators.",
+      });
+    }
+
+    if (!patientEmail) {
+      return res.status(400).json({ success: false, message: "Target 'patientEmail' is required for emergency access." });
+    }
+
+    if (!reason || reason.trim().length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Detailed clinical emergency justification (minimum 10 characters) is required to invoke break-glass access.",
+      });
+    }
+
+    const sessionId = "bg_" + Date.now() + "_" + Math.random().toString(36).substr(2, 6);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1-hour time-limited window
+
+    // Critical security event & clinical audit
+    await logSecurityEvent({
+      type: "BREAK_GLASS_INVOKED",
+      severity: "CRITICAL",
+      actor: caller,
+      req,
+      targetResource: patientEmail.toLowerCase(),
+      details: {
+        sessionId,
+        emergencyType,
+        reason,
+        expiresAt,
+      },
+    });
+
+    await logClinicalAudit({
+      req,
+      action: "BREAK_GLASS_ACCESS_INVOKED",
+      resourceType: "patient_medical_record",
+      resourceId: patientEmail.toLowerCase(),
+      status: "GRANTED",
+      details: {
+        invokedBy: caller.email,
+        invokedRole: caller.role,
+        emergencyType,
+        reason,
+        sessionId,
+      },
+    });
+
+    res.json({
+      success: true,
+      message: "Emergency break-glass access granted. Action recorded in immutable clinical governance ledger.",
+      emergencyAccess: {
+        sessionId,
+        targetPatient: patientEmail.toLowerCase(),
+        grantedTo: caller.email,
+        role: caller.role,
+        reason,
+        validUntil: expiresAt,
+        status: "ACTIVE_TIME_LIMITED",
       },
     });
   } catch (err) {

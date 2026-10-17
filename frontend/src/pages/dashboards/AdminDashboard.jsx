@@ -18,20 +18,27 @@ import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 import LoadingState from "../../components/ui/LoadingState";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "../../components/ui/Table";
-import { getDashboardStats } from "../../api";
+import { getDashboardStats, getSecurityEvents } from "../../api";
 
 export function AdminDashboard() {
   const { user } = useAuth();
   const { isConnected, onlineUsers } = useSocket();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
+  const [securityEvents, setSecurityEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadStats() {
       try {
-        const stats = await getDashboardStats("admin");
+        const [stats, secRes] = await Promise.all([
+          getDashboardStats("admin"),
+          getSecurityEvents({ limit: 5 }).catch(() => ({ success: false, events: [] })),
+        ]);
         setData(stats);
+        if (secRes && secRes.success) {
+          setSecurityEvents(secRes.events || []);
+        }
       } catch (err) {
         console.error("Error loading admin stats:", err);
       } finally {
@@ -240,6 +247,34 @@ export function AdminDashboard() {
                 Handling APPOINTMENT_*, PRESCRIPTION_*, and ORDER_* cross-role events.
               </p>
             </div>
+          </div>
+
+          {/* Security & Threat Events Feed */}
+          <div className="mt-4 pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <FiShield className="w-3.5 h-3.5 text-teal-600" />
+                Security Threat Monitor
+              </span>
+              <Badge variant="neutral" size="sm">{securityEvents.length} Recent</Badge>
+            </div>
+            {securityEvents.length === 0 ? (
+              <p className="text-[11px] text-slate-400">0 anomalies detected. System invariants verified.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {securityEvents.slice(0, 3).map((e, idx) => (
+                  <div key={idx} className="p-2 rounded bg-slate-50 border border-slate-200/70 text-[11px] flex items-center justify-between">
+                    <div>
+                      <span className="font-semibold text-slate-800">{e.type}</span>
+                      <p className="text-slate-500 text-[10px]">{e.actorEmail || "anonymous"}</p>
+                    </div>
+                    <Badge variant={e.severity === "CRITICAL" || e.severity === "HIGH" ? "danger" : "warning"} size="sm">
+                      {e.severity}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </Card>
       </div>

@@ -21,6 +21,9 @@ import consultationRoutes from "./routes/consultations.js";
 import receptionRoutes from "./routes/reception.js";
 import medicationRoutes from "./routes/medication.js";
 import paymentRoutes from "./routes/payment.js";
+import consentRoutes from "./routes/consent.js";
+import privacyRoutes from "./routes/privacy.js";
+import uploadRoutes from "./routes/uploads.js";
 
 import { initSocketIO } from "./services/socketService.js";
 import { startHealthcareScheduler } from "./services/scheduler.js";
@@ -44,26 +47,62 @@ validateStartupConfig().catch((fatalErr) => {
 // Initialize Socket.IO
 initSocketIO(httpServer);
 
-/* ================= MIDDLEWARE ================= */
-app.use(cors());
+/* ================= SECURITY HEADERS ================= */
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(self), microphone=(), geolocation=()");
+  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.razorpay.com ws: wss: http://localhost:5001 http://localhost:5173 http://127.0.0.1:5173; frame-src 'self' https://api.razorpay.com;"
+  );
+  next();
+});
+
+/* ================= HARDENED CORS ================= */
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:5173",
+  "http://localhost:5001",
+  "http://127.0.0.1:5173",
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow non-browser requests (tools, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      const isAllowed = allowedOrigins.some((ao) => origin === ao || origin.startsWith(ao));
+      if (isAllowed) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS policy blocked access from origin: ${origin}`));
+    },
+    credentials: true,
+  })
+);
 
 // Parse JSON while strictly preserving the raw body buffer for HMAC SHA-256 webhook signatures
 app.use(
   express.json({
-    limit: "20mb",
+    limit: "2mb",
     verify: (req, res, buf) => {
       req.rawBody = buf.toString();
     },
   })
 );
-app.use(express.urlencoded({ extended: true, limit: "20mb" }));
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
 /* ================= ROUTES ================= */
 app.get("/", (req, res) => {
   res.json({
     message: "TriMedi Healthcare Platform API is running 🚀",
     status: "OK",
-    phase: "4.5 Production Hardened",
+    phase: "5.0 Security, Privacy, Compliance & Trust",
+    security: "CSP + HSTS + CORS + RBAC + Break-Glass Protocol Active",
+    privacy: "Versioned Consent + Patient Data Export + Retention Lifecycle Active",
     commerce: "Authoritative Pricing + Razorpay + PayPal + COD + State-Aware GST",
     fulfillment: "Strict Pharmacy State Machine + Concurrency Shield",
     reconciliation: "Automated Payment & Inventory Synchronization Active",
@@ -89,6 +128,9 @@ app.use("/api/queue", queueRoutes);
 app.use("/api/consultations", consultationRoutes);
 app.use("/api/reception", receptionRoutes);
 app.use("/api/medications", medicationRoutes);
+app.use("/api/consent", consentRoutes);
+app.use("/api/privacy", privacyRoutes);
+app.use("/api/uploads", uploadRoutes);
 
 /* ================= UNIFIED ERROR HANDLER ================= */
 app.use(errorHandler);
@@ -121,5 +163,5 @@ startHealthcareScheduler();
 /* ================= SERVER ================= */
 const PORT = process.env.PORT || 5001;
 httpServer.listen(PORT, () => {
-  console.log(`🚀 TriMedi Phase 4.5 Production-Hardened Server running on port ${PORT} (Socket.IO + REST + Scheduler)`);
+  console.log(`🚀 TriMedi Phase 5 Production Server running on port ${PORT} (Socket.IO + REST + Security/Privacy Shield)`);
 });

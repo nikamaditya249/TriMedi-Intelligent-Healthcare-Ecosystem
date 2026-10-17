@@ -300,6 +300,90 @@ export const getAIAudits = async () => {
 };
 
 // -------------------------------------------------------------
+// 9.5 PRIVACY, CONSENT, SECURITY & UPLOADS (PHASE 5)
+// -------------------------------------------------------------
+export const getConsents = async (email) => {
+  const query = email ? `?email=${encodeURIComponent(email)}` : "";
+  return request(`/consent${query}`);
+};
+
+export const grantConsent = async (payload) => {
+  return request("/consent", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const revokeConsent = async (payload) => {
+  return request("/consent/revoke", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const getPrivacySettings = async () => {
+  return request("/privacy/settings");
+};
+
+export const exportPatientData = async (payload = {}) => {
+  return request("/privacy/export-data", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const requestAccountDeletion = async (payload = {}) => {
+  return request("/privacy/request-deletion", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const uploadPrescriptionDocument = async (payload) => {
+  return request("/uploads/prescription", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const invokeBreakGlass = async (payload) => {
+  return request("/consultations/break-glass", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const getSecurityEvents = async (params = {}) => {
+  const q = new URLSearchParams(params).toString();
+  return request(`/stats/security-events${q ? `?${q}` : ""}`);
+};
+
+export const logoutUser = async () => {
+  return request("/auth/logout", { method: "POST" });
+};
+
+export const forgotPassword = async (payload) => {
+  return request("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const resetPassword = async (payload) => {
+  return request("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const changePassword = async (payload) => {
+  return request("/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+// -------------------------------------------------------------
 // 9B. MEDICATION INTELLIGENCE & ADHERENCE
 // -------------------------------------------------------------
 export const getMedications = async (params = {}) => {
@@ -528,4 +612,17 @@ export default {
   getConversations,
   getMessages,
   sendMessage,
+  getConsents,
+  grantConsent,
+  revokeConsent,
+  getPrivacySettings,
+  exportPatientData,
+  requestAccountDeletion,
+  uploadPrescriptionDocument,
+  invokeBreakGlass,
+  getSecurityEvents,
+  logoutUser,
+  forgotPassword,
+  resetPassword,
+  changePassword,
 };

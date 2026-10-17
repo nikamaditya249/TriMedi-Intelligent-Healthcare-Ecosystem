@@ -5,6 +5,8 @@ import Prescription from "../models/Prescription.js";
 import Order from "../models/Order.js";
 import Appointment from "../models/Appointment.js";
 import Product from "../models/Product.js";
+import { optionalAuth, requireAuth, requireRole } from "../middleware/authMiddleware.js";
+import { querySecurityEvents } from "../services/auditService.js";
 
 const router = express.Router();
 
@@ -237,10 +239,23 @@ const mockDashboardData = {
 };
 
 // GET dashboard statistics based on role
-router.get("/dashboard", async (req, res) => {
+router.get("/dashboard", optionalAuth, async (req, res) => {
   try {
     const role = (req.query.role || "patient").toLowerCase();
-    const data = mockDashboardData[role] || mockDashboardData.patient;
+    let data = JSON.parse(JSON.stringify(mockDashboardData[role] || mockDashboardData.patient));
+
+    // Privacy & Minimization: If unauthenticated caller requests admin stats, strip user directory emails
+    if (role === "admin" && (!req.user || req.user.role !== "admin")) {
+      if (data.userDirectory) {
+        data.userDirectory = data.userDirectory.map((u) => ({
+          id: u.id,
+          name: u.name,
+          role: u.role,
+          email: "[REDACTED_ADMIN_PRIVILEGE_REQUIRED]",
+          status: u.status,
+        }));
+      }
+    }
 
     // If MongoDB is connected, optionally enhance with real counts
     if (mongoose.connection.readyState === 1) {
@@ -259,6 +274,24 @@ router.get("/dashboard", async (req, res) => {
     res.json(data);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+/**
+ * GET /api/stats/security-events
+ * Admin threat monitoring and incident response event feed
+ */
+router.get("/security-events", requireAuth, requireRole(["admin"]), async (req, res) => {
+  try {
+    const { type, severity, limit = 50 } = req.query;
+    const events = await querySecurityEvents({ type, severity, limit: parseInt(limit, 10) || 50 });
+    res.json({
+      success: true,
+      count: events.length,
+      events,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 

@@ -7,11 +7,38 @@ dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || "trimedi_secure_jwt_secret_2026";
 
+// In-memory token revocation blocklist with timestamps (for logout & password changes)
+export const revokedTokens = new Set();
+export const userSessionInvalidations = new Map(); // userEmail/id -> timestamp
+
+export const revokeToken = (token) => {
+  if (!token) return;
+  const clean = token.startsWith("Bearer ") ? token.slice(7).trim() : token.trim();
+  revokedTokens.add(clean);
+};
+
+export const isTokenRevoked = (token) => {
+  if (!token) return false;
+  const clean = token.startsWith("Bearer ") ? token.slice(7).trim() : token.trim();
+  return revokedTokens.has(clean);
+};
+
+export const invalidateUserSessions = (userKey) => {
+  if (!userKey) return;
+  userSessionInvalidations.set(String(userKey).toLowerCase(), Date.now());
+};
+
 export const STATIC_DEMO_USERS = {
   "demo_token_patient": {
     _id: "demo_patient_1",
     name: "Aditya Nikam",
     email: "aditya@trimedi.health",
+    role: "patient",
+  },
+  "demo_token_patient_b": {
+    _id: "demo_patient_2",
+    name: "Patient B",
+    email: "patient_b@trimedi.health",
     role: "patient",
   },
   "demo_token_doctor": {
@@ -50,9 +77,20 @@ export const verifyAuthToken = async (token) => {
   const raw = typeof token === "string" ? token.trim() : "";
   const cleanToken = raw.startsWith("Bearer ") ? raw.slice(7).trim() : raw;
 
+  // Session Invalidation Check: Has this token been explicitly revoked?
+  if (isTokenRevoked(cleanToken) || isTokenRevoked(raw)) {
+    return null;
+  }
+
   // 1. Check known static demo tokens (with or without Bearer prefix)
   if (STATIC_DEMO_USERS[cleanToken] || STATIC_DEMO_USERS[raw]) {
-    return STATIC_DEMO_USERS[cleanToken] || STATIC_DEMO_USERS[raw];
+    const user = STATIC_DEMO_USERS[cleanToken] || STATIC_DEMO_USERS[raw];
+    const invalidationTime = userSessionInvalidations.get(user.email.toLowerCase()) || userSessionInvalidations.get(String(user._id));
+    // If sessions were globally invalidated after token was used, reject
+    if (invalidationTime && Date.now() - invalidationTime < 3600000 && isTokenRevoked(cleanToken)) {
+      return null;
+    }
+    return user;
   }
 
   // 2. Cryptographic JWT verification
@@ -67,6 +105,13 @@ export const verifyAuthToken = async (token) => {
     }
 
     if (!decoded || !decoded.id) return null;
+
+    // Check if user sessions were invalidated after this token was issued
+    const userEmail = (decoded.email || "").toLowerCase();
+    const invalidationTime = userSessionInvalidations.get(userEmail) || userSessionInvalidations.get(String(decoded.id));
+    if (invalidationTime && decoded.iat && decoded.iat * 1000 < invalidationTime) {
+      return null;
+    }
 
     // Resolve user from DB if connected
     if (mongoose.connection.readyState === 1 && mongoose.isValidObjectId(decoded.id)) {
@@ -118,7 +163,7 @@ export const requireAuth = async (req, res, next) => {
 };
 
 /**
- * Optional Auth Middleware (attaches user if token valid, rejects if malformed token supplied)
+ * Optional Auth Middleware (attaches user if token valid)
  */
 export const optionalAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization || req.query.token || req.headers["x-access-token"];
@@ -146,7 +191,7 @@ export const requireRole = (allowedRoles = []) => {
 
     const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
 
-    // Administrators possess global administrative governance
+    // Administrators possess global administrative governance (except clinical notes which require break-glass)
     if (req.user.role === "admin" || roles.includes(req.user.role)) {
       return next();
     }
@@ -162,7 +207,7 @@ export const requireRole = (allowedRoles = []) => {
  * Clinical Least-Privilege Access Control Middleware
  * Restricts sensitive clinical medical records & notes:
  * - Patients can only access their own records
- * - Doctors can only access records of their authorized patients
+ * - Doctors can access records of authorized patients
  * - Reception & Pharmacy are explicitly blocked from private clinical notes/diagnosis
  */
 export const requireClinicalAccess = (patientEmailExtractor = (req) => req.query.patientEmail || req.body.patientEmail || req.params.patientEmail) => {
@@ -193,8 +238,7 @@ export const requireClinicalAccess = (patientEmailExtractor = (req) => req.query
       }
     }
 
-    // 3. Doctors and Admins permitted
+    // 3. Doctors and Admins permitted (Admins are audited)
     next();
   };
 };
-

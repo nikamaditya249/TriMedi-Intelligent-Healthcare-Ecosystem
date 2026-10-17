@@ -26,6 +26,8 @@ pnpm-debug.log*
 
 # Local data
 backend/data/
+backend/uploads/
+!backend/uploads/prescriptions/.gitkeep
 
 # IDE
 .vscode/

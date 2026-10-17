@@ -14,6 +14,7 @@ import {
   FiUserCheck,
   FiCheckCircle,
   FiEye,
+  FiShield,
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
@@ -36,6 +37,7 @@ import AIAssistantModal from "../../components/ai/AIAssistantModal";
 import MedicalRecordTimeline from "../../components/medical-records/MedicalRecordTimeline";
 import TodayMedicationSchedule from "../../components/medications/TodayMedicationSchedule";
 import MedicationTimelineView from "../../components/medications/MedicationTimelineView";
+import PrivacyTrustModal from "../../components/privacy/PrivacyTrustModal";
 
 export function PatientDashboard() {
   const { user } = useAuth();
@@ -55,6 +57,7 @@ export function PatientDashboard() {
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
   const [bookModalOpen, setBookModalOpen] = useState(false);
   const [orderAgainModalOpen, setOrderAgainModalOpen] = useState(false);
+  const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
   const [selectedRefillItem, setSelectedRefillItem] = useState(null);
 
   const userEmail = (user?.email || "patient@trimedi.com").toLowerCase();
@@ -192,6 +195,14 @@ export function PatientDashboard() {
             icon={FiZap}
           >
             AI Assistant
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPrivacyModalOpen(true)}
+            icon={FiShield}
+          >
+            Privacy & Trust
           </Button>
           <Button
             variant="outline"
@@ -574,6 +585,10 @@ export function PatientDashboard() {
       <AIAssistantModal
         isOpen={aiAssistantOpen}
         onClose={() => setAiAssistantOpen(false)}
+      />
+      <PrivacyTrustModal
+        isOpen={privacyModalOpen}
+        onClose={() => setPrivacyModalOpen(false)}
       />
     </div>
   );
