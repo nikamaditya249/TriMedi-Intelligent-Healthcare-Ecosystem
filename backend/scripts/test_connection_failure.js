@@ -59,8 +59,8 @@ async function runConnectionFailureTest() {
   const testPort = server.address().port;
   console.log(`Ephemeral test probe running on port ${testPort}`);
 
-  // Test 1: Invalid MongoDB URI
-  const invalidUri = "mongodb+srv://invalid_user:wrong_password@cluster0.lxxpoyn.mongodb.net/trimedi?retryWrites=true&w=majority";
+  // Test 1: Invalid MongoDB URI (simulated unreachable database)
+  const invalidUri = "mongodb://127.0.0.1:27019/trimedi_unreachable?serverSelectionTimeoutMS=2000";
   console.log("1. Attempting connection with invalid credentials (simulating auth failure)...");
 
   let connectionFailed = false;

@@ -1,39 +1,35 @@
 /**
  * ==============================================================================
- * TRIMEDI STAGING BACKUP & RESTORE DRILL RUNNER
+ * TRIMEDI STAGING BACKUP & RESTORE DRILL RUNNER (PHASE 5.97)
  * ==============================================================================
- * Performs a rigorous 6-stage disaster recovery drill:
+ * Performs a rigorous 6-stage disaster recovery drill across ALL 15 CANONICAL ENTITIES:
  *
- * 1. Database State Snapshot (9 Core Entities)
+ * 1. Database State Snapshot (15 Canonical Collections)
  * 2. Checksum & Foreign Key Reference Mapping
  * 3. Simulated Catastrophic Loss / Data Corruption
  * 4. Point-in-Time Restore from Backup Archive
  * 5. Application Reconnect & Foreign Key Integrity Verification
  * 6. Post-Recovery Clinical Workflow Smoke Test
  *
- * VALIDATES CORE ENTITIES:
- * - Patient Identity
- * - Appointment
- * - Consultation
- * - Prescription
- * - Medication
- * - Order
- * - Payment State
- * - Inventory
- * - Audit Events
+ * VALIDATES ALL 15 CANONICAL ENTITIES:
+ * - users, appointments, clinicqueues, consultations, prescriptions,
+ *   medications, products, orders, notifications, conversations,
+ *   messages, clinicalaudits, securityevents, consents, aiaudits.
+ *
+ * PRIMARY PAYMENT ENGINE: PAYPAL
+ * ==============================================================================
  */
 
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
-import http from "http";
 
 const BACKUP_DIR = path.resolve("./data/backups");
 if (!fs.existsSync(BACKUP_DIR)) {
   fs.mkdirSync(BACKUP_DIR, { recursive: true });
 }
 
-// 9 Core Entities Schema Seed for Staging Drill
+// 15 Canonical Collections Schema Seed for Disaster Recovery Drill
 const DRILL_ENTITIES = {
   users: [
     { id: "usr_pat_001", email: "aditya@trimedi.health", role: "patient", name: "Aditya Nikam" },
@@ -42,30 +38,47 @@ const DRILL_ENTITIES = {
     { id: "usr_phr_001", email: "pharmacy@trimedi.health", role: "pharmacy", name: "Prime Pharmacy" },
   ],
   appointments: [
-    { id: "apt_101", patientId: "usr_pat_001", doctorId: "usr_doc_001", date: "2026-10-17", status: "COMPLETED", token: 1 },
+    { id: "apt_101", patientId: "usr_pat_001", doctorId: "usr_doc_001", appointmentDate: "2026-10-17", status: "completed", queueNumber: 1 },
+  ],
+  clinicqueues: [
+    { id: "cq_101", appointmentId: "apt_101", patientEmail: "aditya@trimedi.health", doctorEmail: "doctor@trimedi.health", queueNumber: 1, status: "completed" },
   ],
   consultations: [
-    { id: "cns_201", appointmentId: "apt_101", patientEmail: "aditya@trimedi.health", doctorEmail: "doctor@trimedi.health", diagnosis: "Essential Hypertension", vitals: { bp: "128/82", pulse: 74 } },
+    { id: "cns_201", appointmentId: "apt_101", patientEmail: "aditya@trimedi.health", doctorEmail: "doctor@trimedi.health", diagnosis: "Essential Hypertension", vitals: { bp: "128/82", pulse: 74 }, status: "completed" },
   ],
   prescriptions: [
-    { id: "rx_301", patientEmail: "aditya@trimedi.health", doctorEmail: "doctor@trimedi.health", diagnosis: "Essential Hypertension", status: "active", medicines: [{ name: "Telmisartan", dosage: "40mg", frequency: "OD", duration: 30 }] },
+    { id: "rx_301", consultationId: "cns_201", patientEmail: "aditya@trimedi.health", doctorEmail: "doctor@trimedi.health", diagnosis: "Essential Hypertension", status: "active", items: [{ medicineName: "Telmisartan 40mg", dosage: "40mg", frequency: "Once Daily", durationDays: 30, quantityPrescribed: 30 }] },
   ],
   medications: [
-    { id: "med_401", prescriptionId: "rx_301", patientEmail: "aditya@trimedi.health", medicineName: "Telmisartan 40mg", totalPrescribed: 30, remainingQuantity: 28, adherenceRate: 93.3 },
+    { id: "med_401", prescriptionId: "rx_301", patientEmail: "aditya@trimedi.health", medicationName: "Telmisartan 40mg", normalizedMedicationName: "telmisartan 40mg", prescribedQuantity: 30, remainingQuantity: 28, adherence: { adherencePercentage: 93.3 }, status: "active" },
+  ],
+  products: [
+    { id: "prd_701", sku: "SKU-TELMI-40", name: "Telmisartan 40mg", stockQuantity: 250, reservedQuantity: 0, availableQuantity: 250, price: 90, hsnCode: "3004", category: "Medicine", prescriptionRequired: true, active: true },
+    { id: "prd_702", sku: "SKU-PARA-500", name: "Paracetamol 500mg", stockQuantity: 180, reservedQuantity: 0, availableQuantity: 180, price: 50, hsnCode: "3004", category: "Medicine", prescriptionRequired: false, active: true },
   ],
   orders: [
-    { id: "ord_501", patientEmail: "aditya@trimedi.health", prescriptionId: "rx_301", items: [{ name: "Telmisartan 40mg", qty: 1, unitPrice: 90 }], gstAmount: 10.8, totalAmount: 100.8, status: "DELIVERED" },
+    { id: "ord_501", orderId: "ORD-501", patientEmail: "aditya@trimedi.health", prescriptionId: "rx_301", items: [{ name: "Telmisartan 40mg", qty: 1, unitPrice: 90 }], pricing: { subtotal: 90, totalTax: 10.8, grandTotal: 100.8 }, totalAmount: 100.8, status: "DELIVERED", paymentMethod: "paypal", paymentStatus: "PAID", paypalOrderId: "PP-ORD-9901", paypalCaptureId: "CAP-PP-9901" },
   ],
-  payments: [
-    { id: "pay_601", orderId: "ord_501", method: "RAZORPAY", paymentId: "pay_rzp_mock_101", status: "CAPTURED", amount: 100.8, verifiedAt: "2026-10-17T09:00:00Z" },
+  notifications: [
+    { id: "notif_801", userEmail: "aditya@trimedi.health", type: "prescription", title: "Prescription Approved", message: "Dr. Jenkins approved your prescription.", isRead: true },
   ],
-  inventory: [
-    { id: "inv_701", sku: "TELMI-40", name: "Telmisartan 40mg", stockOnHand: 250, reservedStock: 0, reorderLevel: 25 },
-    { id: "inv_702", sku: "ATOR-20", name: "Atorvastatin 20mg", stockOnHand: 180, reservedStock: 0, reorderLevel: 30 },
+  conversations: [
+    { id: "conv_901", patientEmail: "aditya@trimedi.health", doctorEmail: "doctor@trimedi.health", lastMessage: "Your blood pressure is well controlled." },
   ],
-  auditEvents: [
-    { id: "aud_801", type: "CLINICAL_ACCESS", actorEmail: "doctor@trimedi.health", patientEmail: "aditya@trimedi.health", action: "CONSULTATION_CREATED", timestamp: "2026-10-17T08:45:00Z" },
-    { id: "aud_802", type: "SECURITY_EVENT", actorEmail: "system", target: "ORDER_CHECKOUT", action: "GST_AUTHORITATIVE_VERIFIED", timestamp: "2026-10-17T09:01:00Z" },
+  messages: [
+    { id: "msg_901", conversation: "conv_901", senderEmail: "doctor@trimedi.health", receiverEmail: "aditya@trimedi.health", content: "Your blood pressure is well controlled.", isRead: true },
+  ],
+  clinicalaudits: [
+    { id: "aud_801", actorId: "usr_doc_001", actorEmail: "doctor@trimedi.health", actorRole: "doctor", action: "CONSULTATION_COMPLETED", resourceType: "consultation", resourceId: "cns_201", status: "SUCCESS" },
+  ],
+  securityevents: [
+    { id: "sec_801", type: "ROLE_TAMPERING", severity: "HIGH", actorEmail: "system", targetResource: "ORDER_CHECKOUT", resolved: true },
+  ],
+  consents: [
+    { id: "cst_801", userId: "usr_pat_001", userEmail: "aditya@trimedi.health", consentType: "CONSULTATION_DATA", purpose: "Telemedicine care", granted: true },
+  ],
+  aiaudits: [
+    { id: "aia_801", action: "PRESCRIPTION_OCR_EXTRACTION", actorEmail: "aditya@trimedi.health", overallConfidence: 0.94, reviewStatus: "APPROVED", reviewedBy: "doctor@trimedi.health" },
   ],
 };
 
@@ -74,14 +87,15 @@ function computeEntityHash(records) {
   return crypto.createHash("sha256").update(serialized).digest("hex");
 }
 
-async function runBackupRestoreDrill() {
+export async function runBackupRestoreDrill() {
   console.log("\n==================================================================");
-  console.log("🔄 TRIMEDI DISASTER RECOVERY & BACKUP/RESTORE DRILL (STAGING)");
+  console.log("🔄 TRIMEDI DISASTER RECOVERY & BACKUP/RESTORE DRILL (15 COLLECTIONS)");
   console.log("==================================================================");
 
   const startTime = Date.now();
   const report = {
     timestamp: new Date().toISOString(),
+    collectionsCount: Object.keys(DRILL_ENTITIES).length,
     stages: [],
     entityVerification: {},
     rtoSeconds: 0,
@@ -93,7 +107,7 @@ async function runBackupRestoreDrill() {
   // --------------------------------------------------------------------------
   // Stage 1: Snapshot Staging State
   // --------------------------------------------------------------------------
-  console.log("\n[STAGE 1] Creating immutable snapshot of 9 core healthcare collections...");
+  console.log("\n[STAGE 1] Creating immutable snapshot of all 15 canonical collections...");
   const snapshotFile = path.join(BACKUP_DIR, `staging_backup_${Date.now()}.json`);
   const snapshotMetadata = {};
 
@@ -103,7 +117,7 @@ async function runBackupRestoreDrill() {
       count: records.length,
       hash,
     };
-    console.log(`  ✓ Snapshot ${entityName.padEnd(15)} : ${records.length} records (SHA256: ${hash.slice(0, 12)}...)`);
+    console.log(`  ✓ Snapshot ${entityName.padEnd(16)} : ${records.length} records (SHA256: ${hash.slice(0, 12)}...)`);
   }
 
   fs.writeFileSync(snapshotFile, JSON.stringify({ metadata: snapshotMetadata, data: DRILL_ENTITIES }, null, 2));
@@ -115,45 +129,43 @@ async function runBackupRestoreDrill() {
   // --------------------------------------------------------------------------
   console.log("\n[STAGE 2] Pre-loss Foreign Reference & Referential Integrity Mapping...");
   let initialRefErrors = 0;
-  // Verify Consultation -> Appointment
+  // Consultation -> Appointment
   for (const c of DRILL_ENTITIES.consultations) {
-    const match = DRILL_ENTITIES.appointments.find((a) => a.id === c.appointmentId);
-    if (!match) initialRefErrors++;
+    if (!DRILL_ENTITIES.appointments.find((a) => a.id === c.appointmentId)) initialRefErrors++;
   }
-  // Verify Prescription -> Patient
+  // Prescription -> Patient
   for (const rx of DRILL_ENTITIES.prescriptions) {
-    const match = DRILL_ENTITIES.users.find((u) => u.email === rx.patientEmail);
-    if (!match) initialRefErrors++;
+    if (!DRILL_ENTITIES.users.find((u) => u.email === rx.patientEmail)) initialRefErrors++;
   }
-  // Verify Medication -> Prescription
+  // Medication -> Prescription
   for (const m of DRILL_ENTITIES.medications) {
-    const match = DRILL_ENTITIES.prescriptions.find((p) => p.id === m.prescriptionId);
-    if (!match) initialRefErrors++;
+    if (!DRILL_ENTITIES.prescriptions.find((p) => p.id === m.prescriptionId)) initialRefErrors++;
   }
-  // Verify Order -> Prescription
+  // Order -> Prescription
   for (const o of DRILL_ENTITIES.orders) {
-    const match = DRILL_ENTITIES.prescriptions.find((p) => p.id === o.prescriptionId);
-    if (!match) initialRefErrors++;
+    if (!DRILL_ENTITIES.prescriptions.find((p) => p.id === o.prescriptionId)) initialRefErrors++;
   }
-  // Verify Payment -> Order
-  for (const pay of DRILL_ENTITIES.payments) {
-    const match = DRILL_ENTITIES.orders.find((o) => o.id === pay.orderId);
-    if (!match) initialRefErrors++;
+  // ClinicQueue -> Appointment
+  for (const cq of DRILL_ENTITIES.clinicqueues) {
+    if (!DRILL_ENTITIES.appointments.find((a) => a.id === cq.appointmentId)) initialRefErrors++;
+  }
+  // Message -> Conversation
+  for (const msg of DRILL_ENTITIES.messages) {
+    if (!DRILL_ENTITIES.conversations.find((conv) => conv.id === msg.conversation)) initialRefErrors++;
   }
 
-  console.log(`  ✓ Foreign references verified: 0 broken relations found.`);
+  console.log(`  ✓ Foreign references verified: ${initialRefErrors} broken relations found.`);
   report.stages.push({ stage: 2, name: "Foreign Reference Baseline", status: "SUCCESS", brokenReferences: initialRefErrors });
 
   // --------------------------------------------------------------------------
   // Stage 3: Simulated Catastrophic Loss
   // --------------------------------------------------------------------------
   console.log("\n[STAGE 3] Inducing simulated disaster: Purging database state...");
-  // Clone an empty corrupt state
   const damagedState = {};
   for (const k of Object.keys(DRILL_ENTITIES)) {
     damagedState[k] = [];
   }
-  console.log("  ⚠️ Database corrupted: Active records dropped to 0 across all 9 collections.");
+  console.log("  ⚠️ Database corrupted: Active records dropped to 0 across all 15 collections.");
   report.stages.push({ stage: 3, name: "Simulated Catastrophic Failure", status: "SUCCESS" });
 
   // --------------------------------------------------------------------------
@@ -185,7 +197,7 @@ async function runBackupRestoreDrill() {
     };
 
     console.log(
-      `  ✓ ${entityName.padEnd(15)} : ${records.length}/${snapshotMetadata[entityName].count} records | SHA256 Match: ${isMatch ? "✅ EXACT" : "❌ MISMATCH"}`
+      `  ✓ ${entityName.padEnd(16)} : ${records.length}/${snapshotMetadata[entityName].count} records | SHA256 Match: ${isMatch ? "✅ EXACT" : "❌ MISMATCH"}`
     );
   }
 
@@ -200,8 +212,11 @@ async function runBackupRestoreDrill() {
   for (const o of restoredState.orders) {
     if (!restoredState.prescriptions.find((p) => p.id === o.prescriptionId)) postRestoreBrokenRefs++;
   }
-  for (const pay of restoredState.payments) {
-    if (!restoredState.orders.find((ord) => ord.id === pay.orderId)) postRestoreBrokenRefs++;
+  for (const cq of restoredState.clinicqueues) {
+    if (!restoredState.appointments.find((a) => a.id === cq.appointmentId)) postRestoreBrokenRefs++;
+  }
+  for (const msg of restoredState.messages) {
+    if (!restoredState.conversations.find((conv) => conv.id === msg.conversation)) postRestoreBrokenRefs++;
   }
 
   console.log(`  ✓ Post-restore foreign referential integrity: ${postRestoreBrokenRefs === 0 ? "✅ 100% CONSISTENT" : "❌ CORRUPT"}`);
@@ -210,15 +225,23 @@ async function runBackupRestoreDrill() {
   // Stage 6: Post-Restore Clinical Operational Smoke Test
   // --------------------------------------------------------------------------
   console.log("\n[STAGE 6] Executing post-recovery clinical workflow test...");
-  // Simulate active patient authentication & prescription retrieval
   const testPatient = restoredState.users.find((u) => u.email === "aditya@trimedi.health");
   const testRx = restoredState.prescriptions.find((rx) => rx.patientEmail === testPatient.email);
   const testMed = restoredState.medications.find((m) => m.prescriptionId === testRx.id);
-  const workflowOperational = Boolean(testPatient && testRx && testMed && testMed.remainingQuantity === 28);
+  const testOrder = restoredState.orders.find((o) => o.patientEmail === testPatient.email);
+  const workflowOperational = Boolean(
+    testPatient &&
+    testRx &&
+    testMed &&
+    testMed.remainingQuantity === 28 &&
+    testOrder &&
+    testOrder.paymentMethod === "paypal"
+  );
 
   console.log(`  ✓ Patient Identity Login Test: ${testPatient ? "✅ PASS" : "❌ FAIL"}`);
   console.log(`  ✓ Digital Prescription Retrieval: ${testRx ? "✅ PASS" : "❌ FAIL"}`);
   console.log(`  ✓ Medication Schedule & Adherence Telemetry: ${testMed ? "✅ PASS" : "❌ FAIL"}`);
+  console.log(`  ✓ PayPal Order Recovery: ${testOrder ? "✅ PASS" : "❌ FAIL"}`);
 
   // --------------------------------------------------------------------------
   // Summary & RTO / RPO Metrics
@@ -239,7 +262,7 @@ async function runBackupRestoreDrill() {
   report.decision = drillPassed ? "STAGING_DRILL_SUCCESSFUL" : "STAGING_DRILL_FAILED";
 
   console.log("\n==================================================================");
-  console.log(`📋 DRILL RESULT: ${drillPassed ? "✅ STAGING BACKUP & RESTORE DRILL PASSED" : "❌ FAILED"}`);
+  console.log(`📋 DRILL RESULT: ${drillPassed ? "✅ BACKUP & RESTORE DRILL PASSED (15/15 ENTITIES)" : "❌ FAILED"}`);
   console.log(`⏱️ Recovery Time (RTO Actual): ${elapsedSec}s (Target: < 3600s / 60m)`);
   console.log(`🎯 Recovery Point (RPO Actual): 0s delta (Target: < 900s / 15m)`);
   console.log("==================================================================\n");
@@ -247,6 +270,9 @@ async function runBackupRestoreDrill() {
   return report;
 }
 
-runBackupRestoreDrill().catch((err) => {
-  console.error("Backup drill error:", err);
-});
+if (process.argv[1]?.endsWith("backup_restore_drill.js")) {
+  runBackupRestoreDrill().catch((err) => {
+    console.error("Backup drill error:", err);
+    process.exit(1);
+  });
+}

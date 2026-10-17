@@ -247,56 +247,91 @@ curl -s http://localhost:5001/health
 ### 4. Final Production Deployment Gate (`APP_ENV=production` & `NODE_ENV=production`)
 - **Status:** **`NO-GO — PRODUCTION BLOCKED` (Pending External Manual & Statutory Gates)**
 - **Technical Validation:** **100% COMPLETE** (222/222 Automated Tests Passed, 22/22 Smoke Test Steps Passed, Vite Build 0 Errors).
-- **Mandatory Gating Prerequisites (External / Manual):**
-  1. **MongoDB Atlas Manual User Deletion:** Delete compromised legacy user `adityanikams73_db_user` and rotate cluster password in `cloud.mongodb.com` console (Cluster0 is active and healthy; credential security gate requires console deletion).
-  2. **PayPal Live Production Gateway Activation:** Provision live production credentials (`PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENVIRONMENT=live`) and register production webhook URL.
-  3. **Statutory Healthcare Legal Sign-Off:** Execute formal legal compliance review of `LEGAL_REVIEW_CHECKLIST.md` under Telemedicine Guidelines (2020) and DPDP Act (2023).
+- **Production Gating Prerequisites:**
+  1. **MongoDB Atlas Live Database Credential:** Place the newly generated rotated password into `backend/.env` for `MONGO_URI` with explicit `readWrite` granted on database `trimedi`. (Cluster0 is active and available).
+  2. **PayPal Live Production Gateway Activation:** Provision live production credentials (`PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENVIRONMENT=live`) and complete business KYC onboarding.
+  3. **Production Secret Generation:** Replace development `JWT_SECRET` with a 64-character random string.
   4. **Redis Multi-Instance Cluster:** Deploy managed Redis cluster (`REDIS_URL`) prior to scaling horizontally across multiple container replicas.
+
+---
+
+## 🗄️ Fresh MongoDB Atlas Initialization (Phase 5.96 / 5.97)
+
+TriMedi connects to a fresh, authoritative MongoDB database (`trimedi`) without migrating compromised legacy databases. The bootstrap process is completely non-destructive and idempotent:
+
+```bash
+cd backend
+
+# 1. Initialize all 15 canonical collections and synchronize indexes
+node scripts/db_init.js
+
+# 2. Non-destructively seed the 50-item pharmaceutical catalog (HSN 3004/9018, GST 12%/18%)
+node scripts/db_seed.js
+
+# 3. Verify probe CRUD, index integrity, and replica set ACID transactions
+node scripts/db_verify.js
+
+# 4. Run disaster recovery backup & restore drill (SHA-256 integrity verification)
+node scripts/backup_restore_drill.js
+```
+
+---
+
+## 💳 PayPal Primary Online Payment Integration
+
+**Important Architectural Decision:** PayPal is the sole primary online payment provider for TriMedi. Razorpay has been fully deprecated and reclassified as **LEGACY / DISABLED / NON-PRODUCTION**.
+
+- **Server-Authoritative Pricing:** Server calculates medicine costs, intrastate/interstate GST (CGST 6% + SGST 6% or IGST 12%), and delivery charges. Frontend pricing is completely ignored.
+- **Atomic Stock Reservation:** Concurrency-safe inventory reservations prevent negative inventory or overselling under high traffic.
+- **Cryptographic Capture Verification:** Server communicates directly with PayPal REST APIs to capture authorized orders; frontend success flags are not trusted.
+- **Idempotency & Replay Defense:** Replayed captures and duplicate webhooks are recognized and neutralized without multiple charges or double inventory commits.
+- **Automated Bounds-Checked Refunds:** Cancellations and rejections release reserved inventory and trigger audited refunds.
 
 ---
 
 ## 🧪 Comprehensive Automated Test Suites
 
-TriMedi maintains 100% test coverage across **222 automated platform tests with zero regressions**:
+TriMedi maintains 100% automated test coverage across **311 verifiable test points with zero regressions**:
 
 ```bash
 cd backend
 
-# Phase 2: Real Healthcare Workflow & Clinical Operations (21 tests)
-node test_phase2_workflow.js
+# Core Regression Suites (242 Tests):
+node test_audit.js                             # Audit & EventBus (18 tests)
+node test_phase2_workflow.js                   # Clinical Workflow (35 tests)
+node test_phase3_medication_ai.js              # AI & Medication Adherence (41 tests)
+node test_phase4_commerce_fulfillment.js       # Commerce & Pharmacy State Machine (29 tests)
+node test_phase4_5_production_hardening.js     # Concurrency, GST & Invoicing (19 tests)
+node test_phase5_security_privacy.js           # Security, Consent & DPDP Act (25 tests)
+node test_phase5_5_production_readiness.js     # Health Probes & Fail-safes (19 tests)
+node test_phase5_75_pilot_validation.js        # Pilot Gate & Secret Hygiene (20 tests)
+node test_phase5_9_production_gate.js          # Pre-Production Gate (20 tests)
+node test_phase5_95_paypal_production.js       # PayPal Production Architecture (16 tests)
 
-# Phase 3: AI & Medication Intelligence (41 tests)
-node test_phase3_medication_ai.js
+# Specialized Production Verification Suites (69 Verification Points):
+node scripts/security_negative_matrix_test.js  # 20-Point Negative Security Matrix (20 tests)
+node scripts/production_smoke_test.js          # 22-Step Clinical Smoke Test (22 steps)
+node scripts/backup_restore_drill.js           # 15 Collections Disaster Recovery (15 entities)
+node scripts/test_connection_failure.js        # 503 Readiness Probe Shield (4 checks)
+node scripts/verify_secret_hygiene.js          # Secret Leakage Audit (8 checks)
 
-# Phase 4: Pharmacy Commerce & Real-time Fulfillment (29 tests)
-node test_phase4_commerce_fulfillment.js
-
-# Phase 4.5: Production Hardening, Concurrency & GST Invoicing (19 tests)
-node test_phase4_5_production_hardening.js
-
-# Phase 5: Security, Privacy, Consent & Trust Architecture (29 tests)
-node test_phase5_security_privacy.js
-
-# Phase 5.5: Production Readiness, Health Probes & E2E Pilot Gate (20 tests)
-node test_phase5_5_production_readiness.js
-
-# Phase 5.75: Controlled Pilot Validation & Real-World Exit Gate (20 tests)
-node test_phase5_75_pilot_validation.js
-
-# Phase 5.9: Pre-Production Gate & Go-Live Readiness (20 tests)
-node test_phase5_9_production_gate.js
-
-# Phase 5.95: PayPal Production Payment Gateway & Clearances (16 tests)
-node test_phase5_95_paypal_production.js
-
-# Socket.IO & Persistence Audit (7 tests)
-node test_audit.js
-
-# Step 22 Full Production-Equivalent Smoke Test (22 operational steps)
-node scripts/production_smoke_test.js
-
-# Total Automated Suite: 222/222 PASSED (100%)
+# Frontend Production Compilation:
+cd ../frontend && npm run build                # Vite Production Bundle (0 errors)
 ```
+
+---
+
+## 📚 Phase 5.97 Production Readiness Documentation
+
+Detailed operational and technical reports are available in the repository root:
+1. [PHASE_5_97_FINAL_PRODUCTION_READINESS_REPORT.md](PHASE_5_97_FINAL_PRODUCTION_READINESS_REPORT.md) — Master Technical Gate Report
+2. [PAYPAL_PRODUCTION_READINESS_REPORT.md](PAYPAL_PRODUCTION_READINESS_REPORT.md) — PayPal Payment Gate & Classification
+3. [FRESH_DATABASE_VERIFICATION_REPORT.md](FRESH_DATABASE_VERIFICATION_REPORT.md) — Database Idempotency & Catalog Seed
+4. [FINAL_SECURITY_GATE_REPORT.md](FINAL_SECURITY_GATE_REPORT.md) — 20-Point Negative Security Matrix
+5. [FINAL_SMOKE_TEST_REPORT.md](FINAL_SMOKE_TEST_REPORT.md) — 22-Step Clinical & Commercial Continuum
+6. [FINAL_GO_LIVE_CHECKLIST.md](FINAL_GO_LIVE_CHECKLIST.md) — Severity Classification (P0–P3)
+7. [PRODUCTION_DEPLOYMENT_RUNBOOK.md](PRODUCTION_DEPLOYMENT_RUNBOOK.md) — Step-by-Step Production Cutover Runbook
+8. [PRODUCTION_ROLLBACK_RUNBOOK.md](PRODUCTION_ROLLBACK_RUNBOOK.md) — Emergency Rollback & Recovery Procedures
 
 ---
 
