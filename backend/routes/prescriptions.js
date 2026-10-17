@@ -207,7 +207,12 @@ router.post("/", requireDatabase, optionalAuth, async (req, res) => {
     const dEmail = (doctorEmail || (req.user?.role === "doctor" ? req.user?.email : "doctor@trimedi.com")).toLowerCase();
 
     // AI-Assisted Safety Guardrail: AI extracted prescriptions require human review before becoming active
-    const initialStatus = aiExtracted ? "draft" : status || "active";
+    // Clinical Governance: Only licensed physicians or admins can issue active prescriptions directly.
+    // Patient-submitted requests or AI extractions are strictly initialized as "draft" awaiting clinical review.
+    let initialStatus = "draft";
+    if (!req.user || req.user.role === "doctor" || req.user.role === "admin") {
+      initialStatus = aiExtracted ? "draft" : status || "active";
+    }
 
     const validatedItems = items.map((it) => ({
       medicineName: it.medicineName || it.name,

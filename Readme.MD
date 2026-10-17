@@ -237,23 +237,27 @@ curl -s http://localhost:5001/health
 
 ### 3. Controlled Pilot (`APP_ENV=pilot`)
 - Real clinical operations within bounded pilot partner clinics.
+### 3. Controlled Pilot (`APP_ENV=pilot` & `NODE_ENV=pilot`)
+- Deployment to isolated pilot clinic with dedicated `trimedi_pilot` database namespace.
 - Single-instance deployment with local `securityStore` memory adapter.
-- Server-authoritative GST pricing, strict 10-stage order fulfillment, and break-glass emergency access protocols active.
+- Server-authoritative GST pricing, strict order fulfillment state machine, and break-glass emergency access protocols active.
 - Mandatory physician sign-off enforced on all AI-extracted prescriptions.
+- In-memory database fallback mocks disabled by default (`ALLOW_PILOT_MOCKS=false`). If the database disconnects, mutating operations return HTTP 503 `DATABASE_UNAVAILABLE`.
 
-### 4. Production Deployment (`APP_ENV=production` & `NODE_ENV=production`)
-- **Prerequisites for Launch:**
-  1. Complete MongoDB Atlas credential rotation (retire development credentials).
-  2. Inject secrets strictly via cloud vault (AWS Secrets Manager, Doppler).
-  3. Deploy Redis cluster (`REDIS_URL`) for distributed session revocation and rate limiting across multiple replicas.
-  4. Activate live Razorpay merchant credentials with verified HTTPS webhook endpoint.
-  5. In-memory database mocks are strictly disabled (`isMockAllowed() === false`). If MongoDB is unavailable, write operations return HTTP 503 `DATABASE_UNAVAILABLE`.
+### 4. Production Deployment Gate (`APP_ENV=production` & `NODE_ENV=production`)
+- **Status:** **BLOCKED (Pre-Production Conditions Required)**
+- **External Gating Prerequisites:**
+  1. Complete MongoDB Atlas cloud credential rotation (delete compromised user `adityanikams73_db_user` in `cloud.mongodb.com` console).
+  2. Inject secrets strictly via cloud secret manager (AWS Secrets Manager / Doppler).
+  3. Deploy managed Redis cluster (`REDIS_URL`) for multi-instance distributed session revocation and sliding window rate limiting.
+  4. Complete statutory healthcare legal review of `PRIVACY_POLICY.md` and `TERMS_OF_SERVICE.md` with qualified legal counsel.
+  5. Complete live production Razorpay merchant KYC activation.
 
 ---
 
 ## 🧪 Comprehensive Automated Test Suites
 
-TriMedi maintains 100% test coverage across 166 automated platform tests with zero regressions:
+TriMedi maintains 100% test coverage across **186 automated platform tests with zero regressions**:
 
 ```bash
 cd backend
@@ -276,8 +280,13 @@ node test_phase5_security_privacy.js
 # Phase 5.5: Production Readiness, Health Probes & E2E Pilot Gate (20 tests)
 node test_phase5_5_production_readiness.js
 
+# Phase 5.75: Controlled Pilot Validation & Real-World Exit Gate (20 tests)
+node test_phase5_75_pilot_validation.js
+
 # Socket.IO & Persistence Audit (7 tests)
 node test_audit.js
+
+# Total Automated Suite: 186/186 PASSED (100%)
 ```
 
 ---

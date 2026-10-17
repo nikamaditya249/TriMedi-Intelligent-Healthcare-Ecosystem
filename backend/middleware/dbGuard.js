@@ -22,6 +22,14 @@ export const isMockAllowed = () => {
     return false;
   }
 
+  // In controlled pilot mode, mocks are forbidden unless ALLOW_PILOT_MOCKS is explicitly true
+  if (
+    process.env.APP_ENV === "pilot" ||
+    process.env.NODE_ENV === "pilot"
+  ) {
+    return process.env.ALLOW_PILOT_MOCKS === "true";
+  }
+
   // Mocks are only allowed if explicitly enabled by test configuration
   return (
     process.env.ALLOW_TEST_MOCKS === "true" ||
