@@ -64,18 +64,20 @@ export async function seedDatabase(options = {}) {
     let existingCount = 0;
 
     for (const item of defaultProducts) {
-      const { _id, ...productData } = item;
-
-      // Upsert by product name and SKU without overwriting existing production alterations
+      // Upsert by _id, product name, or SKU without overwriting existing production alterations
       const existing = await Product.findOne({
-        $or: [{ name: productData.name }, ...(productData.sku ? [{ sku: productData.sku }] : [])],
+        $or: [
+          ...(item._id ? [{ _id: item._id }] : []),
+          { name: item.name },
+          ...(item.sku ? [{ sku: item.sku }] : []),
+        ],
       });
 
       if (!existing) {
         await Product.create({
-          ...productData,
-          mrp: productData.mrp || Math.round(productData.price * 1.15),
-          availableQuantity: productData.stockQuantity - (productData.reservedQuantity || 0),
+          ...item,
+          mrp: item.mrp || Math.round(item.price * 1.15),
+          availableQuantity: item.stockQuantity - (item.reservedQuantity || 0),
         });
         insertedCount++;
       } else {

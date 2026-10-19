@@ -249,10 +249,20 @@ async function runProductionSmokeTest() {
     recordTransition("PHARMACY_PRESCRIPTION_VERIFICATION", `Pharmacy verified prescription authenticity under least-privilege`, phmVerifyRes.ok || phmVerifyRes.status === 200);
 
     // 13. CART & ITEM SELECTION (AUTHORITATIVE CATALOG)
-    const cartItems = [
+    let cartItems = [
       { productId: "660000000000000000000001", quantity: 1 },
       { productId: "660000000000000000000002", quantity: 1 },
     ];
+    try {
+      const prodRes = await callAPI("/api/products", "GET", null, patientToken);
+      const prods = Array.isArray(prodRes.data) ? prodRes.data : prodRes.data?.products;
+      if (Array.isArray(prods) && prods.length >= 2) {
+        cartItems = [
+          { productId: prods[0]._id, quantity: 1 },
+          { productId: prods[1]._id, quantity: 1 },
+        ];
+      }
+    } catch (_) {}
     recordTransition("CART_SELECTION", `Cart prepared with 2 catalog items (Authoritative catalog lookup)`, true);
 
     // 14. SERVER-AUTHORITATIVE PRICE & GST CALCULATION (ORDER CREATION)
