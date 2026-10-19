@@ -26,8 +26,7 @@ NODE_ENV=production
 APP_ENV=production
 CLIENT_URL=https://app.trimedi.health
 
-# Authoritative MongoDB Atlas
-MONGO_URI=mongodb+srv://<PROD_USER>:<PROD_ROTATED_PASSWORD>@cluster0.lxxpoyn.mongodb.net/trimedi?retryWrites=true&w=majority
+MONGO_URI=mongodb+srv://<username>:<password>@cluster0.lxxpoyn.mongodb.net/trimedi?retryWrites=true&w=majority
 
 # Cryptographic Security
 JWT_SECRET=<64_CHAR_HEX_SECRET_openssl_rand_hex_32>

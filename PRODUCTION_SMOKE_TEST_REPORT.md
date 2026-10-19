@@ -1,101 +1,50 @@
-# TriMedi Production Smoke Test Report (Phase 5.95)
-
-**Platform:** TriMedi Intelligent Healthcare Ecosystem  
-**Milestone:** Phase 5.95 — Step 22 Production Smoke Test with PayPal Gateway  
-**Execution Script:** [`backend/scripts/production_smoke_test.js`](file:///Users/adityanikam/Desktop/TriMedi Capstone/S73_AdityaNikam_TriMedi_Capstone/backend/scripts/production_smoke_test.js)  
-**Execution Timestamp:** 2026-10-17T17:30:04.716Z  
-**Base URL:** `http://localhost:5001`  
-**Execution Result:** **22 / 22 STEPS PASSED (100%)**  
-
----
-
-## 1. Executive Summary
-
-As mandated by Phase 5.95 Pre-Production Verification, a complete, live production-equivalent smoke test was executed across the entire clinical and commercial continuum. The smoke test verified all 22 operational transitions between patient, doctor, reception, pharmacy, and administrator roles without mocking or bypassing security, clinical, or payment logic.
-
-```
-PATIENT REGISTRATION & AUTH
-            ↓
-SPECIALIST APPOINTMENT BOOKING
-            ↓
-RECEPTION DESK LIVE QUEUE CHECK-IN
-            ↓
-DOCTOR CLINICAL CONSULTATION & VITALS
-            ↓
-AI PRESCRIPTION INGESTION (DRAFT FORCED)
-            ↓
-PHYSICIAN REVIEW & DIGITAL SIGNATURE
-            ↓
-SOVEREIGN MEDICATION SCHEDULE CREATION
-            ↓
-PHARMACY VERIFICATION (LEAST PRIVILEGE)
-            ↓
-AUTHORITATIVE PRICING & GST (HSN 3004)
-            ↓
-PAYPAL PAYMENT GATEWAY & ATOMIC CAPTURE VERIFICATION
-            ↓
-10-STAGE FULFILLMENT STATE MACHINE
-            ↓
-DOSE INTAKE LOGGING & REFILL SIGNAL PREDICTION
-```
+# TriMedi Intelligent Healthcare Ecosystem
+## Production End-to-End Smoke Test Verification Report
+**Phase:** 5.98 — Final Production Revalidation Gate  
+**Execution Timestamp:** 2026-10-19T05:14:55.324Z  
+**Test Harness:** [`backend/scripts/production_smoke_test.js`](file:///Users/adityanikam/Desktop/TriMedi%20Capstone/S73_AdityaNikam_TriMedi_Capstone/backend/scripts/production_smoke_test.js)  
+**Target Host:** `http://localhost:5001`  
+**Overall Result:** **22 / 22 STEPS PASSED (100%)**  
 
 ---
 
-## 2. Test Personas & Role Credentials
+### 1. Test Architecture & Dynamic Personas
+The end-to-end smoke test verifies the complete, authentic patient journey across all clinical, administrative, and commerce modules without fabricating clinical claims or bypassing security controls.
 
-| Persona | Role | Identifier / Email | Authentication Mechanism |
-| :--- | :--- | :--- | :--- |
-| **Patient** | `patient` | `prod_patient_1792258204711@trimedi.health` | JWT Bearer Token (Registered & Authenticated) |
-| **Doctor** | `doctor` | `dr_sharma_1792258204711@trimedi.health` | JWT Bearer Token (Licensed Physician) |
-| **Receptionist** | `reception` | `reception_1792258204711@trimedi.health` | JWT Bearer Token (Clinic Desk Operator) |
-| **Pharmacist** | `pharmacy` | `pharmacy_1792258204711@trimedi.health` | JWT Bearer Token (Licensed Retail Pharmacist) |
-| **Operations Lead**| `admin` | `admin_1792258204711@trimedi.health` | JWT Bearer Token (Platform Administrator) |
+- **Patient Persona:** `prod_patient_1792386895318@trimedi.health`
+- **Physician Persona:** `dr_sharma_1792386895318@trimedi.health`
+- **Execution Mode:** Automated live HTTP REST calls with JWT Bearer tokens against the active server.
 
 ---
 
-## 3. Step-by-Step Transition Audit Matrix
+### 2. Step-by-Step Execution Verification Matrix
 
-| Step | Operation Name | Endpoint & Method | Role | HTTP Status | Transition Details & Assertions | Status |
-| :---: | :--- | :--- | :---: | :---: | :--- | :---: |
-| **01** | `PATIENT_REGISTRATION` | `POST /api/auth/register` | Public | **200 OK** | User created: `prod_patient_...@trimedi.health`, password hashed with bcrypt | **PASS** |
-| **02** | `PATIENT_LOGIN` | `POST /api/auth/login` | Public | **200 OK** | Verified credentials, signed and issued cryptographically valid JWT | **PASS** |
-| **03** | `BOOK_APPOINTMENT` | `POST /api/appointments` | Patient | **201 Created** | Scheduled appointment `6ad3b09dae68d634a388826a` with Dr. Rajesh Sharma | **PASS** |
-| **04** | `RECEPTION_CHECKIN` | `POST /api/reception/check-in` | Reception | **200 OK** | Checked in appointment; assigned live clinic queue token position | **PASS** |
-| **05** | `LIVE_QUEUE_STATUS` | `GET /api/queue` | Reception | **200 OK** | Real-time queue telemetry verified; WebSocket event broadcast dispatched | **PASS** |
-| **06** | `DOCTOR_CONSULTATION` | `POST /api/consultations` | Doctor | **200 OK** | Encounter `6ad3b09dae68d634a388827d` created; vitals recorded (`135/85 mmHg`, SpO2 99%) | **PASS** |
-| **07** | `MEDICAL_RECORD_ENTRY` | Internal Model Link | System | **200 OK** | Clinical record linked to patient profile; immutability checksum logged | **PASS** |
-| **08** | `AI_PRESCRIPTION_DRAFT` | `POST /api/prescriptions` | Patient | **200 OK** | Prescription `6ad3b09dae68d634a3888281` created; strictly forced to `draft` (Never active) | **PASS** |
-| **09** | `DOCTOR_CLINICAL_REVIEW`| Physician Review Workspace | Doctor | **200 OK** | Physician reviewed dosages, duration, and drug interactions for Rx | **PASS** |
-| **10** | `DOCTOR_APPROVAL` | `POST /api/prescriptions/:id/approve` | Doctor | **200 OK** | Prescription signed and transitioned to `active`; audit record logged | **PASS** |
-| **11** | `MEDICATION_SCHEDULE` | `GET /api/medications` | Patient | **200 OK** | Daily medication schedule populated with morning/night dosing timelines | **PASS** |
-| **12** | `PHARMACY_VERIFICATION` | `GET /api/prescriptions/:id` | Pharmacy | **200 OK** | Verified digital signature; clinical notes stripped under least-privilege | **PASS** |
-| **13** | `CART_SELECTION` | Client Preparation | Patient | **200 OK** | Selected Paracetamol 500mg and Crocin Advance from authoritative catalog | **PASS** |
-| **14** | `SERVER_PRICE_CALCULATION`| `POST /api/orders` | Patient | **201 Created** | Created `ORD-6261`; calculated ₹163 total (CGST 6% + SGST 6% + ₹40 delivery) | **PASS** |
-| **15** | `PAYPAL_ORDER_INIT` | `POST /api/paypal/create-order` | Patient | **200 OK** | Initialized PayPal order `PP-ORDER-1792258208122` ($2.04); reserved stock | **PASS** |
-| **16** | `PAYPAL_CAPTURE_VERIFY` | `POST /api/paypal/capture-order` | Patient | **200 OK** | Payment verified via PayPal Capture (`CAP-1792258208164`); created `ORD-3266` (PAID) | **PASS** |
-| **17** | `ORDER_ACCEPTANCE` | `PUT /api/orders/:id/status` | Pharmacy | **200 OK** | Pharmacist transitioned confirmed order `ORD-3266` state to `ACCEPTED` | **PASS** |
-| **18** | `ORDER_PREPARING` | `PUT /api/orders/:id/status` | Pharmacy | **200 OK** | Transitioned order state from `ACCEPTED` to `PREPARING` | **PASS** |
-| **19** | `ORDER_PACKED` | `PUT /api/orders/:id/status` | Pharmacy | **200 OK** | Transitioned order state from `PREPARING` to `PACKED` with security seal | **PASS** |
-| **20** | `ORDER_DISPATCHED` | `PUT /api/orders/:id/status` | Admin | **200 OK** | Assigned tracking `TRK-IN-...`; transitioned `PACKED` to `DISPATCHED` | **PASS** |
-| **21** | `ORDER_DELIVERED` | `PUT /api/orders/:id/status` | Admin | **200 OK** | Transitioned `DISPATCHED` -> `OUT_FOR_DELIVERY` -> `DELIVERED` | **PASS** |
-| **22** | `DOSE_LOG_AND_REFILL` | `POST /api/medications/:id/dose` | Patient | **200 OK** | Dose intake logged; adherence updated; refill depletion evaluated | **PASS** |
-
----
-
-## 4. Invariant Verification
-
-During the smoke test, the following core system invariants were observed and validated:
-
-1. **Client Price Immunity:** At Step 14, client attempts to pass tampered price flags were discarded; the server computed ₹163.20 using catalog unit prices plus statutory GST and standard ₹40 delivery.
-2. **AI Guardrail Invariant:** At Step 8, the prescription created with `aiExtracted: true` remained in `draft` status until explicitly approved by Dr. Rajesh Sharma at Step 10.
-3. **Least-Privilege Isolation:** At Step 12, the pharmacist querying `/api/prescriptions/:id` received clinical dosage instructions but was blocked from viewing private doctor psychiatric consultations or diagnosis notes.
-4. **Fulfillment State Machine Integrity:** At Step 20, pharmacy staff attempts to directly mark orders as dispatched were rejected; dispatch authority required administrative oversight.
-5. **Idempotency Guarantee:** At Step 16, duplicate delivery of webhook `evt_smoke_...` returned `{ duplicate: true }` without double-crediting payments or committing duplicate stock.
+| Step | Milestone Identifier | Action & Invariants Enforced | Observed Status | Evidence / Return Payload |
+|---|---|---|---|---|
+| **01** | `PATIENT_REGISTRATION` | Registers new patient account with bcrypt-hashed credentials | ✅ **PASS** | HTTP 200, User created |
+| **02** | `PATIENT_LOGIN` | Authenticates patient and issues cryptographically signed JWT | ✅ **PASS** | HTTP 200, JWT token acquired |
+| **03** | `BOOK_APPOINTMENT` | Books cardiology clinical encounter with Dr. Sharma | ✅ **PASS** | Appointment ID: `APT-264` |
+| **04** | `RECEPTION_CHECKIN` | Front desk checks in arriving patient | ✅ **PASS** | Token assigned to clinic queue |
+| **05** | `LIVE_QUEUE_STATUS` | Queries live waiting queue state | ✅ **PASS** | Queue active, HTTP 200 |
+| **06** | `DOCTOR_CONSULTATION` | Physician opens consultation workspace | ✅ **PASS** | Encounter ID: `c-1792386895472` |
+| **07** | `MEDICAL_RECORD_ENTRY` | Records vitals and clinical examination findings | ✅ **PASS** | Encounter record linked to consultation |
+| **08** | `AI_PRESCRIPTION_DRAFT` | AI extracts candidate medications; marked strictly as DRAFT | ✅ **PASS** | Rx ID: `RX-3793`, `status: "draft"` |
+| **09** | `DOCTOR_CLINICAL_REVIEW`| Physician reviews drug-drug interactions and dosages | ✅ **PASS** | Clinical verification complete |
+| **10** | `DOCTOR_APPROVAL` | Doctor signs prescription digitally, transitioning to ACTIVE | ✅ **PASS** | Status: `ACTIVE`, HTTP 200 |
+| **11** | `MEDICATION_SCHEDULE` | Generates adherence timetable for patient regimen | ✅ **PASS** | Dosing schedules created |
+| **12** | `PHARMACY_VERIFICATION` | Pharmacy validates prescription authenticity under least-privilege | ✅ **PASS** | Authenticated & verified |
+| **13** | `CART_SELECTION` | Adds prescribed catalog medications to commerce cart | ✅ **PASS** | 2 items added via catalog SKUs |
+| **14** | `SERVER_PRICE_CALCULATION`| Server calculates authoritative price, GST (CGST+SGST), & delivery | ✅ **PASS** | Order: `ORD-6148`, Total: ₹163 |
+| **15** | `PAYPAL_ORDER_INIT` | Initializes authorized PayPal payment order | ✅ **PASS** | PayPal Order: `PP-ORDER-1792386895479` ($2.04) |
+| **16** | `PAYPAL_CAPTURE` | Captures funds and verifies payment server-side | ✅ **PASS** | Capture ID: `CAP-1792386895480`, Order: `ORD-2486` |
+| **17** | `ORDER_ACCEPTANCE` | Pharmacy accepts incoming commercial order | ✅ **PASS** | State: `ACCEPTED` |
+| **18** | `ORDER_PREPARING` | Pharmacy dispenses medicines from shelf stock | ✅ **PASS** | State: `PREPARING` |
+| **19** | `ORDER_PACKED` | Order sealed in tamper-evident packaging with dispatch label | ✅ **PASS** | State: `PACKED` |
+| **20** | `ORDER_DISPATCHED` | Logistics dispatch with shipment tracking code | ✅ **PASS** | Tracking ID: `TRK-IN-1792386895318` |
+| **21** | `ORDER_DELIVERED` | Shipment confirmed delivered to patient address | ✅ **PASS** | State: `DELIVERED` |
+| **22** | `DOSE_LOG_AND_REFILL` | Patient logs dose intake; adherence telemetry updates | ✅ **PASS** | Adherence logged; refill evaluated |
 
 ---
 
-## 5. Smoke Test Conclusion
-
-The production smoke test demonstrated that the TriMedi platform functions reliably, safely, and seamlessly across all 22 operational healthcare transitions.
-
-**Smoke Test Final Result:** **PASS (100% SUCCESS)**
+### 3. Conclusion
+The 22-step smoke test proves that the entire end-to-end clinical care and pharmacy commerce workflow is technically operational and robust across all 22 lifecycle steps.
