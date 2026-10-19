@@ -32,6 +32,9 @@
  */
 
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const BASE_URL = "http://localhost:5001";
 const JWT_SECRET = process.env.JWT_SECRET || "secret123";

@@ -5,7 +5,15 @@ import User from "../models/User.js";
 
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || "trimedi_secure_jwt_secret_2026";
+const isProduction = (process.env.APP_ENV || process.env.NODE_ENV) === "production";
+export const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (secret) return secret;
+  if (isProduction) {
+    throw new Error("FATAL: JWT_SECRET must be configured in production environment. No fallback permitted.");
+  }
+  return "trimedi_secure_jwt_secret_2026";
+};
 
 import securityStore from "../services/securityStore.js";
 
@@ -111,10 +119,14 @@ export const verifyAuthToken = async (token) => {
     let decoded = null;
 
     try {
-      decoded = jwt.verify(cleanToken, JWT_SECRET);
+      decoded = jwt.verify(cleanToken, getJwtSecret());
     } catch (jwtErr) {
-      // Fallback secret check
-      decoded = jwt.verify(cleanToken, "trimedi_secure_jwt_secret_2026");
+      if (!isProduction && !process.env.JWT_SECRET) {
+        // Fallback secret check only in development/test when no JWT_SECRET env is provided
+        decoded = jwt.verify(cleanToken, "trimedi_secure_jwt_secret_2026");
+      } else {
+        throw jwtErr;
+      }
     }
 
     if (!decoded || !decoded.id) return null;

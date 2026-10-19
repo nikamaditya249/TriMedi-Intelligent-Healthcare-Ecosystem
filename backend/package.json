@@ -6,6 +6,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "test": "node test_phase5_95_paypal_production.js && node scripts/security_negative_matrix_test.js && node scripts/production_smoke_test.js",
     "seed": "node scripts/db_seed.js",
     "db:init": "node scripts/db_init.js",
     "db:seed": "node scripts/db_seed.js",

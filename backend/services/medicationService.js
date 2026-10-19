@@ -288,6 +288,7 @@ export class MedicationService {
 
     const today = date || new Date().toISOString().split("T")[0];
     const recordTime = new Date();
+    const normalizedSlot = (timeSlot || "morning").toLowerCase();
 
     let med = null;
     if (mongoose.connection.readyState === 1 && mongoose.isValidObjectId(medicationId)) {
@@ -302,9 +303,10 @@ export class MedicationService {
 
     // 1. Update or append to doseLogs
     if (!med.doseLogs) med.doseLogs = [];
-    const logIndex = med.doseLogs.findIndex((l) => l.date === today && l.timeSlot === timeSlot);
+    const logIndex = med.doseLogs.findIndex((l) => l.date === today && (l.timeSlot || "").toLowerCase() === normalizedSlot);
 
     if (logIndex !== -1) {
+      med.doseLogs[logIndex].timeSlot = normalizedSlot;
       med.doseLogs[logIndex].status = status;
       med.doseLogs[logIndex].recordedAt = recordTime;
       med.doseLogs[logIndex].recordedBy = actorEmail;
@@ -312,7 +314,7 @@ export class MedicationService {
     } else {
       med.doseLogs.push({
         date: today,
-        timeSlot: timeSlot || "morning",
+        timeSlot: normalizedSlot,
         status,
         scheduledTime: "08:00 AM",
         recordedAt: recordTime,

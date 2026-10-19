@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import User from "../models/User.js";
-import { optionalAuth, requireAuth, revokeToken, invalidateUserSessions } from "../middleware/authMiddleware.js";
+import { optionalAuth, requireAuth, revokeToken, invalidateUserSessions, getJwtSecret } from "../middleware/authMiddleware.js";
 import { logClinicalAudit, logSecurityEvent } from "../services/auditService.js";
 import securityStore from "../services/securityStore.js";
 
@@ -183,7 +183,7 @@ router.post("/register", async (req, res) => {
 
       const token = jwt.sign(
         { id: newUser._id, role: newUser.role, email: newUser.email },
-        process.env.JWT_SECRET || "trimedi_secure_jwt_secret_2026",
+        getJwtSecret(),
         { expiresIn: "7d" }
       );
 
@@ -229,7 +229,7 @@ router.post("/register", async (req, res) => {
 
     const token = jwt.sign(
       { id: mockUser._id, role: mockUser.role, email: mockUser.email },
-      process.env.JWT_SECRET || "trimedi_secure_jwt_secret_2026",
+      getJwtSecret(),
       { expiresIn: "7d" }
     );
 
@@ -347,7 +347,7 @@ router.post("/login", async (req, res) => {
 
     const token = jwt.sign(
       { id: user._id, role: user.role || "patient", email: user.email },
-      process.env.JWT_SECRET || "trimedi_secure_jwt_secret_2026",
+      getJwtSecret(),
       { expiresIn: "7d" }
     );
 
@@ -570,7 +570,7 @@ router.get("/me", async (req, res) => {
 
   try {
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "trimedi_secure_jwt_secret_2026");
+    const decoded = jwt.verify(token, getJwtSecret());
 
     let user = null;
     if (mongoose.connection.readyState === 1) {

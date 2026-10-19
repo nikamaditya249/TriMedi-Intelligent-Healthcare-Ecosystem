@@ -81,12 +81,13 @@ async function runTests() {
     // 1. PATIENT REGISTRATION & ONBOARDING
     // -------------------------------------------------------------------------
     console.log("\n--- 1. PATIENT REGISTRATION & ONBOARDING ---");
+    const walkinEmail = `jane.test_${Date.now()}@trimedi.health`;
     const regRes = await apiCall(
       "/reception/register-patient",
       "POST",
       {
         name: "Test Patient Jane",
-        email: "jane.test@trimedi.health",
+        email: walkinEmail,
         phone: "+1-555-0199",
         dob: "1990-05-14",
         gender: "female",
@@ -100,7 +101,7 @@ async function runTests() {
       "Reception Registers Walk-in Patient with Clinical Baseline",
       "201 Created with stable ID and clinical profile",
       `${regRes.status}: ${regRes.data?.patient?.email || regRes.data?.message}`,
-      regRes.status === 201 && regRes.data?.patient?.email === "jane.test@trimedi.health"
+      regRes.status === 201 && regRes.data?.patient?.email === walkinEmail
     );
 
     // -------------------------------------------------------------------------
