@@ -1,10 +1,15 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+const rawBase =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:5001/api";
+const BASE_URL = rawBase.replace(/\/+$/, "");
 
 /**
  * Universal safe fetch helper with error handling & token attachment
  */
 async function request(endpoint, options = {}) {
-  const url = endpoint.startsWith("http") ? endpoint : `${BASE_URL}${endpoint}`;
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const url = endpoint.startsWith("http") ? endpoint : `${BASE_URL}${cleanEndpoint}`;
   const token = localStorage.getItem("token");
 
   const headers = {
@@ -19,6 +24,12 @@ async function request(endpoint, options = {}) {
     const data = contentType && contentType.includes("application/json") ? await res.json() : null;
 
     if (!res.ok) {
+      if (res.status === 401) {
+        // Handle token expiration/unauthorized session
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("trimedi:unauthorized", { detail: { endpoint, status: 401 } }));
+        }
+      }
       const errorMsg = data?.message || data?.error || `Request failed with status ${res.status}`;
       return { success: false, error: errorMsg, status: res.status, ...data };
     }
@@ -42,6 +53,10 @@ export const getProducts = async (params = {}) => {
   const endpoint = query ? `/products?${query}` : `/products`;
   const res = await request(endpoint);
   return Array.isArray(res) ? res : res?.products || [];
+};
+
+export const getProductById = async (id) => {
+  return request(`/products/${id}`);
 };
 
 export const addProduct = async (productData) => {

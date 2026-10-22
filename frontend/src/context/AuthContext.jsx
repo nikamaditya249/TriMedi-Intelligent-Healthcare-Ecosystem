@@ -86,6 +86,17 @@ export function AuthProvider({ children }) {
     }
   }, [user]);
 
+  // Listen for global 401 unauthorized events from api.js
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      logout();
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("trimedi:unauthorized", handleUnauthorized);
+      return () => window.removeEventListener("trimedi:unauthorized", handleUnauthorized);
+    }
+  }, []);
+
   const login = async (credentials) => {
     const res = await apiLogin(credentials);
     if (res.token && res.user) {
@@ -96,7 +107,7 @@ export function AuthProvider({ children }) {
       setActiveRole(res.user.role || "patient");
       return { success: true, user: res.user };
     }
-    return { success: false, message: res.message || "Login failed" };
+    return { success: false, message: res.message || res.error || "Login failed" };
   };
 
   const register = async (userData) => {
@@ -109,7 +120,7 @@ export function AuthProvider({ children }) {
       setActiveRole(res.user.role || userData.role || "patient");
       return { success: true, user: res.user };
     }
-    return { success: false, message: res.message || "Registration failed" };
+    return { success: false, message: res.message || res.error || "Registration failed" };
   };
 
   const logout = () => {
@@ -120,13 +131,33 @@ export function AuthProvider({ children }) {
     setActiveRole("patient");
   };
 
-  const switchDemoRole = (role) => {
+  const switchDemoRole = async (role) => {
+    const roleEmailMap = {
+      patient: "aditya@trimedi.health",
+      doctor: "doctor@trimedi.health",
+      pharmacy: "pharmacy@trimedi.health",
+      admin: "admin@trimedi.health",
+      reception: "reception@trimedi.health",
+    };
+
     const mockUser = DEMO_USERS[role] || DEMO_USERS.patient;
-    localStorage.setItem("token", "demo_token_" + role);
     localStorage.setItem("user", JSON.stringify(mockUser));
-    setToken("demo_token_" + role);
     setUser(mockUser);
     setActiveRole(role);
+
+    const email = roleEmailMap[role] || "aditya@trimedi.health";
+    try {
+      const res = await apiLogin({ email, password: "password123" });
+      if (res.token && res.user) {
+        localStorage.setItem("token", res.token);
+        localStorage.setItem("user", JSON.stringify(res.user));
+        setToken(res.token);
+        setUser(res.user);
+        setActiveRole(res.user.role || role);
+      }
+    } catch (err) {
+      console.warn("Real login fallback:", err);
+    }
   };
 
   const updateUserProfile = (updatedFields) => {

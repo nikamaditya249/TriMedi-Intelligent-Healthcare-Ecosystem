@@ -2,19 +2,22 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { SocketProvider } from "./context/SocketContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // Public Pages
 import Landing from "./pages/Landing";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import Auth from "./pages/Auth";
 import Products from "./pages/Products";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Profile from "./pages/Profile";
 
-// Layout & App Shell
+// Layout & Route Protection
 import Navbar from "./components/Navbar";
 import AppShell from "./components/layout/AppShell";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 // Dashboards
 import PatientDashboard from "./pages/dashboards/PatientDashboard";
@@ -36,6 +39,15 @@ import {
 // Real-Time Chat
 import ChatPage from "./pages/chat/ChatPage";
 
+// Scroll restoration helper on route transition
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 // Route wrapper to render Navbar for public views and AppShell for application views
 function AppContent() {
   const [search, setSearch] = useState("");
@@ -46,21 +58,37 @@ function AppContent() {
 
   return (
     <>
+      <ScrollToTop />
       {!isAppRoute && <Navbar search={search} setSearch={setSearch} />}
 
       <Routes>
         {/* PUBLIC ROUTES */}
         <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/products" element={<Products search={search} />} />
+        <Route path="/medicines" element={<Navigate to="/products" replace />} />
+        <Route path="/consult" element={<Navigate to="/login" replace />} />
+        <Route path="/help" element={<Navigate to="/#help" replace />} />
+        <Route path="/offers" element={<Navigate to="/#offers" replace />} />
         <Route path="/cart" element={<Cart />} />
-        <Route path="/checkout" element={<Checkout />} />
+        <Route
+          path="/checkout"
+          element={
+            <ProtectedRoute>
+              <Checkout />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/profile"
           element={
-            <div className="py-8 px-4 sm:px-6">
-              <Profile />
-            </div>
+            <ProtectedRoute>
+              <div className="py-8 px-4 sm:px-6">
+                <Profile />
+              </div>
+            </ProtectedRoute>
           }
         />
 
@@ -68,9 +96,11 @@ function AppContent() {
         <Route
           path="/app/chat"
           element={
-            <AppShell>
-              <ChatPage />
-            </AppShell>
+            <ProtectedRoute>
+              <AppShell>
+                <ChatPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
 
@@ -78,205 +108,258 @@ function AppContent() {
         <Route
           path="/app/patient/dashboard"
           element={
-            <AppShell>
-              <PatientDashboard />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["patient", "admin"]}>
+              <AppShell>
+                <PatientDashboard />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/patient/doctors"
           element={
-            <AppShell>
-              <MyDoctorsPage />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["patient", "admin"]}>
+              <AppShell>
+                <MyDoctorsPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/patient/prescriptions"
           element={
-            <AppShell>
-              <PrescriptionsPage />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["patient", "admin"]}>
+              <AppShell>
+                <PrescriptionsPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/patient/orders"
           element={
-            <AppShell>
-              <OrdersPage />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["patient", "admin"]}>
+              <AppShell>
+                <OrdersPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/patient/messages"
           element={
-            <AppShell>
-              <ChatPage />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["patient", "admin"]}>
+              <AppShell>
+                <ChatPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
+        <Route path="/app/patient" element={<Navigate to="/app/patient/dashboard" replace />} />
 
         {/* DOCTOR ROUTES */}
         <Route
           path="/app/doctor/dashboard"
           element={
-            <AppShell>
-              <DoctorDashboard />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["doctor", "admin"]}>
+              <AppShell>
+                <DoctorDashboard />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/doctor/patients"
           element={
-            <AppShell>
-              <MyDoctorsPage />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["doctor", "admin"]}>
+              <AppShell>
+                <MyDoctorsPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/doctor/prescriptions"
           element={
-            <AppShell>
-              <PrescriptionsPage />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["doctor", "admin"]}>
+              <AppShell>
+                <PrescriptionsPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/doctor/appointments"
           element={
-            <AppShell>
-              <AppointmentsPage />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["doctor", "admin"]}>
+              <AppShell>
+                <AppointmentsPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/doctor/messages"
           element={
-            <AppShell>
-              <ChatPage />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["doctor", "admin"]}>
+              <AppShell>
+                <ChatPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
+        <Route path="/app/doctor" element={<Navigate to="/app/doctor/dashboard" replace />} />
 
         {/* PHARMACY ROUTES */}
         <Route
           path="/app/pharmacy/dashboard"
           element={
-            <AppShell>
-              <PharmacyDashboard />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["pharmacy", "admin"]}>
+              <AppShell>
+                <PharmacyDashboard />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/pharmacy/orders"
           element={
-            <AppShell>
-              <OrdersPage />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["pharmacy", "admin"]}>
+              <AppShell>
+                <OrdersPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/pharmacy/inventory"
           element={
-            <AppShell>
-              <InventoryPage />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["pharmacy", "admin"]}>
+              <AppShell>
+                <InventoryPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/pharmacy/patients"
           element={
-            <AppShell>
-              <MyDoctorsPage />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["pharmacy", "admin"]}>
+              <AppShell>
+                <MyDoctorsPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
+        <Route path="/app/pharmacy" element={<Navigate to="/app/pharmacy/dashboard" replace />} />
 
         {/* ADMIN ROUTES */}
         <Route
           path="/app/admin/dashboard"
           element={
-            <AppShell>
-              <AdminDashboard />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AppShell>
+                <AdminDashboard />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/admin/users"
           element={
-            <AppShell>
-              <AdminDashboard />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AppShell>
+                <AdminDashboard />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/admin/doctors"
           element={
-            <AppShell>
-              <MyDoctorsPage />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AppShell>
+                <MyDoctorsPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/admin/patients"
           element={
-            <AppShell>
-              <MyDoctorsPage />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AppShell>
+                <MyDoctorsPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/admin/orders"
           element={
-            <AppShell>
-              <OrdersPage />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AppShell>
+                <OrdersPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/admin/system"
           element={
-            <AppShell>
-              <SystemManagementPage />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AppShell>
+                <SystemManagementPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
+        <Route path="/app/admin" element={<Navigate to="/app/admin/dashboard" replace />} />
 
         {/* RECEPTION ROUTES */}
         <Route
           path="/app/reception/dashboard"
           element={
-            <AppShell>
-              <ReceptionDashboard />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["reception", "admin"]}>
+              <AppShell>
+                <ReceptionDashboard />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/reception/queue"
           element={
-            <AppShell>
-              <ReceptionDashboard />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["reception", "admin"]}>
+              <AppShell>
+                <ReceptionDashboard />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/reception/appointments"
           element={
-            <AppShell>
-              <ReceptionDashboard />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["reception", "admin"]}>
+              <AppShell>
+                <ReceptionDashboard />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/app/reception/patients"
           element={
-            <AppShell>
-              <ReceptionDashboard />
-            </AppShell>
+            <ProtectedRoute allowedRoles={["reception", "admin"]}>
+              <AppShell>
+                <ReceptionDashboard />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
+        <Route path="/app/reception" element={<Navigate to="/app/reception/dashboard" replace />} />
 
-        {/* Unified redirect helper */}
+        {/* Unified redirect helpers */}
         <Route
           path="/app/dashboard"
           element={<Navigate to={`/app/${activeRole || "patient"}/dashboard`} replace />}

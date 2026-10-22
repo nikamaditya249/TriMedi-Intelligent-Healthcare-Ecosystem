@@ -204,7 +204,7 @@ export function Sidebar({ mobileOpen = false, setMobileOpen = () => {} }) {
           <button
             onClick={() => {
               logout();
-              navigate("/auth");
+              navigate("/login");
               handleNavClick();
             }}
             className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"

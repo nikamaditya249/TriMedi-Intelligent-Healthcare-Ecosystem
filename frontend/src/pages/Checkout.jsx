@@ -25,8 +25,6 @@ import {
   capturePayPalOrder,
   getPayPalConfig,
   getPaymentConfig,
-  createRazorpayOrder,
-  verifyRazorpayPayment,
 } from "../api";
 
 function Checkout() {
@@ -168,62 +166,6 @@ function Checkout() {
     }
   }, [payment, paypalLoaded, cart, address, user, confirmedOrder, prescriptionRef]);
 
-  // Handle India-First Razorpay Payment (Cards, UPI, Net Banking)
-  const handleRazorpayCheckout = async () => {
-    if (!address.name || !address.phone || !address.address) {
-      setError("Please complete all delivery address fields.");
-      return;
-    }
-
-    if (hasPrescriptionItems && !prescriptionRef.trim()) {
-      setError("Prescription reference number (e.g. RX-9041) is required for controlled medications.");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-      // 1. Backend creates authenticated payment order & atomically reserves stock
-      const rzpInit = await createRazorpayOrder({
-        items: cart,
-        deliveryAddress: address,
-        prescriptionRef,
-        idempotencyKey: `chk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      });
-
-      if (!rzpInit.success || !rzpInit.orderId) {
-        throw new Error(rzpInit.message || "Failed to initialize payment gateway order");
-      }
-
-      // 2. Client Payment Execution (Test sandbox / live checkout)
-      // Simulating user entering OTP / UPI PIN in Razorpay modal
-      const dummyPaymentId = `pay_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-
-      // Calculate HMAC SHA256 test signature
-      // The server will cryptographically verify this signature with RAZORPAY_KEY_SECRET!
-      const verifyRes = await verifyRazorpayPayment({
-        razorpayOrderId: rzpInit.orderId,
-        razorpayPaymentId: dummyPaymentId,
-        // For testing / demo environment, generate authentic signature using test credentials
-        razorpaySignature: "test_sig_auto_verified",
-        items: cart,
-        deliveryAddress: address,
-        prescriptionRef,
-      });
-
-      if (verifyRes.order) {
-        setConfirmedOrder(verifyRes.order);
-        clearCart && clearCart();
-      } else {
-        setError(verifyRes.message || "Cryptographic payment verification failed on server");
-      }
-    } catch (err) {
-      setError(err.message || "Payment checkout error");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Handle Cash on Delivery (COD) Checkout
   const handleDirectOrder = async () => {
@@ -472,27 +414,7 @@ function Checkout() {
               <h3 className="text-sm font-bold text-slate-900">2. Select Payment Method</h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-              <label
-                className={`p-3.5 rounded-xl border flex flex-col gap-1 cursor-pointer text-xs font-semibold transition-all ${
-                  payment === "razorpay"
-                    ? "border-brand-600 bg-brand-50/50 text-brand-900 ring-2 ring-brand-500/20"
-                    : "border-slate-200 text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="payment"
-                    checked={payment === "razorpay"}
-                    onChange={() => setPayment("razorpay")}
-                    className="text-brand-600 focus:ring-brand-500"
-                  />
-                  <span>Razorpay (India-First)</span>
-                </div>
-                <span className="text-[10px] text-slate-500 pl-5">UPI, Cards, Net Banking</span>
-              </label>
-
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               <label
                 className={`p-3.5 rounded-xl border flex flex-col gap-1 cursor-pointer text-xs font-semibold transition-all ${
                   payment === "paypal"
@@ -508,9 +430,9 @@ function Checkout() {
                     onChange={() => setPayment("paypal")}
                     className="text-brand-600 focus:ring-brand-500"
                   />
-                  <span>PayPal (Global)</span>
+                  <span>PayPal (Production Gateway)</span>
                 </div>
-                <span className="text-[10px] text-slate-500 pl-5">USD / Global Cards</span>
+                <span className="text-[10px] text-slate-500 pl-5">USD / Global Cards / PayPal Sandbox</span>
               </label>
 
               <label
@@ -533,27 +455,6 @@ function Checkout() {
                 <span className="text-[10px] text-slate-500 pl-5">Pay Upon Delivery</span>
               </label>
             </div>
-
-            {/* Razorpay Action */}
-            {payment === "razorpay" && (
-              <div className="space-y-3 pt-2">
-                <div className="p-3 rounded-xl bg-slate-50 text-[11px] text-slate-600 flex items-center gap-2 border border-slate-100">
-                  <FiLock className="w-4 h-4 text-brand-600 shrink-0" />
-                  <span>
-                    Secured by Razorpay. Cryptographically verified server-side via HMAC SHA-256. Authoritative total: <b>₹{authoritativeTotalEstimate}</b>.
-                  </span>
-                </div>
-                <Button
-                  variant="primary"
-                  size="lg"
-                  loading={loading}
-                  className="w-full"
-                  onClick={handleRazorpayCheckout}
-                >
-                  Pay with Razorpay (₹{authoritativeTotalEstimate})
-                </Button>
-              </div>
-            )}
 
             {/* PayPal Container */}
             {payment === "paypal" && (

@@ -7,7 +7,7 @@ import Button from "../components/ui/Button";
 import EmptyState from "../components/ui/EmptyState";
 
 function Cart() {
-  const { cart = [], removeFromCart, total = 0 } = useCart() || {};
+  const { cart = [], removeFromCart, updateQuantity, total = 0 } = useCart() || {};
   const navigate = useNavigate();
 
   return (
@@ -44,9 +44,29 @@ function Cart() {
                   <div>
                     <h3 className="text-sm font-bold text-slate-900">{item.name}</h3>
                     <p className="text-xs text-slate-500">Unit Price: ₹{item.price}</p>
-                    <span className="text-[11px] text-brand-700 font-semibold mt-0.5 inline-block">
-                      Qty: {item.qty || 1}
-                    </span>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="inline-flex items-center border border-slate-200 rounded-lg bg-slate-50">
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity && updateQuantity(item._id, (item.qty || 1) - 1)}
+                          className="w-6 h-6 flex items-center justify-center text-slate-600 hover:text-slate-900 font-bold hover:bg-slate-200 rounded-l-md transition-colors text-xs"
+                          aria-label="Decrease quantity"
+                        >
+                          -
+                        </button>
+                        <span className="w-7 text-center text-xs font-bold text-slate-800">
+                          {item.qty || 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity && updateQuantity(item._id, (item.qty || 1) + 1)}
+                          className="w-6 h-6 flex items-center justify-center text-slate-600 hover:text-slate-900 font-bold hover:bg-slate-200 rounded-r-md transition-colors text-xs"
+                          aria-label="Increase quantity"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

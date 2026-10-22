@@ -58,7 +58,7 @@ app.use((req, res, next) => {
   res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.paypal.com https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.razorpay.com https://api-m.paypal.com https://api-m.sandbox.paypal.com https://www.paypal.com ws: wss: http://localhost:5001 http://localhost:5173 http://127.0.0.1:5173; frame-src 'self' https://api.razorpay.com https://www.paypal.com;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.paypal.com https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.razorpay.com https://api-m.paypal.com https://api-m.sandbox.paypal.com https://www.paypal.com ws: wss: http://localhost:5001 http://localhost:5173 http://localhost:5174 http://127.0.0.1:5173 http://127.0.0.1:5174; frame-src 'self' https://api.razorpay.com https://www.paypal.com;"
   );
   next();
 });
@@ -67,8 +67,10 @@ app.use((req, res, next) => {
 const allowedOrigins = [
   process.env.CLIENT_URL,
   "http://localhost:5173",
+  "http://localhost:5174",
   "http://localhost:5001",
   "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
 ].filter(Boolean);
 
 app.use(

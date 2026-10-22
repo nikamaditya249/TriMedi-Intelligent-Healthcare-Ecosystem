@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import {
@@ -15,6 +16,7 @@ import Avatar from "../components/ui/Avatar";
 import { updateProfile as apiUpdateProfile } from "../api";
 
 export function Profile() {
+  const navigate = useNavigate();
   const { user, activeRole, updateUserProfile } = useAuth();
   const { cart = [], total = 0 } = useCart() || {};
 
@@ -61,7 +63,7 @@ export function Profile() {
           <FiUser className="w-12 h-12 text-slate-400 mx-auto mb-3" />
           <h3 className="text-base font-bold text-slate-800 mb-1">Please Sign In</h3>
           <p className="text-xs text-slate-500 mb-4">You must be authenticated to view your healthcare profile.</p>
-          <Button variant="primary" size="sm" onClick={() => (window.location.href = "/auth")}>
+          <Button variant="primary" size="sm" onClick={() => navigate("/login")}>
             Go to Login
           </Button>
         </Card>

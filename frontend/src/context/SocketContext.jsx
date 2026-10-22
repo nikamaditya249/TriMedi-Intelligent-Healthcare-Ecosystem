@@ -29,7 +29,11 @@ export const SocketProvider = ({ children }) => {
     }
 
     const socketUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:5001";
-    const authToken = localStorage.getItem("token") || (user?.role ? `demo_token_${user.role}` : "demo_token_patient");
+    const authToken = localStorage.getItem("token");
+    if (!authToken || authToken.startsWith("demo_token_")) {
+      // Defer socket connection until a real authenticated token is established
+      return;
+    }
 
     const newSocket = io(socketUrl, {
       auth: {

@@ -38,44 +38,89 @@ import BookAppointmentModal from "../../components/appointments/BookAppointmentM
 // ==========================================
 export function MyDoctorsPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [bookModalOpen, setBookModalOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const doctors = [
-    {
-      id: "doc-1",
-      name: "Dr. Sarah Jenkins, MD",
-      specialty: "Cardiology & Internal Medicine",
-      hospital: "Metro Health Center",
-      experience: "14 yrs experience",
-      rating: "4.9 ★ (120 reviews)",
-      email: "doctor@trimedi.health",
-      lastConsult: "Aug 28, 2026",
-    },
-    {
-      id: "doc-2",
-      name: "Dr. Rajesh Gupta, MD",
-      specialty: "Endocrinology & Diabetology",
-      hospital: "City Care Clinic",
-      experience: "18 yrs experience",
-      rating: "4.8 ★ (95 reviews)",
-      email: "gupta@trimedi.health",
-      lastConsult: "Aug 10, 2026",
-    },
-    {
-      id: "doc-3",
-      name: "Dr. Emily Chen, MBBS",
-      specialty: "General Physician & Family Medicine",
-      hospital: "Sunrise Polyclinic",
-      experience: "9 yrs experience",
-      rating: "4.9 ★ (88 reviews)",
-      email: "chen@trimedi.health",
-      lastConsult: "Jul 15, 2026",
-    },
-  ];
+  useEffect(() => {
+    async function loadCareTeam() {
+      try {
+        const userEmail = (user?.email || "aditya@trimedi.health").toLowerCase();
+        const [appts, rxs] = await Promise.all([
+          getAppointments({ role: "patient", patientEmail: userEmail }),
+          getPrescriptions({ role: "patient", patientEmail: userEmail }),
+        ]);
+
+        const docMap = new Map();
+
+        if (Array.isArray(appts)) {
+          appts.forEach((apt) => {
+            if (apt.doctorName) {
+              const emailKey = (apt.doctorEmail || apt.doctorName).toLowerCase();
+              if (!docMap.has(emailKey)) {
+                docMap.set(emailKey, {
+                  id: apt.doctorEmail || apt._id,
+                  name: apt.doctorName,
+                  specialty: apt.doctorSpecialty || "General Medicine",
+                  hospital: apt.hospital || "Metro Health Center",
+                  experience: "14 yrs experience",
+                  rating: "4.9 ★ (Verified Specialist)",
+                  email: apt.doctorEmail || "doctor@trimedi.health",
+                  lastConsult: apt.appointmentDate || "Recent Consultation",
+                });
+              }
+            }
+          });
+        }
+
+        if (Array.isArray(rxs)) {
+          rxs.forEach((rx) => {
+            if (rx.doctorName) {
+              const emailKey = (rx.doctorEmail || rx.doctorName).toLowerCase();
+              if (!docMap.has(emailKey)) {
+                docMap.set(emailKey, {
+                  id: rx.doctorEmail || rx._id,
+                  name: rx.doctorName,
+                  specialty: rx.doctorSpecialty || "Cardiology & Internal Medicine",
+                  hospital: "Metro Health Center",
+                  experience: "14 yrs experience",
+                  rating: "4.9 ★ (Verified Specialist)",
+                  email: rx.doctorEmail || "doctor@trimedi.health",
+                  lastConsult: rx.createdAt ? new Date(rx.createdAt).toLocaleDateString() : "Recent",
+                });
+              }
+            }
+          });
+        }
+
+        if (docMap.size === 0) {
+          docMap.set("doctor@trimedi.health", {
+            id: "doc-1",
+            name: "Dr. Sarah Jenkins, MD",
+            specialty: "Cardiology & Internal Medicine",
+            hospital: "Metro Health Center",
+            experience: "14 yrs experience",
+            rating: "4.9 ★ (Verified Platform Specialist)",
+            email: "doctor@trimedi.health",
+            lastConsult: "Available for Booking",
+          });
+        }
+
+        setDoctors(Array.from(docMap.values()));
+      } catch (err) {
+        console.error("Failed to load care team doctors:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadCareTeam();
+  }, [user]);
 
   const handleOpenBook = (doc) => {
-    setSelectedDoc(doc);
+    setSelectedDoc(doc || doctors[0]);
     setBookModalOpen(true);
   };
 
@@ -93,49 +138,53 @@ export function MyDoctorsPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {doctors.map((doc) => (
-          <Card key={doc.id} className="flex flex-col justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-11 h-11 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center font-bold text-base border border-brand-100">
-                  <FiUserCheck className="w-5 h-5" />
+      {loading ? (
+        <LoadingState message="Loading your verified specialists and care team..." rows={3} />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {doctors.map((doc) => (
+            <Card key={doc.id} className="flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-11 h-11 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center font-bold text-base border border-brand-100">
+                    <FiUserCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">{doc.name}</h3>
+                    <p className="text-xs text-brand-700 font-semibold">{doc.specialty}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">{doc.name}</h3>
-                  <p className="text-xs text-brand-700 font-semibold">{doc.specialty}</p>
+                <div className="space-y-1.5 text-xs text-slate-500 py-2.5 border-y border-slate-100">
+                  <p>📍 {doc.hospital}</p>
+                  <p>⏳ {doc.experience} • {doc.rating}</p>
+                  <p>
+                    🗓️ Last Consultation: <span className="font-semibold text-slate-700">{doc.lastConsult}</span>
+                  </p>
                 </div>
               </div>
-              <div className="space-y-1.5 text-xs text-slate-500 py-2.5 border-y border-slate-100">
-                <p>📍 {doc.hospital}</p>
-                <p>⏳ {doc.experience} • {doc.rating}</p>
-                <p>
-                  🗓️ Last Consultation: <span className="font-semibold text-slate-700">{doc.lastConsult}</span>
-                </p>
-              </div>
-            </div>
 
-            <div className="pt-4 flex gap-2">
-              <Button
-                variant="primary"
-                size="sm"
-                className="w-full text-xs"
-                onClick={() => handleOpenBook(doc)}
-              >
-                Book Visit
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs shrink-0"
-                onClick={() => navigate("/app/patient/prescriptions")}
-              >
-                Prescriptions
-              </Button>
-            </div>
-          </Card>
-        ))}
-      </div>
+              <div className="pt-4 flex gap-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() => handleOpenBook(doc)}
+                >
+                  Book Visit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs shrink-0"
+                  onClick={() => navigate("/app/patient/prescriptions")}
+                >
+                  Prescriptions
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <BookAppointmentModal
         isOpen={bookModalOpen}

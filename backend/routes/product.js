@@ -86,6 +86,22 @@ router.get("/inventory", requireAuth, requireRole(["pharmacy", "admin"]), async 
   }
 });
 
+/* GET PRODUCT BY ID (Public / Verified Catalog Lookup) */
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (mongoose.connection.readyState === 1 && mongoose.isValidObjectId(id)) {
+      const prod = await Product.findById(id);
+      if (prod) return res.json(prod);
+    }
+    const fallback = defaultProducts.find((p) => String(p._id) === id);
+    if (fallback) return res.json(fallback);
+    return res.status(404).json({ message: "Product not found" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /* PATCH UPDATE PRODUCT STOCK (Pharmacy & Admin Role Protected) */
 router.patch("/:id/stock", requireAuth, requireRole(["pharmacy", "admin"]), async (req, res) => {
   try {
