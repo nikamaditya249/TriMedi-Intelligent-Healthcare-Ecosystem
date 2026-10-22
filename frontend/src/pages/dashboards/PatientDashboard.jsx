@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   FiActivity,
   FiFileText,
@@ -43,8 +43,15 @@ export function PatientDashboard() {
   const { user } = useAuth();
   const { socket, isConnected, onlineUsers } = useSocket();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(urlTab || "overview");
 
-  const [activeTab, setActiveTab] = useState("overview"); // "overview" | "medical_record"
+  useEffect(() => {
+    if (urlTab) {
+      setActiveTab(urlTab);
+    }
+  }, [urlTab]);
   const [data, setData] = useState(null);
   const [medicationSupplies, setMedicationSupplies] = useState([]);
   const [livePrescriptions, setLivePrescriptions] = useState([]);

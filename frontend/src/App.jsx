@@ -69,7 +69,11 @@ function AppContent() {
         <Route path="/auth" element={<Auth />} />
         <Route path="/products" element={<Products search={search} />} />
         <Route path="/medicines" element={<Navigate to="/products" replace />} />
-        <Route path="/consult" element={<Navigate to="/login" replace />} />
+        <Route path="/consult" element={<Navigate to="/app/patient/doctors" replace />} />
+        <Route path="/orders" element={<Navigate to="/app/patient/orders" replace />} />
+        <Route path="/records" element={<Navigate to="/app/patient/dashboard?tab=medical_record" replace />} />
+        <Route path="/health-records" element={<Navigate to="/app/patient/dashboard?tab=medical_record" replace />} />
+        <Route path="/lab-reports" element={<Navigate to="/app/patient/dashboard?tab=medical_record" replace />} />
         <Route path="/help" element={<Navigate to="/#help" replace />} />
         <Route path="/offers" element={<Navigate to="/#offers" replace />} />
         <Route path="/cart" element={<Cart />} />

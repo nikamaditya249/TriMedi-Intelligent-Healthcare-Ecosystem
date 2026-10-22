@@ -37,19 +37,54 @@ export function Login() {
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotFeedback, setForgotFeedback] = useState(null);
 
-  // Where did the user come from?
-  const redirectTarget = location.state?.from?.pathname || null;
+  // Determine preserved destination if user was redirected from a protected route
+  const getPreservedTarget = () => {
+    if (!location.state?.from) return null;
+    if (typeof location.state.from === "string") {
+      const p = location.state.from;
+      return p !== "/login" && p !== "/signup" ? p : null;
+    }
+    if (location.state.from.pathname) {
+      const p = location.state.from.pathname + (location.state.from.search || "");
+      return p !== "/login" && p !== "/signup" ? p : null;
+    }
+    return null;
+  };
+  const preservedTarget = getPreservedTarget();
 
-  // If already authenticated and not actively logging in, redirect to workspace
+  // Redirect priority helper:
+  // 1. Valid preserved destination from location.state.from
+  // 2. Otherwise, if role === "patient" -> /products
+  // 3. Doctor/Pharmacy/Admin/Reception -> appropriate care workspace
+  const getDestinationForRole = (role) => {
+    if (preservedTarget) {
+      return preservedTarget;
+    }
+    if (role === "patient") {
+      return "/products";
+    }
+    if (role === "doctor") {
+      return "/app/doctor/dashboard";
+    }
+    if (role === "pharmacy") {
+      return "/app/pharmacy/dashboard";
+    }
+    if (role === "admin") {
+      return "/app/admin/dashboard";
+    }
+    if (role === "reception") {
+      return "/app/reception/dashboard";
+    }
+    return "/products";
+  };
+
+  // If already authenticated and not actively logging in, redirect according to role priority
   useEffect(() => {
     if (isAuthenticated && user && !loading && !successMessage) {
-      const destination =
-        redirectTarget && redirectTarget.startsWith("/app")
-          ? redirectTarget
-          : `/app/${user.role || activeRole || "patient"}/dashboard`;
+      const destination = getDestinationForRole(user.role || activeRole || "patient");
       navigate(destination, { replace: true });
     }
-  }, [isAuthenticated, user, activeRole, redirectTarget, navigate, loading, successMessage]);
+  }, [isAuthenticated, user, activeRole, preservedTarget, navigate, loading, successMessage]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -70,16 +105,18 @@ export function Login() {
       });
 
       if (res.success && res.user) {
-        setSuccessMessage("Authentication successful. Opening your healthcare workspace...");
+        const targetRole = res.user.role || "patient";
+        const destination = getDestinationForRole(targetRole);
 
-        const destination =
-          redirectTarget && redirectTarget.startsWith("/app")
-            ? redirectTarget
-            : `/app/${res.user.role || "patient"}/dashboard`;
+        setSuccessMessage(
+          targetRole === "patient"
+            ? "Authentication successful! Opening medicine catalog..."
+            : "Authentication successful! Opening healthcare workspace..."
+        );
 
         setTimeout(() => {
           navigate(destination, { replace: true });
-        }, 400);
+        }, 350);
       } else {
         const errorMsg =
           res.message || res.error || "Invalid email or password. Please verify and try again.";

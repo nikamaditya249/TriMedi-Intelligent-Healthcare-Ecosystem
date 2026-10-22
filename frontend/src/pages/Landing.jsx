@@ -44,35 +44,35 @@ export function Landing() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 selection:bg-brand-500 selection:text-white">
-      {/* 1. TOP TRUST ANNOUNCEMENT STRIP */}
-      <div className="bg-slate-900 text-slate-300 py-1.5 px-4 text-center text-xs font-medium border-b border-slate-800">
-        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 flex-wrap">
-          <span className="inline-flex items-center gap-1.5 text-brand-400 font-semibold">
-            <FiCheckCircle className="w-3.5 h-3.5" />
+      {/* 1. SUBTLE CLINICAL TRUST STRIP */}
+      <div className="bg-emerald-50/60 text-slate-600 py-1.5 px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 text-center text-[11px] font-medium border-b border-emerald-100/80">
+        <div className="w-full flex items-center justify-center gap-2 flex-wrap">
+          <span className="inline-flex items-center gap-1.5 text-brand-800 font-semibold">
+            <FiCheckCircle className="w-3.5 h-3.5 text-brand-600" />
             Connected Healthcare Ecosystem
           </span>
-          <span className="hidden sm:inline text-slate-500">•</span>
-          <span>Certified Doctors, Licensed Pharmacies & Intelligent Refill Tracking</span>
+          <span className="hidden sm:inline text-slate-400">•</span>
+          <span className="text-slate-600">Certified Doctors, Licensed Pharmacies & Intelligent Refill Tracking</span>
         </div>
       </div>
 
-      {/* 2. MINIMAL HEALTHCARE HERO SECTION */}
-      <section className="relative bg-white pt-12 pb-16 lg:pt-20 lg:pb-24 border-b border-slate-200/90">
+      {/* 2. HEALTHCARE COMMERCE HERO SECTION */}
+      <section className="relative bg-white pt-8 pb-14 lg:pt-12 lg:pb-20 border-b border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 xl:gap-16 items-center">
             {/* Left: Clear Healthcare Value Proposition */}
-            <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
+            <div className="lg:col-span-7 xl:col-span-7 space-y-6 text-center lg:text-left">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-800 text-xs font-semibold">
                 <span className="w-2 h-2 rounded-full bg-brand-600"></span>
                 <span>CONNECTED HEALTHCARE PLATFORM</span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.18]">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.15]">
                 Healthcare, Connected <br className="hidden sm:inline" />
                 <span className="text-brand-700">From Consultation to Refill.</span>
               </h1>
 
-              <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed">
+              <p className="text-base sm:text-lg lg:text-xl text-slate-600 max-w-3xl mx-auto lg:mx-0 font-normal leading-relaxed">
                 TriMedi connects patients, doctors, and licensed pharmacies through consultations, digital prescriptions, medicine fulfillment, and intelligent medication tracking.
               </p>
 
@@ -115,8 +115,8 @@ export function Landing() {
             </div>
 
             {/* Right: Restrained Healthcare Product Visual */}
-            <div className="lg:col-span-5">
-              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/60 p-5 shadow-card max-w-md mx-auto">
+            <div className="lg:col-span-5 xl:col-span-5">
+              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/70 p-6 sm:p-7 shadow-card w-full">
                 <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-slate-200">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -196,7 +196,7 @@ export function Landing() {
       {/* 3. CORE TRIMEDI DIFFERENTIATORS (MORE THAN A PHARMACY) */}
       <section id="differentiators" className="py-16 sm:py-24 bg-white border-b border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-14">
+          <div className="text-center max-w-4xl mx-auto mb-14">
             <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-700 mb-2">
               <FiActivity className="w-3.5 h-3.5" />
               <span>Core Ecosystem</span>
@@ -209,7 +209,7 @@ export function Landing() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 xl:gap-8">
             {/* 01 — Doctor Consultation */}
             <div className="rounded-xl border border-slate-200/90 bg-slate-50/50 p-6 flex flex-col justify-between hover:border-slate-300 hover:shadow-subtle transition-all">
               <div>
@@ -325,7 +325,7 @@ export function Landing() {
       {/* 4. ONE CONTINUOUS HEALTHCARE JOURNEY (HORIZONTAL WORKFLOW) */}
       <section id="journey" className="py-16 sm:py-24 bg-slate-50 border-b border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="text-center max-w-3xl mx-auto mb-14">
             <h2 className="text-xs font-bold uppercase tracking-wider text-brand-700 mb-2">
               End-to-End Care Loop
             </h2>
@@ -338,7 +338,7 @@ export function Landing() {
           </div>
 
           {/* 6 Steps Workflow */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 xl:gap-5">
             {[
               {
                 step: "01",
@@ -409,7 +409,7 @@ export function Landing() {
       {/* 5. PRESCRIPTION-TO-DOOR SECTION */}
       <section id="prescription-flow" className="py-16 sm:py-20 bg-white border-b border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mb-12">
+          <div className="max-w-4xl mb-12">
             <h2 className="text-xs font-bold uppercase tracking-wider text-brand-700 mb-2">
               Controlled Fulfillment
             </h2>
@@ -421,7 +421,7 @@ export function Landing() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 xl:gap-5">
             {[
               {
                 num: "1",
@@ -476,7 +476,7 @@ export function Landing() {
       {/* 6. TRADITIONAL HEALTHCARE VS TRIMEDI (COMPARISON) */}
       <section className="py-16 sm:py-24 bg-slate-50 border-b border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="text-center max-w-3xl mx-auto mb-14">
             <h2 className="text-xs font-bold uppercase tracking-wider text-brand-700 mb-2">
               Integrated vs. Fragmented
             </h2>
@@ -488,7 +488,7 @@ export function Landing() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 xl:gap-12 w-full">
             {/* Traditional Healthcare */}
             <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-subtle">
               <div className="flex items-center gap-2 pb-4 mb-4 border-b border-slate-100">
@@ -572,7 +572,7 @@ export function Landing() {
       {/* 7. ROLE-BASED PLATFORM WORKSPACES */}
       <section className="py-16 sm:py-24 bg-white border-b border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="text-center max-w-3xl mx-auto mb-14">
             <h2 className="text-xs font-bold uppercase tracking-wider text-brand-700 mb-2">
               Role-Based Architecture
             </h2>
@@ -584,7 +584,7 @@ export function Landing() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 xl:gap-8">
             {/* Patient Portal */}
             <div className="rounded-xl border border-slate-200/90 bg-slate-50/50 p-6 flex flex-col justify-between hover:border-slate-300 hover:shadow-subtle transition-all">
               <div>
@@ -719,8 +719,8 @@ export function Landing() {
       {/* 8. PATIENT SAFETY & TRUST */}
       <section id="safety" className="py-16 sm:py-24 bg-slate-50 border-b border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-10 shadow-subtle">
-            <div className="max-w-3xl">
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-10 lg:p-12 shadow-subtle w-full">
+            <div className="max-w-4xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold mb-3">
                 <FiShield className="w-3.5 h-3.5 text-brand-700" />
                 <span>Clinical Governance & Standards</span>
@@ -783,7 +783,7 @@ export function Landing() {
       {/* 9. OFFERS & BENEFITS SECTION */}
       <section id="offers" className="py-14 sm:py-18 bg-white border-b border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl mb-8">
+          <div className="max-w-3xl mb-8">
             <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-700 mb-1">
               <FiPercent className="w-3.5 h-3.5" />
               <span>Patient Benefits</span>
@@ -796,7 +796,7 @@ export function Landing() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 xl:gap-8">
             <div className="p-5 rounded-xl border border-slate-200/90 bg-slate-50/50">
               <span className="text-xs font-bold text-brand-700 uppercase tracking-wider">Fulfillment</span>
               <h4 className="text-sm font-bold text-slate-900 mt-1 mb-1.5">Direct Pharmacy Rates</h4>
@@ -827,7 +827,7 @@ export function Landing() {
       {/* 10. NEED HELP & SUPPORT SECTION */}
       <section id="help" className="py-14 sm:py-18 bg-slate-50 border-b border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl mb-8">
+          <div className="max-w-3xl mb-8">
             <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-700 mb-1">
               <FiHelpCircle className="w-3.5 h-3.5" />
               <span>Assistance & FAQs</span>
@@ -840,7 +840,7 @@ export function Landing() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 xl:gap-8">
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-subtle">
               <h4 className="text-sm font-bold text-slate-900 mb-1.5">How do digital prescriptions work?</h4>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -866,8 +866,8 @@ export function Landing() {
       </section>
 
       {/* 11. FINAL CALL TO ACTION */}
-      <section className="py-16 sm:py-20 bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="py-16 sm:py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
             Start Your Healthcare Journey With TriMedi
           </h2>

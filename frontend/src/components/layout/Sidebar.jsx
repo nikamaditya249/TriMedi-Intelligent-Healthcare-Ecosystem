@@ -34,7 +34,6 @@ export function Sidebar({ mobileOpen = false, setMobileOpen = () => {} }) {
       { name: "Prescriptions", path: "/app/patient/prescriptions", icon: FiFileText },
       { name: "Medicine Catalog", path: "/products", icon: FiPackage },
       { name: "Orders & Refills", path: "/app/patient/orders", icon: FiShoppingBag },
-      { name: "Health Profile", path: "/profile", icon: FiUser },
     ],
     doctor: [
       { name: "Clinical Hub", path: "/app/doctor/dashboard", icon: FiGrid },

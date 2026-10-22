@@ -49,7 +49,9 @@ export function Signup() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && user && !loading && !successMessage) {
-      navigate(`/app/${user.role || activeRole || "patient"}/dashboard`, { replace: true });
+      const targetRole = user.role || activeRole || "patient";
+      const destination = targetRole === "patient" ? "/products" : `/app/${targetRole}/dashboard`;
+      navigate(destination, { replace: true });
     }
   }, [isAuthenticated, user, activeRole, navigate, loading, successMessage]);
 
@@ -113,11 +115,16 @@ export function Signup() {
       const res = await register(payload);
 
       if (res.success && res.user) {
-        setSuccessMessage("Your TriMedi account has been created successfully! Launching your workspace...");
         const targetRole = res.user.role || role;
+        const destination = targetRole === "patient" ? "/products" : `/app/${targetRole}/dashboard`;
+        setSuccessMessage(
+          targetRole === "patient"
+            ? "Your TriMedi account has been created! Welcome to our medicine catalog..."
+            : "Your TriMedi account has been created! Launching your workspace..."
+        );
         setTimeout(() => {
-          navigate(`/app/${targetRole}/dashboard`, { replace: true });
-        }, 500);
+          navigate(destination, { replace: true });
+        }, 400);
       } else {
         setErrorMessage(res.message || res.error || "Unable to complete registration. Please try again.");
       }

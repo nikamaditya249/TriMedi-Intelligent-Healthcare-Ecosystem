@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useCart } from "../context/CartContext";
-import { FiShoppingBag, FiCheck, FiPackage } from "react-icons/fi";
+import { FiShoppingBag, FiCheck, FiPackage, FiX } from "react-icons/fi";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import LoadingState from "../components/ui/LoadingState";
@@ -8,6 +9,10 @@ import EmptyState from "../components/ui/EmptyState";
 import { getProducts } from "../api";
 
 function Products({ search = "" }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const querySearch = searchParams.get("search") || "";
+  const effectiveSearch = querySearch || search || "";
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("All");
@@ -34,8 +39,17 @@ function Products({ search = "" }) {
 
   const filtered = Array.isArray(products)
     ? products.filter((p) => {
-        const matchesSearch = p.name?.toLowerCase().includes(search?.toLowerCase() || "");
-        const matchesCategory = category === "All" || (p.category && p.category.toLowerCase() === category.toLowerCase());
+        const term = effectiveSearch.toLowerCase().trim();
+        const matchesSearch =
+          !term ||
+          p.name?.toLowerCase().includes(term) ||
+          p.category?.toLowerCase().includes(term) ||
+          p.composition?.toLowerCase().includes(term) ||
+          p.genericName?.toLowerCase().includes(term) ||
+          p.brand?.toLowerCase().includes(term);
+        const matchesCategory =
+          category === "All" ||
+          (p.category && p.category.toLowerCase() === category.toLowerCase());
         return matchesSearch && matchesCategory;
       })
     : [];
@@ -75,6 +89,24 @@ function Products({ search = "" }) {
         </div>
       </div>
 
+      {effectiveSearch && (
+        <div className="flex items-center justify-between gap-2 px-3.5 py-2 rounded-xl bg-brand-50/70 border border-brand-200/80 text-xs text-brand-900">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-slate-600">Showing results for:</span>
+            <span className="font-bold text-brand-800">"{effectiveSearch}"</span>
+            <span className="text-[11px] text-slate-500">({filtered.length} {filtered.length === 1 ? "medicine" : "medicines"} found)</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSearchParams({})}
+            className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-700 hover:text-brand-900 hover:underline"
+          >
+            <FiX className="w-3.5 h-3.5" />
+            <span>Clear Search</span>
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <LoadingState message="Loading authentic medicines catalog..." rows={6} />
       ) : filtered.length === 0 ? (
@@ -82,15 +114,15 @@ function Products({ search = "" }) {
           icon={FiPackage}
           title="No Medicines Found"
           description={
-            search
-              ? `No products matching "${search}". Try searching for Paracetamol, Atorvastatin, or Cetirizine.`
+            effectiveSearch
+              ? `No products matching "${effectiveSearch}". Try searching for Paracetamol, Atorvastatin, or Telmisartan.`
               : "No medicines available in this category."
           }
           actionLabel="View All Products"
           onAction={() => setCategory("All")}
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5">
           {filtered.map((p) => {
             const isAdded = addedId === p._id;
 
@@ -109,19 +141,45 @@ function Products({ search = "" }) {
                         e.target.src = "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300";
                       }}
                     />
-                    <span className="absolute top-2 right-2 text-[10px] font-bold bg-white px-2 py-0.5 rounded text-slate-700 border border-slate-200/80">
-                      {p.category || "Medicine"}
-                    </span>
+                    <div className="absolute top-2 right-2 flex items-center gap-1">
+                      <span className="text-[10px] font-bold bg-white/95 px-2 py-0.5 rounded text-slate-700 border border-slate-200/80 shadow-xs">
+                        {p.category || "Medicine"}
+                      </span>
+                      {p.prescriptionRequired ? (
+                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded shadow-xs" title="Prescription Required">
+                          Rx
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded shadow-xs" title="Over The Counter">
+                          OTC
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  <h3 className="text-sm font-bold text-slate-900 line-clamp-1 mb-1">{p.name}</h3>
-                  <p className="text-xs text-slate-400">Authentic Pharmacy Stock</p>
+                  <h3 className="text-sm font-bold text-slate-900 line-clamp-1 mb-0.5">{p.name}</h3>
+                  <p className="text-xs text-slate-500 line-clamp-1 mb-2">
+                    {p.genericName || p.composition || p.dosageForm || "Verified Pharma Stock"}
+                  </p>
+                  <div className="flex items-center justify-between text-[11px] text-slate-400">
+                    <span>{p.dosageForm || "Standard"}</span>
+                    {(p.stockQuantity ?? 100) > 0 ? (
+                      <span className="text-emerald-700 font-semibold">In Stock</span>
+                    ) : (
+                      <span className="text-rose-600 font-semibold">Out of Stock</span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
                   <div>
-                    <span className="text-[11px] text-slate-400 block leading-none">Price</span>
-                    <span className="text-base font-extrabold text-slate-900">₹{p.price}</span>
+                    <span className="text-[10px] text-slate-400 block leading-none">Price</span>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-base font-extrabold text-slate-900">₹{p.price}</span>
+                      {p.mrp && p.mrp > p.price && (
+                        <span className="text-xs text-slate-400 line-through">₹{p.mrp}</span>
+                      )}
+                    </div>
                   </div>
 
                   <Button
