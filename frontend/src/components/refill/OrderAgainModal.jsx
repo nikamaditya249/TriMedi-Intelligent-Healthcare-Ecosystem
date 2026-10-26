@@ -68,14 +68,14 @@ const OrderAgainModal = ({ isOpen, onClose, refillItem }) => {
     <Modal isOpen={isOpen} onClose={onClose} title="Medication Refill: Order Again" maxWidth="max-w-xl">
       <div className="space-y-4">
         {loading ? (
-          <div className="py-12 text-center text-xs text-slate-500">
+          <div className="py-12 text-center text-xs text-[#52627A]">
             Validating active doctor prescription & authoritative stock pricing...
           </div>
         ) : error ? (
-          <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl text-center space-y-2">
+          <div className="p-4 bg-[#FFF7E6] border border-[#FDE68A] rounded-xl text-center space-y-2">
             <span className="text-2xl">⚠️</span>
-            <h4 className="text-sm font-bold text-amber-900 dark:text-amber-200">Prescription Verification Notice</h4>
-            <p className="text-xs text-amber-700 dark:text-amber-300">{error}</p>
+            <h4 className="text-sm font-bold text-[#B7791F]">Prescription Verification Notice</h4>
+            <p className="text-xs text-[#718096]">{error}</p>
             <Button variant="secondary" size="sm" onClick={onClose}>
               Close
             </Button>
@@ -83,14 +83,14 @@ const OrderAgainModal = ({ isOpen, onClose, refillItem }) => {
         ) : draft ? (
           <>
             {/* Prescription Match Banner */}
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-xl flex items-center justify-between">
+            <div className="p-3 bg-[#E8F7F4] border border-[#9AD9D1] rounded-xl flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-emerald-600 text-lg">✓</span>
+                <span className="text-[#087F73] text-lg font-bold">✓</span>
                 <div>
-                  <h4 className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                  <h4 className="text-xs font-bold text-[#087F73]">
                     Active Prescription Verified
                   </h4>
-                  <p className="text-[11px] text-emerald-700 dark:text-emerald-300">
+                  <p className="text-[11px] text-[#06665D]">
                     Issued by {draft.doctorName || "Dr. Sarah Jenkins"} • Eligible for refill
                   </p>
                 </div>
@@ -101,55 +101,55 @@ const OrderAgainModal = ({ isOpen, onClose, refillItem }) => {
             </div>
 
             {/* Product Summary */}
-            <div className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-between">
+            <div className="p-4 border border-[#D9E2EC] rounded-xl bg-white flex items-center justify-between">
               <div>
-                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                <h4 className="text-sm font-bold text-[#172033]">
                   {draft.medicine.name}
                 </h4>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-[#52627A] mt-0.5">
                   Refill Batch: {draft.medicine.quantity} Tablets (~15 Days Supply)
                 </p>
-                <p className="text-[11px] text-teal-600 dark:text-teal-400 mt-1">
+                <p className="text-[11px] text-[#087F73] font-semibold mt-1">
                   Dosage: {draft.medicine.dosage}
                 </p>
               </div>
               <div className="text-right">
-                <span className="text-xs text-slate-400">Unit Price</span>
-                <p className="text-base font-bold text-slate-900 dark:text-white">
+                <span className="text-xs text-[#718096]">Unit Price</span>
+                <p className="text-base font-bold text-[#172033]">
                   ₹{draft.medicine.authoritativePrice}
                 </p>
               </div>
             </div>
 
             {/* Price Breakdown */}
-            <div className="p-3.5 border border-slate-100 dark:border-slate-800 rounded-xl space-y-1.5 text-xs">
-              <div className="flex justify-between text-slate-500">
+            <div className="p-3.5 border border-[#D9E2EC] bg-[#F1F5F9] rounded-xl space-y-1.5 text-xs">
+              <div className="flex justify-between text-[#52627A]">
                 <span>Subtotal (Authoritative Catalog Price)</span>
-                <span>₹{draft.pricing.subtotal}</span>
+                <span className="font-medium text-[#172033]">₹{draft.pricing.subtotal}</span>
               </div>
-              <div className="flex justify-between text-slate-500">
-                <span>Estimated Tax (GST 5%)</span>
-                <span>₹{draft.pricing.tax}</span>
+              <div className="flex justify-between text-[#52627A]">
+                <span>Estimated Tax (GST)</span>
+                <span className="font-medium text-[#172033]">₹{draft.pricing.totalTax ?? draft.pricing.tax ?? ((draft.pricing.cgst || 0) + (draft.pricing.sgst || 0))}</span>
               </div>
-              <div className="flex justify-between text-slate-500">
+              <div className="flex justify-between text-[#52627A]">
                 <span>Standard Delivery</span>
-                <span className={draft.pricing.shipping === 0 ? "text-emerald-600 font-semibold" : ""}>
+                <span className={draft.pricing.shipping === 0 ? "text-[#087F73] font-bold" : "text-[#172033]"}>
                   {draft.pricing.shipping === 0 ? "FREE" : `₹${draft.pricing.shipping}`}
                 </span>
               </div>
-              <div className="border-t border-slate-200 dark:border-slate-700 pt-2 flex justify-between font-bold text-slate-900 dark:text-white">
+              <div className="border-t border-[#D9E2EC] pt-2 flex justify-between font-bold text-[#172033]">
                 <span>Total Amount</span>
-                <span className="text-teal-600 dark:text-teal-400">₹{draft.pricing.totalAmount}</span>
+                <span className="text-[#087F73] text-sm">₹{draft.pricing.totalAmount}</span>
               </div>
             </div>
 
             {/* Safety Notice */}
-            <p className="text-[11px] text-slate-400 leading-relaxed italic">
+            <p className="text-[11px] text-[#718096] leading-relaxed italic">
               * Note: You will review this order on the secure checkout screen before completing payment via PayPal, COD, or UPI.
             </p>
 
             {/* Actions */}
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex justify-end gap-2 pt-2 border-t border-[#D9E2EC]">
               <Button variant="secondary" size="md" onClick={onClose}>
                 Cancel
               </Button>

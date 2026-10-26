@@ -11,19 +11,40 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   const search = (req.query.search || "").trim();
   const category = (req.query.category || "All").trim();
-  const prescriptionOnly = req.query.prescriptionRequired === "true";
+  const brand = (req.query.brand || "All").trim();
+  const subcategory = (req.query.subcategory || "All").trim();
+  const concern = (req.query.concern || "").trim();
+  const prescriptionOnly =
+    req.query.prescriptionRequired === "true" || req.query.prescriptionOnly === "true";
 
   // 1. If MongoDB is connected, query DB
   if (mongoose.connection.readyState === 1) {
     try {
       const query = { active: true };
       if (search) {
-        query.name = { $regex: search, $options: "i" };
+        const searchRegex = { $regex: search, $options: "i" };
+        query.$or = [
+          { name: searchRegex },
+          { genericName: searchRegex },
+          { brand: searchRegex },
+          { category: searchRegex },
+          { subcategory: searchRegex },
+          { healthConcern: searchRegex },
+        ];
       }
       if (category && category !== "All") {
-        query.category = category;
+        query.category = { $regex: new RegExp(`^${category}$`, "i") };
       }
-      if (prescriptionOnly) {
+      if (brand && brand !== "All") {
+        query.brand = { $regex: new RegExp(`^${brand}$`, "i") };
+      }
+      if (subcategory && subcategory !== "All") {
+        query.subcategory = { $regex: new RegExp(subcategory, "i") };
+      }
+      if (concern) {
+        query.healthConcern = { $regex: new RegExp(concern, "i") };
+      }
+      if (prescriptionOnly === "true" || prescriptionOnly === true) {
         query.prescriptionRequired = true;
       }
 
@@ -39,17 +60,30 @@ router.get("/", async (req, res) => {
   // 2. Fallback / Immediate in-memory dataset
   let result = defaultProducts.filter((p) => p.active !== false);
   if (search) {
+    const s = search.toLowerCase();
     result = result.filter(
       (p) =>
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        (p.genericName && p.genericName.toLowerCase().includes(search.toLowerCase())) ||
-        (p.brand && p.brand.toLowerCase().includes(search.toLowerCase()))
+        p.name.toLowerCase().includes(s) ||
+        (p.genericName && p.genericName.toLowerCase().includes(s)) ||
+        (p.brand && p.brand.toLowerCase().includes(s)) ||
+        (p.category && p.category.toLowerCase().includes(s)) ||
+        (p.subcategory && p.subcategory.toLowerCase().includes(s)) ||
+        (p.healthConcern && p.healthConcern.toLowerCase().includes(s))
     );
   }
   if (category && category !== "All") {
-    result = result.filter((p) => p.category === category);
+    result = result.filter((p) => (p.category || "").toLowerCase() === category.toLowerCase());
   }
-  if (prescriptionOnly) {
+  if (brand && brand !== "All") {
+    result = result.filter((p) => (p.brand || "").toLowerCase() === brand.toLowerCase());
+  }
+  if (subcategory && subcategory !== "All") {
+    result = result.filter((p) => (p.subcategory || "").toLowerCase().includes(subcategory.toLowerCase()));
+  }
+  if (concern) {
+    result = result.filter((p) => (p.healthConcern || "").toLowerCase().includes(concern.toLowerCase()));
+  }
+  if (prescriptionOnly === "true" || prescriptionOnly === true) {
     result = result.filter((p) => p.prescriptionRequired === true);
   }
 

@@ -236,9 +236,14 @@ export class MedicationService {
       return Medication.find(query).sort({ createdAt: -1 });
     }
 
-    let meds = fallbackMedications.filter(
-      (m) => m.patientEmail?.toLowerCase() === cleanEmail || cleanEmail.includes("aditya")
-    );
+    let meds = fallbackMedications.filter((m) => {
+      const mEmail = (m.patientEmail || "").toLowerCase();
+      return (
+        mEmail === cleanEmail ||
+        (cleanEmail === "patient@trimedi.com" && mEmail === "aditya@trimedi.health") ||
+        (cleanEmail === "aditya@trimedi.health" && mEmail === "patient@trimedi.com")
+      );
+    });
     if (statusFilter) {
       meds = meds.filter((m) => m.status === statusFilter);
     }
@@ -257,78 +262,163 @@ export class MedicationService {
       const slots = med.scheduleSlots || [{ slot: "morning", time: "08:00 AM", dose: "1 Tab" }];
 
       slots.forEach((s) => {
+        const slotKey = (s.slot || "morning").toLowerCase();
         // Find existing log for today + slot
-        const existingLog = (med.doseLogs || []).find((l) => l.date === today && l.timeSlot === s.slot);
+        const existingLog = (med.doseLogs || []).find(
+          (l) => l.date === today && (l.timeSlot || "").toLowerCase() === slotKey
+        );
 
         scheduleItems.push({
           medicationId: med._id,
+          prescriptionId: med.prescriptionId,
           medicationName: med.medicationName,
           dosage: med.strength || med.dosage,
+          dose: s.dose || "1 Tab",
           instructions: med.instructions,
-          slot: s.slot,
-          scheduledTime: s.time,
+          slot: slotKey,
+          timeSlot: slotKey,
+          scheduledTime: s.time || "08:00 AM",
           date: today,
           status: existingLog ? existingLog.status : "UPCOMING",
           recordedAt: existingLog?.recordedAt || null,
+          refillDue: Boolean(med.refillInfo?.refillDue),
         });
       });
     });
 
-    return scheduleItems;
+    // Calculate today's adherence metrics
+    let takenToday = 0;
+    let missedToday = 0;
+    let skippedToday = 0;
+    const scheduledToday = scheduleItems.length;
+
+    scheduleItems.forEach((item) => {
+      if (item.status === "TAKEN") takenToday++;
+      else if (item.status === "MISSED") missedToday++;
+      else if (item.status === "SKIPPED") skippedToday++;
+    });
+
+    const evaluatedToday = takenToday + missedToday + skippedToday;
+    const adherenceRateToday = evaluatedToday > 0 ? Math.round((takenToday / evaluatedToday) * 100) : 100;
+
+    return {
+      date: today,
+      count: scheduleItems.length,
+      schedule: scheduleItems,
+      adherence: {
+        totalScheduled: scheduledToday,
+        totalTaken: takenToday,
+        totalMissed: missedToday,
+        totalSkipped: skippedToday,
+        adherencePercentage: adherenceRateToday,
+        statement: `Medication adherence: ${adherenceRateToday}% based on recorded doses.`,
+      },
+    };
   }
 
   /**
    * Record dose event (TAKEN, MISSED, SKIPPED) and calculate adherence rate
    */
-  async recordDose({ medicationId, date, timeSlot, status, actorEmail, notes = "" }) {
+  async recordDose({ medicationId, date, timeSlot, status, actorEmail, actorRole, notes = "", reason = "" }) {
     const validStatuses = ["TAKEN", "MISSED", "SKIPPED"];
     if (!validStatuses.includes(status)) {
-      throw new Error(`Invalid dose status '${status}'. Must be one of: ${validStatuses.join(", ")}`);
+      const err = new Error(`Invalid dose status '${status}'. Must be one of: ${validStatuses.join(", ")}`);
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (!timeSlot) {
+      const err = new Error("Dose status and timeSlot are required.");
+      err.statusCode = 400;
+      throw err;
     }
 
     const today = date || new Date().toISOString().split("T")[0];
     const recordTime = new Date();
-    const normalizedSlot = (timeSlot || "morning").toLowerCase();
+    const normalizedSlot = (timeSlot || "morning").toLowerCase().trim();
+    const actor = (actorEmail || "patient@trimedi.com").toLowerCase().trim();
 
     let med = null;
     if (mongoose.connection.readyState === 1 && mongoose.isValidObjectId(medicationId)) {
       med = await Medication.findById(medicationId);
-    } else {
+    } else if (mongoose.connection.readyState === 1) {
+      med = await Medication.findOne({ _id: medicationId });
+    }
+    if (!med) {
       med = fallbackMedications.find((m) => String(m._id) === String(medicationId));
     }
 
     if (!med) {
-      throw new Error("Medication record not found.");
+      const err = new Error("Medication record not found.");
+      err.statusCode = 404;
+      throw err;
     }
 
-    // 1. Update or append to doseLogs
+    // Role & Ownership IDOR Guard
+    if (actorRole === "reception" || actorRole === "pharmacy") {
+      const err = new Error("Forbidden: Clinical medication doses cannot be recorded by reception or pharmacy.");
+      err.statusCode = 403;
+      throw err;
+    }
+
+    if (actorRole === "patient" && med.patientEmail && med.patientEmail.toLowerCase() !== actor) {
+      const err = new Error("Forbidden: You are not authorized to modify another patient's medication regimen.");
+      err.statusCode = 403;
+      throw err;
+    }
+
+    // 1. Idempotency & Conflict Resolution
     if (!med.doseLogs) med.doseLogs = [];
-    const logIndex = med.doseLogs.findIndex((l) => l.date === today && (l.timeSlot || "").toLowerCase() === normalizedSlot);
+    const logIndex = med.doseLogs.findIndex(
+      (l) => l.date === today && (l.timeSlot || "").toLowerCase() === normalizedSlot
+    );
+
+    let isDuplicate = false;
 
     if (logIndex !== -1) {
-      med.doseLogs[logIndex].timeSlot = normalizedSlot;
-      med.doseLogs[logIndex].status = status;
-      med.doseLogs[logIndex].recordedAt = recordTime;
-      med.doseLogs[logIndex].recordedBy = actorEmail;
-      med.doseLogs[logIndex].notes = notes;
+      const currentLog = med.doseLogs[logIndex];
+
+      // Case A: Idempotent duplicate submission (e.g. double click or retry)
+      if (currentLog.status === status) {
+        isDuplicate = true;
+      } else if (currentLog.status === "TAKEN" && status !== "TAKEN") {
+        // Case B: Conflict: Once TAKEN, cannot transition to SKIPPED or MISSED
+        const conflictErr = new Error(
+          `Conflict: Dose on ${today} (${normalizedSlot}) was already recorded as TAKEN and cannot be marked as ${status}.`
+        );
+        conflictErr.statusCode = 409;
+        throw conflictErr;
+      } else {
+        // Case C: Transitioning from UPCOMING/SKIPPED/MISSED to TAKEN or between SKIPPED/MISSED
+        const prevStatus = currentLog.status;
+        currentLog.status = status;
+        currentLog.recordedAt = recordTime;
+        currentLog.recordedBy = actor;
+        currentLog.notes = notes || reason || currentLog.notes || "";
+
+        // Adjust remaining quantity if transition is to TAKEN
+        if (status === "TAKEN" && prevStatus !== "TAKEN" && med.remainingQuantity > 0) {
+          med.remainingQuantity = Math.max(0, med.remainingQuantity - 1);
+        }
+      }
     } else {
+      // New dose log entry
       med.doseLogs.push({
         date: today,
         timeSlot: normalizedSlot,
         status,
         scheduledTime: "08:00 AM",
         recordedAt: recordTime,
-        recordedBy: actorEmail,
-        notes,
+        recordedBy: actor,
+        notes: notes || reason || "",
       });
+
+      if (status === "TAKEN" && med.remainingQuantity > 0) {
+        med.remainingQuantity = Math.max(0, med.remainingQuantity - 1);
+      }
     }
 
-    // 2. Adjust remaining quantity if taken
-    if (status === "TAKEN" && med.remainingQuantity > 0) {
-      med.remainingQuantity = Math.max(0, med.remainingQuantity - 1);
-    }
-
-    // 3. Recalculate adherence metrics neutrally
+    // 2. Recalculate adherence metrics neutrally
     let takenCount = 0;
     let missedCount = 0;
     let skippedCount = 0;
@@ -341,7 +431,6 @@ export class MedicationService {
 
     const totalEvaluated = takenCount + missedCount + skippedCount;
     const adherenceRate = totalEvaluated > 0 ? Math.round((takenCount / totalEvaluated) * 100) : 100;
-
     const adherenceStatement = `Medication adherence: ${adherenceRate}% based on recorded doses.`;
 
     med.adherence = {
@@ -354,7 +443,7 @@ export class MedicationService {
       lastRecordedAt: recordTime,
     };
 
-    // 4. Update refill status if supply is running low
+    // 3. Update refill status if supply is running low (<= 5 doses remaining)
     if (med.remainingQuantity <= 5) {
       if (!med.refillInfo) med.refillInfo = {};
       med.refillInfo.refillDue = true;
@@ -365,29 +454,55 @@ export class MedicationService {
       await med.save();
     }
 
-    // 5. Realtime broadcast via Socket.IO
+    // 4. Realtime broadcast via Socket.IO
     try {
       const io = getSocketIO();
       if (io) {
-        io.to(`user:${med.patientEmail}`).emit("medication:adherence_updated", {
+        const payload = {
           medicationId: med._id,
           medicationName: med.medicationName,
+          patientEmail: med.patientEmail,
           status,
+          date: today,
+          timeSlot: normalizedSlot,
           adherencePercentage: adherenceRate,
-        });
+          remainingQuantity: med.remainingQuantity,
+          refillDue: Boolean(med.refillInfo?.refillDue),
+        };
+
+        // Emit specific dose outcome event
+        io.to(`user_${med.patientEmail.toLowerCase()}`).emit(`medication:dose:${status.toLowerCase()}`, payload);
+        io.to(`user:${med.patientEmail.toLowerCase()}`).emit(`medication:dose:${status.toLowerCase()}`, payload);
+
+        // Emit adherence updated event to patient and doctor rooms
+        io.to(`user_${med.patientEmail.toLowerCase()}`).emit("medication:adherence:updated", payload);
+        io.to(`user:${med.patientEmail.toLowerCase()}`).emit("medication:adherence:updated", payload);
+        io.to(`user_${med.patientEmail.toLowerCase()}`).emit("medication:adherence_updated", payload);
+        io.to(`user:${med.patientEmail.toLowerCase()}`).emit("medication:adherence_updated", payload);
+        io.to("role_doctor").emit("medication:adherence_updated", payload);
+        io.to("role:doctor").emit("medication:adherence_updated", payload);
+
+        // Emit refill alert if threshold reached
+        if (med.refillInfo?.refillDue) {
+          io.to(`user_${med.patientEmail.toLowerCase()}`).emit("medication:refill:alert", payload);
+          io.to(`user:${med.patientEmail.toLowerCase()}`).emit("medication:refill:alert", payload);
+        }
       }
     } catch (sockErr) {
-      // Non-blocking
+      // Non-blocking socket emission
     }
 
     return {
       success: true,
-      message: `Dose recorded as ${status}. Current calculated adherence is ${adherenceRate}%.`,
+      isDuplicate,
+      message: isDuplicate
+        ? `Dose was already recorded as ${status}.`
+        : `Dose recorded as ${status}. Current calculated adherence is ${adherenceRate}%.`,
       medication: med,
       adherence: med.adherence,
       adherenceSummary: {
         adherencePercentage: adherenceRate,
-        statement: `Medication adherence: ${adherenceRate}% based on recorded doses.`,
+        statement: adherenceStatement,
         taken: takenCount,
         missed: missedCount,
         skipped: skippedCount,

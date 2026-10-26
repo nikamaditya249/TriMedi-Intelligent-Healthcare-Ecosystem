@@ -345,22 +345,22 @@ export function PatientDashboard() {
       />
 
       {/* 3. Proactive Refill Alert Box */}
-      <div className="p-4 sm:p-5 rounded-xl border border-amber-200/90 bg-amber-50/60 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-4 sm:p-5 rounded-xl border border-[#FDE68A] bg-[#FFF7E6] flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-3.5">
-          <div className="w-9 h-9 rounded-lg bg-amber-100 text-amber-800 border border-amber-200 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-amber-100 text-[#B7791F] border border-amber-200 flex items-center justify-center shrink-0">
             <FiAlertTriangle className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-amber-950">
+              <h3 className="text-sm font-bold text-[#B7791F]">
                 Proactive Medication Refill Recommendation
               </h3>
               <Badge variant="warning" size="sm">
                 Supply Notice
               </Badge>
             </div>
-            <p className="text-xs text-amber-900/80 mt-1 leading-relaxed">
-              Your prescription for <strong>Atorvastatin 20mg</strong> covers 30 days, while your recent order provides 15 days of supply. Estimated supply remaining: ~12 days.
+            <p className="text-xs text-[#52627A] mt-1 leading-relaxed">
+              Your prescription for <strong className="text-[#172033]">Atorvastatin 20mg</strong> covers 30 days, while your recent order provides 15 days of supply. Estimated supply remaining: ~12 days.
             </p>
           </div>
         </div>
@@ -377,23 +377,23 @@ export function PatientDashboard() {
 
       {/* 4. Medication Supply & Gap Tracker */}
       <Card>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#D9E2EC]">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-slate-900">
+              <h2 className="text-base font-bold text-[#172033]">
                 Medication Supply Intelligence
               </h2>
               <Badge variant="brand" size="sm">
                 Deterministic Engine
               </Badge>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-[#52627A] mt-0.5">
               Backend calculation compares prescribed therapy duration with purchased supply to prevent treatment gaps.
             </p>
           </div>
           <Link
             to="/products"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 hover:text-brand-800 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#087F73] hover:text-[#06665D] transition-colors"
           >
             <span>Medicine Catalog</span>
             <FiArrowRight className="w-3.5 h-3.5" />
@@ -406,25 +406,25 @@ export function PatientDashboard() {
             return (
               <div
                 key={idx}
-                className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/60 space-y-3"
+                className="p-4 rounded-xl border border-[#D9E2EC] bg-[#FFFFFF] space-y-3 shadow-xs"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-white border border-slate-200 text-brand-700 flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 rounded-lg bg-[#E8F7F4] border border-[#9AD9D1] text-[#087F73] flex items-center justify-center shrink-0">
                       <FiPackage className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-sm font-bold text-slate-900">
+                        <h3 className="text-sm font-bold text-[#172033]">
                           {med.medicineName}
                         </h3>
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded bg-white text-slate-700 border border-slate-200">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[#F1F5F9] text-[#172033] border border-[#D9E2EC]">
                           {med.dosage}
                         </span>
-                        <span className="text-xs text-slate-500">• {med.frequency}</span>
+                        <span className="text-xs text-[#718096]">• {med.frequency}</span>
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Prescribed by <span className="font-medium text-slate-700">{med.doctorName || "Dr. Sarah Jenkins"}</span>
+                      <p className="text-xs text-[#52627A] mt-0.5">
+                        Prescribed by <span className="font-semibold text-[#172033]">{med.doctorName || "Dr. Sarah Jenkins"}</span>
                       </p>
                     </div>
                   </div>
@@ -438,6 +438,7 @@ export function PatientDashboard() {
                       variant="outline"
                       onClick={() => handleOpenOrderAgain(med, med.prescriptionId)}
                       icon={FiRefreshCw}
+                      className="bg-white border-[#D9E2EC] text-[#087F73] hover:bg-[#E8F7F4] hover:border-[#087F73] font-semibold"
                     >
                       Order Again
                     </Button>
@@ -445,22 +446,22 @@ export function PatientDashboard() {
                 </div>
 
                 {/* Progress bar and details */}
-                <div className="space-y-1.5 pt-2 border-t border-slate-200/60 text-xs">
-                  <div className="flex flex-col sm:flex-row justify-between text-slate-500 gap-1">
+                <div className="space-y-1.5 pt-2 border-t border-[#D9E2EC] text-xs">
+                  <div className="flex flex-col sm:flex-row justify-between text-[#52627A] gap-1">
                     <span>
-                      Prescribed: <strong className="text-slate-800">{med.prescribedDuration || 30} Days</strong>
+                      Prescribed: <strong className="text-[#172033]">{med.prescribedDuration || 30} Days</strong>
                     </span>
                     <span>
-                      Purchased Supply: <strong className="text-slate-800">{med.purchasedSupplyDays || 15} Days</strong>
+                      Purchased Supply: <strong className="text-[#172033]">{med.purchasedSupplyDays || 15} Days</strong>
                     </span>
-                    <span className="text-amber-800 font-semibold">
+                    <span className="text-[#B7791F] font-bold">
                       Shortage Gap: {med.supplyGapDays || 15} Days
                     </span>
                   </div>
-                  <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                  <div className="w-full bg-[#F1F5F9] border border-[#D9E2EC] h-2.5 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-300 ${
-                        isLow ? "bg-amber-600" : "bg-brand-700"
+                        isLow ? "bg-[#B7791F]" : "bg-[#087F73]"
                       }`}
                       style={{ width: `${Math.max(15, med.supplyPercentage || 75)}%` }}
                     />

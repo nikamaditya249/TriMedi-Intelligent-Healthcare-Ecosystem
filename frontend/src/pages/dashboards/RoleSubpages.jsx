@@ -717,10 +717,10 @@ export function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#D9E2EC]">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Healthcare Orders & Fulfillment Tracking</h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          <h1 className="text-2xl font-bold text-[#172033]">Healthcare Orders & Fulfillment Tracking</h1>
+          <p className="text-xs sm:text-sm text-[#52627A] mt-1">
             Prescription-linked orders, payment verifications, and real-time fulfillment progression.
           </p>
         </div>
@@ -747,18 +747,22 @@ export function OrdersPage() {
             const canCancel = activeRole === "patient" && ["NEW", "PRESCRIPTION_REVIEW", "ACCEPTED", "PENDING"].includes(currentStatus);
 
             return (
-              <Card key={ord._id || ord.orderId} className="space-y-4">
+              <Card key={ord._id || ord.orderId} className="space-y-4 border-[#D9E2EC] bg-white">
                 {/* Header row */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#D9E2EC]">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-bold text-slate-900">{ord.orderId || ord._id}</span>
-                    <span className="text-xs text-slate-300">•</span>
+                    <span className="text-sm font-bold text-[#172033]">{ord.orderId || ord._id}</span>
+                    <span className="text-xs text-[#CBD5E1]">•</span>
                     <Badge
                       variant={
-                        currentStatus === "DELIVERED"
+                        currentStatus === "DELIVERED" || currentStatus === "COMPLETED"
                           ? "success"
+                          : currentStatus === "DISPATCHED" || currentStatus === "OUT_FOR_DELIVERY"
+                          ? "warning"
+                          : currentStatus === "ACCEPTED" || currentStatus === "PREPARING" || currentStatus === "PACKED"
+                          ? "info"
                           : currentStatus === "CANCELLED" || currentStatus === "REJECTED"
-                          ? "error"
+                          ? "danger"
                           : "brand"
                       }
                       size="sm"
@@ -774,7 +778,7 @@ export function OrdersPage() {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-[#718096] font-medium">
                     Placed: {new Date(ord.createdAt || Date.now()).toLocaleDateString()}
                   </p>
                 </div>
@@ -782,21 +786,21 @@ export function OrdersPage() {
                 {/* Multi-Stage Visual Tracking Bar */}
                 {currentStatus !== "CANCELLED" && currentStatus !== "REJECTED" && (
                   <div className="py-2">
-                    <div className="flex items-center justify-between text-[10px] font-semibold text-slate-500 mb-1.5 flex-wrap gap-1">
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-[#52627A] mb-1.5 flex-wrap gap-1">
                       {["Placed", "Reviewed", "Accepted", "Preparing", "Packed", "Dispatched", "Delivered"].map(
                         (label, idx) => (
                           <span
                             key={label}
-                            className={idx <= stageIdx ? "text-brand-800 font-bold" : "text-slate-400"}
+                            className={idx <= stageIdx ? "text-[#06665D] font-bold" : "text-[#718096]"}
                           >
                             {label}
                           </span>
                         )
                       )}
                     </div>
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden flex">
+                    <div className="w-full bg-[#F1F5F9] border border-[#D9E2EC] h-2.5 rounded-full overflow-hidden flex">
                       <div
-                        className="bg-brand-600 h-full transition-all duration-500"
+                        className="bg-[#087F73] h-full transition-all duration-500 rounded-full"
                         style={{ width: `${Math.min(100, Math.round(((stageIdx + 1) / 7) * 100))}%` }}
                       />
                     </div>
@@ -806,14 +810,14 @@ export function OrdersPage() {
                 {/* Items & Fulfillment details */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                   <div>
-                    <p className="font-bold text-slate-800 mb-1.5">Purchased Medicines:</p>
-                    <ul className="space-y-1.5 text-slate-600">
+                    <p className="font-bold text-[#172033] mb-1.5">Purchased Medicines:</p>
+                    <ul className="space-y-1.5 text-[#52627A]">
                       {ord.items?.map((it, idx) => (
-                        <li key={idx} className="flex justify-between bg-slate-50 p-2 rounded-lg border border-slate-100">
-                          <span>
+                        <li key={idx} className="flex justify-between bg-[#FFFFFF] p-2.5 rounded-lg border border-[#D9E2EC]">
+                          <span className="font-medium text-[#172033]">
                             • {it.nameSnapshot || it.name} (x{it.quantity || it.qty || 1})
                           </span>
-                          <span className="font-semibold text-slate-800">
+                          <span className="font-bold text-[#172033]">
                             ₹{(it.unitPrice || it.price || 0) * (it.quantity || it.qty || 1)}
                           </span>
                         </li>
@@ -821,29 +825,29 @@ export function OrdersPage() {
                     </ul>
                   </div>
 
-                  <div className="space-y-1.5 text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <div className="space-y-1.5 text-[#52627A] bg-[#F1F5F9] p-3.5 rounded-xl border border-[#D9E2EC]">
                     <p>
-                      <strong>Recipient:</strong> {ord.patientName} ({ord.patientPhone || "+91 98765 43210"})
+                      <strong className="text-[#172033]">Recipient:</strong> {ord.patientName} ({ord.patientPhone || "+91 98765 43210"})
                     </p>
                     <p>
-                      <strong>Delivery Destination:</strong> {ord.deliveryAddress?.street || "Address provided"}, {ord.deliveryAddress?.city || "Mumbai"} ({ord.deliveryAddress?.pincode || "400001"})
+                      <strong className="text-[#172033]">Delivery Destination:</strong> {ord.deliveryAddress?.street || "Address provided"}, {ord.deliveryAddress?.city || "Mumbai"} ({ord.deliveryAddress?.pincode || "400001"})
                     </p>
                     <p>
-                      <strong>Dispensing Pharmacy:</strong> {ord.pharmacyName || "MedPlus Prime Pharmacy"}
+                      <strong className="text-[#172033]">Dispensing Pharmacy:</strong> {ord.pharmacyName || "MedPlus Prime Pharmacy"}
                     </p>
                     {ord.pricing && (
-                      <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-600 flex justify-between">
-                        <span>GST Breakup (CGST + SGST): ₹{ord.pricing.totalTax || 0}</span>
-                        <span>Delivery Fee: {ord.pricing.deliveryFee === 0 ? "FREE" : `₹${ord.pricing.deliveryFee}`}</span>
+                      <div className="pt-2 border-t border-[#D9E2EC] text-[11px] text-[#52627A] flex justify-between">
+                        <span>GST Breakup (CGST + SGST): <strong className="text-[#172033]">₹{ord.pricing.totalTax || 0}</strong></span>
+                        <span>Delivery Fee: <strong className="text-[#172033]">{ord.pricing.deliveryFee === 0 ? "FREE" : `₹${ord.pricing.deliveryFee}`}</strong></span>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Footer Actions */}
-                <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-                  <span className="text-sm sm:text-base font-bold text-slate-900">
-                    Authoritative Total: <span className="text-brand-800 font-extrabold">₹{ord.totalAmount}</span>
+                <div className="pt-3 border-t border-[#D9E2EC] flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <span className="text-sm sm:text-base font-bold text-[#172033]">
+                    Authoritative Total: <span className="text-[#087F73] font-extrabold text-base sm:text-lg">₹{ord.totalAmount}</span>
                   </span>
 
                   <div className="flex gap-2">
@@ -852,7 +856,7 @@ export function OrdersPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-xs text-rose-600 hover:bg-rose-50"
+                        className="text-xs text-[#C53030] hover:bg-[#FFF0F0] font-semibold"
                         onClick={() => handleCancelOrder(ord.orderId || ord._id)}
                       >
                         Cancel Order
@@ -863,7 +867,7 @@ export function OrdersPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="text-xs"
+                        className="text-xs bg-white border-[#D9E2EC] text-[#087F73] hover:bg-[#E8F7F4] hover:border-[#087F73] font-semibold"
                         onClick={() => navigate("/products")}
                       >
                         Order Again

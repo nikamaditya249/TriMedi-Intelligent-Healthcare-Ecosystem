@@ -10,8 +10,8 @@ export function Card({
   return (
     <div
       onClick={onClick}
-      className={`rounded-xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-subtle transition-all duration-150 ${
-        hover ? "hover:border-slate-300 hover:shadow-card cursor-pointer" : ""
+      className={`rounded-xl border border-[#D9E2EC] bg-[#FFFFFF] p-5 sm:p-6 shadow-xs transition-all duration-150 ${
+        hover ? "hover:border-[#C5D1DE] hover:shadow-sm cursor-pointer" : ""
       } ${className}`}
       {...props}
     >
@@ -31,19 +31,19 @@ export function StatCard({
 }) {
   return (
     <div
-      className={`rounded-xl border border-slate-200/80 bg-white p-5 shadow-subtle hover:border-slate-300 hover:shadow-card transition-all duration-150 flex flex-col justify-between ${className}`}
+      className={`rounded-xl border border-[#D9E2EC] bg-[#FFFFFF] p-5 shadow-xs hover:border-[#C5D1DE] hover:shadow-sm transition-all duration-150 flex flex-col justify-between ${className}`}
     >
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[#52627A] mb-1">
             {title}
           </p>
-          <h3 className="text-2xl font-bold text-slate-900 tracking-tight">
+          <h3 className="text-2xl font-bold text-[#172033] tracking-tight">
             {value}
           </h3>
         </div>
         {Icon && (
-          <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 border border-brand-100 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[#E8F7F4] text-[#087F73] border border-[#9AD9D1] flex items-center justify-center shrink-0">
             <Icon className="w-5 h-5" />
           </div>
         )}

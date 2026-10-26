@@ -11,9 +11,11 @@ import {
 import Card from "../ui/Card";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
+import { useSocket } from "../../context/SocketContext";
 import { getMedicationTimeline } from "../../api";
 
 export function MedicationTimelineView({ patientEmail }) {
+  const { socket } = useSocket();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,13 +36,38 @@ export function MedicationTimelineView({ patientEmail }) {
     fetchTimeline();
   }, [patientEmail]);
 
+  // Synchronize timeline in real-time when doses or refills are logged
+  useEffect(() => {
+    if (!socket) return;
+    const handleRemoteDoseUpdate = () => {
+      fetchTimeline();
+    };
+
+    socket.on("medication:dose:taken", handleRemoteDoseUpdate);
+    socket.on("medication:dose:skipped", handleRemoteDoseUpdate);
+    socket.on("medication:dose:missed", handleRemoteDoseUpdate);
+    socket.on("medication:adherence_updated", handleRemoteDoseUpdate);
+    socket.on("medication:refill:alert", handleRemoteDoseUpdate);
+
+    return () => {
+      socket.off("medication:dose:taken", handleRemoteDoseUpdate);
+      socket.off("medication:dose:skipped", handleRemoteDoseUpdate);
+      socket.off("medication:dose:missed", handleRemoteDoseUpdate);
+      socket.off("medication:adherence_updated", handleRemoteDoseUpdate);
+      socket.off("medication:refill:alert", handleRemoteDoseUpdate);
+    };
+  }, [socket, patientEmail]);
+
   const getEventIcon = (type) => {
     switch (type) {
       case "MEDICATION_STARTED":
       case "PRESCRIPTION_ISSUED":
+      case "MEDICATION_PRESCRIBED":
         return <FiFileText className="w-4 h-4 text-teal-700" />;
       case "DOSE_TAKEN":
         return <FiCheckCircle className="w-4 h-4 text-emerald-700" />;
+      case "DOSE_SKIPPED":
+        return <FiClock className="w-4 h-4 text-slate-500" />;
       case "DOSE_MISSED":
         return <FiXCircle className="w-4 h-4 text-rose-700" />;
       case "REFILL_DUE":

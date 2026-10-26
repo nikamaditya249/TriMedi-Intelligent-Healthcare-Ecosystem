@@ -8,6 +8,7 @@ import {
   FiRefreshCw,
   FiZap,
 } from "react-icons/fi";
+import { useSocket } from "../../context/SocketContext";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
 import Badge from "../ui/Badge";
@@ -15,6 +16,7 @@ import Modal from "../ui/Modal";
 import { getTodayDoseSchedule, recordDose, simplifyInstructionsWithAI } from "../../api";
 
 export function TodayMedicationSchedule({ onDoseUpdated, onOrderAgain }) {
+  const { socket } = useSocket();
   const [scheduleData, setScheduleData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [recordingId, setRecordingId] = useState(null);
@@ -42,17 +44,43 @@ export function TodayMedicationSchedule({ onDoseUpdated, onOrderAgain }) {
     fetchSchedule();
   }, []);
 
-  const handleRecord = async (medicationId, slot, status) => {
-    setRecordingId(`${medicationId}_${slot.timeSlot}`);
+  // Real-time synchronization
+  useEffect(() => {
+    if (!socket) return;
+    const handleRemoteDoseUpdate = () => {
+      fetchSchedule();
+    };
+
+    socket.on("medication:dose:taken", handleRemoteDoseUpdate);
+    socket.on("medication:dose:skipped", handleRemoteDoseUpdate);
+    socket.on("medication:dose:missed", handleRemoteDoseUpdate);
+    socket.on("medication:adherence_updated", handleRemoteDoseUpdate);
+    socket.on("medication:adherence:updated", handleRemoteDoseUpdate);
+
+    return () => {
+      socket.off("medication:dose:taken", handleRemoteDoseUpdate);
+      socket.off("medication:dose:skipped", handleRemoteDoseUpdate);
+      socket.off("medication:dose:missed", handleRemoteDoseUpdate);
+      socket.off("medication:adherence_updated", handleRemoteDoseUpdate);
+      socket.off("medication:adherence:updated", handleRemoteDoseUpdate);
+    };
+  }, [socket]);
+
+  const handleRecord = async (medicationId, item, status) => {
+    const slotKey = item.slot || item.timeSlot || "morning";
+    setRecordingId(`${medicationId}_${slotKey}`);
     try {
       const res = await recordDose(medicationId, {
-        timeSlot: slot.timeSlot,
+        timeSlot: slotKey,
+        slot: slotKey,
         date: scheduleData?.date || new Date().toISOString().split("T")[0],
         status,
       });
-      if (res.success) {
+      if (res && res.success) {
         await fetchSchedule();
         onDoseUpdated && onDoseUpdated();
+      } else {
+        alert(res?.message || "Unable to record dose. Please try again.");
       }
     } catch (err) {
       console.error("Failed to record dose:", err);
@@ -72,15 +100,18 @@ export function TodayMedicationSchedule({ onDoseUpdated, onOrderAgain }) {
             name: item.medicationName,
             dosage: item.dosage,
             frequency: item.frequency,
-            instructions: item.instructions || "Take after food",
+            instructions: item.instructions || "Take as prescribed",
           },
         ],
       });
-      if (res.success && res.simplifiedItems?.[0]) {
-        setSimplifiedText(res.simplifiedItems[0].plainLanguage);
+      const guide = res?.guidelines?.[0] || res?.simplifiedItems?.[0];
+      if (res?.success && guide) {
+        setSimplifiedText(
+          guide.plainLanguage || `${guide.howToTake || ""} ${guide.timingGuidance || ""}`.trim()
+        );
       } else {
         setSimplifiedText(
-          `Take ${item.dose || item.dosage || "1 dose"} of ${item.medicationName} as prescribed. Please confirm with your doctor if unsure.`
+          `Take ${item.dose || item.dosage || "1 dose"} of ${item.medicationName} as prescribed by your doctor.`
         );
       }
     } catch (err) {
@@ -147,7 +178,8 @@ export function TodayMedicationSchedule({ onDoseUpdated, onOrderAgain }) {
             const isTaken = item.status === "TAKEN";
             const isMissed = item.status === "MISSED";
             const isSkipped = item.status === "SKIPPED";
-            const isBusy = recordingId === `${item.medicationId}_${item.timeSlot}`;
+            const slotKey = item.slot || item.timeSlot || "morning";
+            const isBusy = recordingId === `${item.medicationId}_${slotKey}`;
 
             return (
               <div
@@ -179,7 +211,7 @@ export function TodayMedicationSchedule({ onDoseUpdated, onOrderAgain }) {
                         {item.dose || "1 Dose"}
                       </span>
                       <span className="text-xs text-slate-500 font-medium capitalize">
-                        • {item.timeSlot} ({item.scheduledTime})
+                        • {slotKey} ({item.scheduledTime || "Scheduled"})
                       </span>
                     </div>
                     {item.instructions && (
@@ -208,17 +240,17 @@ export function TodayMedicationSchedule({ onDoseUpdated, onOrderAgain }) {
                   </button>
 
                   {isTaken ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-300 px-2.5 py-1 rounded-lg">
-                      <FiCheckCircle className="w-3.5 h-3.5" />
-                      <span>Taken</span>
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-lg shadow-xs">
+                      <FiCheckCircle className="w-4 h-4 text-emerald-600" />
+                      <span>✓ Taken</span>
                     </span>
                   ) : isMissed ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 bg-rose-100/70 border border-rose-300 px-2.5 py-1 rounded-lg">
-                      <FiXCircle className="w-3.5 h-3.5" />
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-800 bg-rose-50 border border-rose-300 px-3 py-1.5 rounded-lg shadow-xs">
+                      <FiXCircle className="w-4 h-4 text-rose-600" />
                       <span>Missed</span>
                     </span>
                   ) : isSkipped ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 bg-slate-100 border border-slate-300 px-2.5 py-1 rounded-lg">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-slate-100 border border-slate-300 px-3 py-1.5 rounded-lg shadow-xs">
                       <span>Skipped</span>
                     </span>
                   ) : (

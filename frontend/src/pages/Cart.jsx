@@ -11,7 +11,7 @@ function Cart() {
   const navigate = useNavigate();
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-8 space-y-6">
       <div className="pb-4 border-b border-slate-200">
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Your Medicine Cart</h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1">

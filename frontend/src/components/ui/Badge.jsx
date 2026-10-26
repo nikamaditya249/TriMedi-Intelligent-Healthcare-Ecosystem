@@ -14,21 +14,21 @@ export function Badge({
   };
 
   const variants = {
-    default: "bg-slate-100 text-slate-700 border border-slate-200",
-    brand: "bg-brand-50 text-brand-800 border border-brand-200",
-    success: "bg-emerald-50 text-emerald-800 border border-emerald-200",
-    warning: "bg-amber-50 text-amber-800 border border-amber-200",
-    danger: "bg-rose-50 text-rose-800 border border-rose-200",
-    info: "bg-sky-50 text-sky-800 border border-sky-200",
+    default: "bg-[#F1F5F9] text-[#52627A] border border-[#D9E2EC]",
+    brand: "bg-[#E8F7F4] text-[#087F73] border border-[#9AD9D1]",
+    success: "bg-[#E8F7F4] text-[#087F73] border border-[#9AD9D1]",
+    warning: "bg-[#FFF7E6] text-[#B7791F] border border-[#FDE68A]",
+    danger: "bg-[#FFF0F0] text-[#C53030] border border-[#FECACA]",
+    info: "bg-[#EDF5FF] text-[#2563A6] border border-[#BAE6FD]",
   };
 
   const dotColors = {
-    default: "bg-slate-500",
-    brand: "bg-brand-600",
-    success: "bg-emerald-600",
-    warning: "bg-amber-600",
-    danger: "bg-rose-600",
-    info: "bg-sky-600",
+    default: "bg-[#718096]",
+    brand: "bg-[#087F73]",
+    success: "bg-[#087F73]",
+    warning: "bg-[#B7791F]",
+    danger: "bg-[#C53030]",
+    info: "bg-[#2563A6]",
   };
 
   return (

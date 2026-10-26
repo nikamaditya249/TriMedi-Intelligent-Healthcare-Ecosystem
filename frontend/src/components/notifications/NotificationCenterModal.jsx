@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSocket } from "../../context/SocketContext";
 import { useAuth } from "../../context/AuthContext";
 import Modal from "../ui/Modal";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
+import { getNotificationPreferences, updateNotificationPreferences } from "../../api";
 
 const NotificationCenterModal = ({ isOpen, onClose }) => {
   const { notifications, unreadNotifCount, markAsRead, markAllAsRead } = useSocket();
@@ -18,6 +19,24 @@ const NotificationCenterModal = ({ isOpen, onClose }) => {
     refill: true,
     chat: true,
   });
+
+  const userEmail = (user?.email || "patient@trimedi.com").toLowerCase();
+
+  // Load preferences from backend when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    async function loadPrefs() {
+      try {
+        const res = await getNotificationPreferences(userEmail);
+        if (res && res.success && res.preferences) {
+          setPreferences((prev) => ({ ...prev, ...res.preferences }));
+        }
+      } catch (err) {
+        console.warn("Failed to load notification preferences:", err.message);
+      }
+    }
+    loadPrefs();
+  }, [isOpen, userEmail]);
 
   const categories = [
     { id: "all", label: "All" },
@@ -60,36 +79,42 @@ const NotificationCenterModal = ({ isOpen, onClose }) => {
       case "high":
         return <Badge variant="warning" size="sm">High</Badge>;
       default:
-        return <Badge variant="neutral" size="sm">Normal</Badge>;
+        return <Badge variant="default" size="sm">Normal</Badge>;
     }
   };
 
-  const handleTogglePref = (cat) => {
-    setPreferences((prev) => ({ ...prev, [cat]: !prev[cat] }));
+  const handleTogglePref = async (cat) => {
+    const updated = { ...preferences, [cat]: !preferences[cat] };
+    setPreferences(updated);
+    try {
+      await updateNotificationPreferences({ userEmail, preferences: updated });
+    } catch (err) {
+      console.warn("Failed to persist notification preferences:", err.message);
+    }
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Healthcare Notifications & Alerts" maxWidth="max-w-2xl">
       <div className="flex flex-col h-[520px]">
-        {/* Top Tabs */}
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-3">
+        {/* Top Tabs: Activity Feed vs Preferences */}
+        <div className="flex items-center justify-between border-b border-[#D9E2EC] pb-3 mb-3">
           <div className="flex gap-2">
             <button
               onClick={() => setActiveTab("notifications")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150 ${
                 activeTab === "notifications"
-                  ? "bg-teal-500 text-white"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  ? "bg-[#087F73] text-white shadow-xs"
+                  : "bg-[#F1F5F9] text-[#52627A] hover:bg-[#E8F7F4] hover:text-[#06665D]"
               }`}
             >
               Activity Feed ({unreadNotifCount} unread)
             </button>
             <button
               onClick={() => setActiveTab("preferences")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150 ${
                 activeTab === "preferences"
-                  ? "bg-teal-500 text-white"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  ? "bg-[#087F73] text-white shadow-xs"
+                  : "bg-[#F1F5F9] text-[#52627A] hover:bg-[#E8F7F4] hover:text-[#06665D]"
               }`}
             >
               ⚙️ Preferences
@@ -99,7 +124,7 @@ const NotificationCenterModal = ({ isOpen, onClose }) => {
           {activeTab === "notifications" && unreadNotifCount > 0 && (
             <button
               onClick={markAllAsRead}
-              className="text-xs text-teal-600 dark:text-teal-400 hover:underline font-medium"
+              className="text-xs text-[#087F73] hover:text-[#06665D] hover:underline font-semibold"
             >
               Mark all as read
             </button>
@@ -114,10 +139,10 @@ const NotificationCenterModal = ({ isOpen, onClose }) => {
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition ${
+                  className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors duration-150 ${
                     selectedCategory === cat.id
-                      ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-sm"
-                      : "bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
+                      ? "bg-[#087F73] text-white shadow-xs"
+                      : "bg-[#F1F5F9] text-[#52627A] hover:bg-[#E8F7F4] hover:text-[#06665D]"
                   }`}
                 >
                   {cat.label}
@@ -129,61 +154,72 @@ const NotificationCenterModal = ({ isOpen, onClose }) => {
             <div className="flex-1 overflow-y-auto space-y-2 pr-1">
               {filteredNotifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-64 text-center">
-                  <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-2xl mb-2">
+                  <div className="w-12 h-12 rounded-xl bg-[#E8F7F4] text-[#087F73] flex items-center justify-center text-xl mb-3 border border-[#9AD9D1]/60">
                     📭
                   </div>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                  <p className="text-sm font-semibold text-[#52627A]">
                     No notifications in this category
                   </p>
-                  <p className="text-xs text-slate-400">You're all caught up with your healthcare updates.</p>
+                  <p className="text-xs text-[#718096] mt-1">
+                    You're all caught up with your healthcare updates.
+                  </p>
                 </div>
               ) : (
-                filteredNotifications.map((notif) => (
-                  <div
-                    key={notif._id}
-                    onClick={() => !notif.isRead && markAsRead(notif._id)}
-                    className={`p-3 rounded-xl border transition cursor-pointer flex gap-3 ${
-                      notif.isRead
-                        ? "bg-white dark:bg-slate-800/40 border-slate-100 dark:border-slate-800 opacity-80"
-                        : "bg-teal-50/50 dark:bg-teal-950/20 border-teal-200 dark:border-teal-800/50 shadow-sm"
-                    }`}
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-700/60 flex items-center justify-center text-lg flex-shrink-0">
-                      {getCategoryIcon(notif.category)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 truncate">
-                          <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
-                            {notif.title}
-                          </h4>
-                          {!notif.isRead && (
-                            <span className="w-2 h-2 rounded-full bg-teal-500 inline-block flex-shrink-0" />
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          {getPriorityBadge(notif.priority)}
-                          <span className="text-[10px] text-slate-400">
-                            {new Date(notif.createdAt || Date.now()).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        </div>
+                filteredNotifications.map((notif) => {
+                  const isUnread = !notif.isRead;
+                  return (
+                    <div
+                      key={notif._id}
+                      onClick={() => isUnread && markAsRead(notif._id)}
+                      className={`p-3.5 rounded-xl border transition-all cursor-pointer flex gap-3 ${
+                        isUnread
+                          ? "bg-[#F3FBF9] border-[#9AD9D1] shadow-xs"
+                          : "bg-white border-[#D9E2EC] hover:border-[#C5D1DE]"
+                      }`}
+                    >
+                      <div
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0 ${
+                          isUnread
+                            ? "bg-[#E8F7F4] text-[#087F73] border border-[#9AD9D1]"
+                            : "bg-[#F1F5F9] text-[#52627A] border border-[#D9E2EC]"
+                        }`}
+                      >
+                        {getCategoryIcon(notif.category)}
                       </div>
-                      <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
-                        {notif.message}
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 truncate">
+                            <h4 className="text-xs font-semibold text-[#172033] truncate">
+                              {notif.title}
+                            </h4>
+                            {isUnread && (
+                              <span className="w-2 h-2 rounded-full bg-[#087F73] inline-block flex-shrink-0" />
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            {getPriorityBadge(notif.priority)}
+                            <span className="text-[10px] text-[#718096] font-medium">
+                              {new Date(notif.createdAt || Date.now()).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-[#52627A] mt-1 leading-relaxed">
+                          {notif.message}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </>
         ) : (
           /* Preferences Tab */
-          <div className="flex-1 overflow-y-auto space-y-3 py-2">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex-1 overflow-y-auto space-y-3 py-2 pr-1">
+            <p className="text-xs text-[#52627A] font-medium">
               Choose which real-time healthcare notifications you want to receive on your device:
             </p>
 
@@ -195,35 +231,48 @@ const NotificationCenterModal = ({ isOpen, onClose }) => {
                 { id: "refill", label: "Medication Refill Alerts", desc: "Smart shortage detection and Order Again alerts" },
                 { id: "medication", label: "Daily Medication Reminders", desc: "Prescription adherence routine prompts" },
                 { id: "chat", label: "Doctor & Patient Messages", desc: "Real-time communication pings" },
-              ].map((pref) => (
-                <div
-                  key={pref.id}
-                  className="flex items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40"
-                >
-                  <div>
-                    <h5 className="text-xs font-bold text-slate-900 dark:text-slate-100">{pref.label}</h5>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">{pref.desc}</p>
+              ].map((pref) => {
+                const isChecked = Boolean(preferences[pref.id]);
+                return (
+                  <div
+                    key={pref.id}
+                    className="flex items-center justify-between p-3.5 rounded-xl border border-[#D9E2EC] bg-white hover:border-[#C5D1DE] transition-colors"
+                  >
+                    <div>
+                      <h5 className="text-xs font-semibold text-[#172033]">{pref.label}</h5>
+                      <p className="text-[11px] text-[#718096] mt-0.5">{pref.desc}</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleTogglePref(pref.id)}
+                        className="sr-only"
+                      />
+                      <div
+                        className={`w-10 h-5 rounded-full transition-colors relative ${
+                          isChecked ? "bg-[#087F73]" : "bg-[#CBD5E1]"
+                        }`}
+                      >
+                        <div
+                          className={`w-4 h-4 bg-white rounded-full shadow-xs absolute top-0.5 transition-transform duration-200 ${
+                            isChecked ? "translate-x-5" : "translate-x-0.5"
+                          }`}
+                        />
+                      </div>
+                    </label>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={preferences[pref.id]}
-                      onChange={() => handleTogglePref(pref.id)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-500"></div>
-                  </label>
-                </div>
-              ))}
+                );
+              })}
             </div>
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl text-[11px] text-amber-800 dark:text-amber-300">
+            <div className="p-3 bg-[#FFF7E6] border border-[#FDE68A] rounded-xl text-[11px] text-[#B7791F]">
               ⚠️ <strong>Mandatory Security Notifications:</strong> Account verification and crucial transaction alerts cannot be turned off.
             </div>
           </div>
         )}
 
         {/* Footer */}
-        <div className="border-t border-slate-100 dark:border-slate-800 pt-3 mt-2 flex justify-end">
+        <div className="border-t border-[#D9E2EC] pt-3 mt-2 flex justify-end">
           <Button variant="secondary" size="sm" onClick={onClose}>
             Close
           </Button>

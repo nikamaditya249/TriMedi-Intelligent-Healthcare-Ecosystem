@@ -449,6 +449,18 @@ export const markAllNotificationsRead = async (userEmail) => {
   });
 };
 
+export const getNotificationPreferences = async (userEmail) => {
+  const query = userEmail ? `?userEmail=${encodeURIComponent(userEmail)}` : "";
+  return request(`/notifications/preferences${query}`);
+};
+
+export const updateNotificationPreferences = async (payload) => {
+  return request("/notifications/preferences", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+};
+
 export const getConversations = async (userEmail, role = "patient") => {
   return request(`/chat/conversations?userEmail=${encodeURIComponent(userEmail)}&role=${role}`);
 };

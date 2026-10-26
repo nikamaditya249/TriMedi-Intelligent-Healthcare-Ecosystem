@@ -48,11 +48,47 @@ router.post("/extract-prescription", optionalAuth, async (req, res) => {
  * POST /api/ai/simplify-instructions
  * Convert complex clinical instructions into clear, friendly patient guidance
  */
-router.post("/simplify-instructions", async (req, res) => {
+router.post("/simplify-instructions", optionalAuth, async (req, res) => {
   try {
     const { medicines = [], diagnosis = "" } = req.body;
+    const actorEmail = req.user?.email || "patient@trimedi.com";
+    const actorRole = req.user?.role || "patient";
+
     const result = aiService.simplifyPrescription(medicines, diagnosis);
-    res.json(result);
+
+    // AI Safety & Audit logging
+    try {
+      if (mongoose.connection.readyState === 1) {
+        await AIAudit.create({
+          action: "INSTRUCTION_SIMPLIFICATION",
+          actorEmail,
+          actorRole,
+          resourceType: "medication",
+          details: {
+            medicinesCount: medicines.length,
+            medicines: medicines.map((m) => m.medicineName || m.name),
+          },
+          model: "rules_engine_lexicon",
+          confidenceScore: 0.95,
+          timestamp: new Date(),
+        });
+      }
+    } catch (auditErr) {
+      // Non-blocking audit failure
+    }
+
+    const simplifiedItems = (result.guidelines || []).map((g) => ({
+      medicineName: g.medicineName,
+      dosage: g.dosage,
+      howToTake: g.howToTake,
+      timingGuidance: g.timingGuidance,
+      plainLanguage: `${g.howToTake} ${g.timingGuidance}`.trim(),
+    }));
+
+    res.json({
+      ...result,
+      simplifiedItems,
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: "Error simplifying clinical instructions", error: err.message });
   }

@@ -97,12 +97,14 @@ export const initSocketIO = (httpServer) => {
     const email = socket.userEmail;
     const role = socket.userRole;
 
-    // Join isolated individual user room
+    // Join isolated individual user room (support both user_email and user:email patterns)
     socket.join(`user_${email}`);
+    socket.join(`user:${email}`);
 
-    // Join authorized role room
+    // Join authorized role room (support both role_role and role:role patterns)
     if (role) {
       socket.join(`role_${role}`);
+      socket.join(`role:${role}`);
     }
 
     // Track online state

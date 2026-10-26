@@ -86,8 +86,7 @@ export async function seedDatabase(options = {}) {
     }
 
     console.log(`   ✨ New catalog items inserted: ${insertedCount}`);
-    console.log(`   🛡️ Existing catalog items preserved: ${existingCount}`);
-    console.log(`   📦 Total catalog products active: ${insertedCount + existingCount} / 50`);
+    console.log(`   📦 Total catalog products active: ${insertedCount + existingCount} / ${defaultProducts.length}`);
 
     // 2. Safe Optional Administrator Bootstrap
     console.log("\n2. Checking administrator bootstrap configuration...");

@@ -25,15 +25,15 @@ export function Button({
 
   const variants = {
     primary:
-      "bg-brand-700 hover:bg-brand-800 text-white shadow-subtle hover:shadow focus:ring-brand-700 border border-brand-800",
+      "bg-[#087F73] hover:bg-[#06665D] text-white shadow-xs focus:ring-[#087F73] border border-[#06665D]",
     secondary:
-      "bg-slate-100 hover:bg-slate-200 text-slate-800 focus:ring-slate-400 border border-slate-200/90",
+      "bg-white hover:bg-[#F1F5F9] text-[#172033] border border-[#D9E2EC] hover:border-[#C5D1DE] shadow-xs focus:ring-[#087F73]",
     outline:
-      "border border-slate-300 hover:border-brand-700 text-slate-700 hover:text-brand-700 bg-white hover:bg-brand-50/40 focus:ring-brand-700 shadow-subtle",
+      "border border-[#D9E2EC] hover:border-[#087F73] text-[#087F73] bg-white hover:bg-[#E8F7F4] focus:ring-[#087F73] shadow-xs",
     ghost:
-      "bg-transparent hover:bg-slate-100 text-slate-600 hover:text-slate-900 focus:ring-slate-300",
+      "bg-transparent hover:bg-[#F1F5F9] text-[#52627A] hover:text-[#172033] focus:ring-[#CBD5E1]",
     danger:
-      "bg-rose-600 hover:bg-rose-700 text-white shadow-subtle focus:ring-rose-500 border border-rose-700",
+      "bg-[#C53030] hover:bg-[#9B2C2C] text-white shadow-xs focus:ring-[#C53030] border border-[#9B2C2C]",
   };
 
   return (

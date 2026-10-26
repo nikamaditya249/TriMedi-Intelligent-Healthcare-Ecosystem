@@ -78,8 +78,14 @@ router.get("/schedule/today", optionalAuth, async (req, res) => {
       });
     }
 
-    const schedule = await medicationService.getTodaySchedule(requestedEmail);
-    res.json({ success: true, count: schedule.length, schedule });
+    const scheduleData = await medicationService.getTodaySchedule(requestedEmail);
+    res.json({
+      success: true,
+      count: scheduleData.schedule.length,
+      date: scheduleData.date,
+      schedule: scheduleData.schedule,
+      adherence: scheduleData.adherence,
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -92,10 +98,12 @@ router.get("/schedule/today", optionalAuth, async (req, res) => {
 router.post("/:id/dose", requireDatabase, optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, date, timeSlot, notes } = req.body;
+    const { status, date, timeSlot, slot, notes, reason } = req.body;
+    const slotKey = timeSlot || slot;
     const actorEmail = req.user?.email || "patient@trimedi.com";
+    const actorRole = req.user?.role || "patient";
 
-    if (!status || !timeSlot) {
+    if (!status || !slotKey) {
       return res.status(400).json({
         success: false,
         message: "Dose status ('TAKEN', 'MISSED', 'SKIPPED') and timeSlot are required.",
@@ -105,10 +113,12 @@ router.post("/:id/dose", requireDatabase, optionalAuth, async (req, res) => {
     const result = await medicationService.recordDose({
       medicationId: id,
       date,
-      timeSlot,
+      timeSlot: slotKey,
       status,
       actorEmail,
+      actorRole,
       notes,
+      reason,
     });
 
     await logClinicalAudit({
@@ -116,11 +126,26 @@ router.post("/:id/dose", requireDatabase, optionalAuth, async (req, res) => {
       action: `MEDICATION_DOSE_${status}`,
       resourceType: "medication",
       resourceId: String(id),
-      details: { timeSlot, date, status, adherence: result.adherenceSummary },
+      details: {
+        timeSlot: slotKey,
+        date,
+        status,
+        isDuplicate: result.isDuplicate,
+        adherence: result.adherenceSummary,
+      },
     });
 
     res.json(result);
   } catch (err) {
+    if (err.statusCode === 409) {
+      return res.status(409).json({ success: false, message: err.message });
+    }
+    if (err.statusCode === 403 || err.message?.includes("Forbidden") || err.message?.includes("IDOR")) {
+      return res.status(403).json({ success: false, message: err.message });
+    }
+    if (err.statusCode === 404 || err.message?.includes("not found")) {
+      return res.status(404).json({ success: false, message: err.message });
+    }
     res.status(400).json({ success: false, message: err.message });
   }
 });

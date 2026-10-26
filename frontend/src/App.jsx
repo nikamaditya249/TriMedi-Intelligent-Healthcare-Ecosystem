@@ -10,6 +10,11 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Auth from "./pages/Auth";
 import Products from "./pages/Products";
+import CategoryExplorer from "./pages/commerce/CategoryExplorer";
+import HealthConcernsExplorer from "./pages/commerce/HealthConcernsExplorer";
+import BrandDirectoryPage from "./pages/commerce/BrandDirectoryPage";
+import ProductListingPage from "./pages/commerce/ProductListingPage";
+import ProductDetailPage from "./pages/commerce/ProductDetailPage";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Profile from "./pages/Profile";
@@ -67,8 +72,47 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/auth" element={<Auth />} />
+        {/* COMMERCE DISCOVERY & PROGRESSIVE DISCLOSURE ROUTES */}
         <Route path="/products" element={<Products search={search} />} />
-        <Route path="/medicines" element={<Navigate to="/products" replace />} />
+        <Route path="/products/categories" element={<CategoryExplorer />} />
+        <Route
+          path="/products/category/:slug"
+          element={<ProductListingPage mode="category" search={search} />}
+        />
+        <Route path="/products/concerns" element={<HealthConcernsExplorer />} />
+        <Route
+          path="/products/concern/:slug"
+          element={<ProductListingPage mode="concern" search={search} />}
+        />
+        <Route path="/products/brands" element={<BrandDirectoryPage />} />
+        <Route
+          path="/products/brand/:slug"
+          element={<ProductListingPage mode="brand" search={search} />}
+        />
+        <Route
+          path="/products/medicines"
+          element={<ProductListingPage mode="medicines" search={search} />}
+        />
+        <Route
+          path="/products/devices"
+          element={<ProductListingPage mode="devices" search={search} />}
+        />
+        <Route
+          path="/products/wellness"
+          element={<ProductListingPage mode="wellness" search={search} />}
+        />
+        <Route
+          path="/products/personal-care"
+          element={<ProductListingPage mode="personalCare" search={search} />}
+        />
+        <Route
+          path="/products/search"
+          element={<ProductListingPage mode="search" search={search} />}
+        />
+        <Route path="/products/:productId" element={<ProductDetailPage />} />
+
+        {/* LEGACY SHORTCUTS */}
+        <Route path="/medicines" element={<Navigate to="/products/medicines" replace />} />
         <Route path="/consult" element={<Navigate to="/app/patient/doctors" replace />} />
         <Route path="/orders" element={<Navigate to="/app/patient/orders" replace />} />
         <Route path="/records" element={<Navigate to="/app/patient/dashboard?tab=medical_record" replace />} />

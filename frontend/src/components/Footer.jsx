@@ -10,7 +10,7 @@ export function Footer() {
 
   return (
     <footer className="bg-slate-950 text-slate-300 border-t border-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-10">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 pt-14 pb-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
           {/* Column 1 — TriMedi Brand */}
           <div className="lg:col-span-1 space-y-4">

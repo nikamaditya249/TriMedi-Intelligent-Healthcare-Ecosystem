@@ -9,10 +9,22 @@ const productSchema = new mongoose.Schema(
     dosageForm: { type: String, default: "Tablet" }, // Tablet, Syrup, Injection, Ointment, etc.
     category: {
       type: String,
-      enum: ["Medicine", "Fitness", "Diabetes", "Skin Care", "Baby Care", "Medical Device"],
+      enum: [
+        "Medicine",
+        "Fitness",
+        "Diabetes",
+        "Skin Care",
+        "Baby Care",
+        "Medical Device",
+        "Wellness",
+        "Personal Care",
+        "Ayurvedic",
+      ],
       default: "Medicine",
       index: true,
     },
+    subcategory: { type: String, default: "" },
+    healthConcern: { type: String, default: "" },
     prescriptionRequired: { type: Boolean, default: false, index: true },
     price: { type: Number, required: true }, // Selling price in INR
     mrp: { type: Number, required: true }, // Maximum Retail Price

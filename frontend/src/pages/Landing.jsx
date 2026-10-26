@@ -58,7 +58,7 @@ export function Landing() {
 
       {/* 2. HEALTHCARE COMMERCE HERO SECTION */}
       <section className="relative bg-white pt-8 pb-14 lg:pt-12 lg:pb-20 border-b border-slate-200/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 xl:gap-16 items-center">
             {/* Left: Clear Healthcare Value Proposition */}
             <div className="lg:col-span-7 xl:col-span-7 space-y-6 text-center lg:text-left">
@@ -195,7 +195,7 @@ export function Landing() {
 
       {/* 3. CORE TRIMEDI DIFFERENTIATORS (MORE THAN A PHARMACY) */}
       <section id="differentiators" className="py-16 sm:py-24 bg-white border-b border-slate-200/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10">
           <div className="text-center max-w-4xl mx-auto mb-14">
             <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-700 mb-2">
               <FiActivity className="w-3.5 h-3.5" />
@@ -324,7 +324,7 @@ export function Landing() {
 
       {/* 4. ONE CONTINUOUS HEALTHCARE JOURNEY (HORIZONTAL WORKFLOW) */}
       <section id="journey" className="py-16 sm:py-24 bg-slate-50 border-b border-slate-200/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10">
           <div className="text-center max-w-3xl mx-auto mb-14">
             <h2 className="text-xs font-bold uppercase tracking-wider text-brand-700 mb-2">
               End-to-End Care Loop
@@ -408,7 +408,7 @@ export function Landing() {
 
       {/* 5. PRESCRIPTION-TO-DOOR SECTION */}
       <section id="prescription-flow" className="py-16 sm:py-20 bg-white border-b border-slate-200/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10">
           <div className="max-w-4xl mb-12">
             <h2 className="text-xs font-bold uppercase tracking-wider text-brand-700 mb-2">
               Controlled Fulfillment
@@ -475,7 +475,7 @@ export function Landing() {
 
       {/* 6. TRADITIONAL HEALTHCARE VS TRIMEDI (COMPARISON) */}
       <section className="py-16 sm:py-24 bg-slate-50 border-b border-slate-200/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10">
           <div className="text-center max-w-3xl mx-auto mb-14">
             <h2 className="text-xs font-bold uppercase tracking-wider text-brand-700 mb-2">
               Integrated vs. Fragmented
@@ -571,7 +571,7 @@ export function Landing() {
 
       {/* 7. ROLE-BASED PLATFORM WORKSPACES */}
       <section className="py-16 sm:py-24 bg-white border-b border-slate-200/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10">
           <div className="text-center max-w-3xl mx-auto mb-14">
             <h2 className="text-xs font-bold uppercase tracking-wider text-brand-700 mb-2">
               Role-Based Architecture
@@ -718,7 +718,7 @@ export function Landing() {
 
       {/* 8. PATIENT SAFETY & TRUST */}
       <section id="safety" className="py-16 sm:py-24 bg-slate-50 border-b border-slate-200/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10">
           <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-10 lg:p-12 shadow-subtle w-full">
             <div className="max-w-4xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold mb-3">
@@ -782,7 +782,7 @@ export function Landing() {
 
       {/* 9. OFFERS & BENEFITS SECTION */}
       <section id="offers" className="py-14 sm:py-18 bg-white border-b border-slate-200/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10">
           <div className="max-w-3xl mb-8">
             <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-700 mb-1">
               <FiPercent className="w-3.5 h-3.5" />
@@ -826,7 +826,7 @@ export function Landing() {
 
       {/* 10. NEED HELP & SUPPORT SECTION */}
       <section id="help" className="py-14 sm:py-18 bg-slate-50 border-b border-slate-200/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10">
           <div className="max-w-3xl mb-8">
             <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-700 mb-1">
               <FiHelpCircle className="w-3.5 h-3.5" />
@@ -867,7 +867,7 @@ export function Landing() {
 
       {/* 11. FINAL CALL TO ACTION */}
       <section className="py-16 sm:py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 text-center">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
             Start Your Healthcare Journey With TriMedi
           </h2>
