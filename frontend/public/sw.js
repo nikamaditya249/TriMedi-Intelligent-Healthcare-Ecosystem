@@ -1,4 +1,4 @@
-// Clean up and unregister any stale Service Worker on localhost
+// Immediately unregister and deactivate this Service Worker
 self.addEventListener("install", () => {
   self.skipWaiting();
 });
@@ -6,19 +6,10 @@ self.addEventListener("install", () => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     self.registration.unregister().then(() => {
-      return self.clients.matchAll();
-    }).then((clients) => {
-      clients.forEach((client) => client.navigate(client.url));
+      return self.clients.claim();
     })
   );
 });
 
-self.addEventListener("fetch", (event) => {
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      // Return a basic fallback response instead of rejecting promise to avoid TypeError
-      return new Response("", { status: 503, statusText: "Service Unavailable" });
-    })
-  );
-});
-
+// DO NOT add a fetch event listener.
+// Without a fetch listener, the service worker does not intercept any HTTP/navigation requests.
