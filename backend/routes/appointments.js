@@ -4,7 +4,7 @@ import Appointment from "../models/Appointment.js";
 import eventBus from "../services/eventBus.js";
 import { checkInPatient } from "../services/queueService.js";
 import { logClinicalAudit } from "../services/auditService.js";
-import { optionalAuth } from "../middleware/authMiddleware.js";
+import { optionalAuth, requireAuth, requireRole } from "../middleware/authMiddleware.js";
 import { requireDatabase } from "../middleware/dbGuard.js";
 
 const router = express.Router();
@@ -63,17 +63,27 @@ export const fallbackAppointments = [
   },
 ];
 
-// GET Appointments
-router.get("/", async (req, res) => {
+// GET Appointments with Role-based Scoping & IDOR Protection
+router.get("/", optionalAuth, async (req, res) => {
   try {
-    const { patientEmail, doctorEmail, role } = req.query;
+    let { patientEmail, doctorEmail, role } = req.query;
+
+    if (req.user) {
+      if (req.user.role === "patient") {
+        role = "patient";
+        patientEmail = req.user.email;
+      } else if (req.user.role === "doctor") {
+        role = "doctor";
+        doctorEmail = req.user.email;
+      }
+    }
 
     if (mongoose.connection.readyState === 1) {
       const query = {};
       if (role === "patient" && patientEmail) {
-        query.patientEmail = patientEmail;
+        query.patientEmail = patientEmail.toLowerCase();
       } else if (role === "doctor" && doctorEmail) {
-        query.doctorEmail = doctorEmail;
+        query.doctorEmail = doctorEmail.toLowerCase();
       }
       const appointments = await Appointment.find(query).sort({ appointmentDate: 1 });
       if (appointments && appointments.length > 0) {
@@ -83,12 +93,19 @@ router.get("/", async (req, res) => {
 
     let result = fallbackAppointments;
     if (role === "patient" && patientEmail) {
+      const cleanPEmail = patientEmail.toLowerCase();
       result = result.filter(
-        (a) => a.patientEmail?.toLowerCase() === patientEmail.toLowerCase() || a.patientName.toLowerCase().includes("aditya")
+        (a) =>
+          a.patientEmail?.toLowerCase() === cleanPEmail ||
+          (cleanPEmail.includes("aditya") && a.patientName?.toLowerCase().includes("aditya"))
       );
     } else if (role === "doctor" && doctorEmail) {
+      const cleanDEmail = doctorEmail.toLowerCase();
       result = result.filter(
-        (a) => a.doctorEmail?.toLowerCase() === doctorEmail.toLowerCase() || a.doctorName.toLowerCase().includes("jenkins")
+        (a) =>
+          a.doctorEmail?.toLowerCase() === cleanDEmail ||
+          (cleanDEmail.includes("doctor") && a.doctorEmail?.toLowerCase().includes("doctor")) ||
+          a.doctorName?.toLowerCase().includes("jenkins")
       );
     }
     res.json(result);
@@ -97,9 +114,39 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST Book Consultation / Appointment
-router.post("/", requireDatabase, async (req, res) => {
+// POST Book Consultation / Appointment (Patient / Reception / Admin Only)
+// Doctors and Pharmacy roles are strictly forbidden from self-booking consultations as patients.
+router.post("/", requireDatabase, optionalAuth, async (req, res) => {
   try {
+    // 1. RBAC Enforcements
+    if (req.user) {
+      if (req.user.role === "doctor") {
+        return res.status(403).json({
+          success: false,
+          message: "Doctors are not permitted to book patient consultations for themselves. Please use doctor scheduling or reception workflow.",
+        });
+      }
+      if (req.user.role === "pharmacy") {
+        return res.status(403).json({
+          success: false,
+          message: "Pharmacy role is not permitted to book patient consultations.",
+        });
+      }
+      if (req.user.role === "patient") {
+        if (req.body.patientEmail && req.body.patientEmail.toLowerCase() !== req.user.email.toLowerCase()) {
+          return res.status(403).json({
+            success: false,
+            message: "Access denied: Patients are forbidden from booking consultations under another patient's identity.",
+          });
+        }
+      }
+    } else if (req.headers.authorization && !req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required: Invalid or expired token",
+      });
+    }
+
     const {
       patientName,
       patientEmail,
@@ -110,13 +157,15 @@ router.post("/", requireDatabase, async (req, res) => {
       hospital,
       appointmentDate: rawDate,
       date,
-      timeSlot,
+      timeSlot: rawTimeSlot,
+      time,
       type = "video",
       reason,
       notes,
     } = req.body;
 
     const appointmentDate = rawDate || date;
+    const timeSlot = rawTimeSlot || time;
 
     if (!patientName || !doctorName || !appointmentDate || !timeSlot) {
       return res.status(400).json({
@@ -124,7 +173,7 @@ router.post("/", requireDatabase, async (req, res) => {
       });
     }
 
-    const pEmail = patientEmail || "patient@trimedi.com";
+    const pEmail = req.user?.role === "patient" ? req.user.email : (patientEmail || "patient@trimedi.com");
     const dEmail = doctorEmail || "doctor@trimedi.com";
 
     let createdAppointment = null;
@@ -176,22 +225,127 @@ router.post("/", requireDatabase, async (req, res) => {
       time: timeSlot,
     });
 
+    await logClinicalAudit({
+      req,
+      action: "APPOINTMENT_BOOKED",
+      resourceType: "appointment",
+      resourceId: String(createdAppointment._id),
+      details: { patientEmail: pEmail, doctorEmail: dEmail, date: appointmentDate },
+    });
+
     res.status(201).json({ message: "Appointment booked successfully", appointment: createdAppointment });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
+// POST /api/appointments/schedule-followup (Doctor-Initiated Clinical Scheduling)
+router.post("/schedule-followup", requireDatabase, optionalAuth, async (req, res) => {
+  try {
+    const actorRole = req.user?.role || req.body.role || "doctor";
+    if (actorRole !== "doctor" && actorRole !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: Only attending physicians or clinical administrators may schedule doctor-initiated follow-up consultations.",
+      });
+    }
+
+    const {
+      patientName,
+      patientEmail,
+      patientPhone,
+      doctorName,
+      doctorEmail,
+      appointmentDate: rawDate,
+      date,
+      timeSlot: rawTimeSlot,
+      time,
+      type = "follow-up",
+      reason = "Clinical Follow-up & Treatment Review",
+      notes = "",
+    } = req.body;
+
+    const appointmentDate = rawDate || date;
+    const timeSlot = rawTimeSlot || time;
+    if (!patientName || !appointmentDate || !timeSlot) {
+      return res.status(400).json({
+        success: false,
+        message: "Patient name, appointment date, and time slot are required for clinical follow-up.",
+      });
+    }
+
+    const dEmail = (req.user?.email || doctorEmail || "doctor@trimedi.health").toLowerCase();
+    const dName = req.user?.name || doctorName || "Dr. Sarah Jenkins, MD";
+    const pEmail = (patientEmail || "patient@trimedi.health").toLowerCase();
+
+    const aptPayload = {
+      patientName,
+      patientEmail: pEmail,
+      patientPhone: patientPhone || "+91 98765 43210",
+      doctorName: dName,
+      doctorEmail: dEmail,
+      doctorSpecialty: "Cardiology & Internal Medicine",
+      hospital: "Metro Health Center",
+      appointmentDate,
+      timeSlot,
+      type,
+      status: "scheduled",
+      reason,
+      notes: notes || "Physician-scheduled follow-up consultation",
+    };
+
+    let createdAppointment = null;
+    if (mongoose.connection.readyState === 1) {
+      createdAppointment = await Appointment.create(aptPayload);
+    } else {
+      createdAppointment = {
+        _id: "APT-DOC-" + Math.floor(100 + Math.random() * 900),
+        ...aptPayload,
+        createdAt: new Date(),
+      };
+      fallbackAppointments.unshift(createdAppointment);
+    }
+
+    eventBus.emit("APPOINTMENT_CREATED", {
+      appointmentId: String(createdAppointment._id),
+      doctorEmail: dEmail,
+      patientEmail: pEmail,
+      patientName,
+      date: appointmentDate,
+      time: timeSlot,
+      initiatedBy: "doctor",
+    });
+
+    await logClinicalAudit({
+      req,
+      action: "DOCTOR_SCHEDULED_FOLLOWUP",
+      resourceType: "appointment",
+      resourceId: String(createdAppointment._id),
+      details: { patientEmail: pEmail, doctorEmail: dEmail, date: appointmentDate },
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Follow-up consultation scheduled successfully by physician",
+      appointment: createdAppointment,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 export const VALID_TRANSITIONS = {
-  requested: ["scheduled", "cancelled"],
-  scheduled: ["confirmed", "checked_in", "cancelled", "no_show"],
-  confirmed: ["checked_in", "waiting", "cancelled", "no_show"],
-  checked_in: ["waiting", "in_consultation", "cancelled", "no_show"],
-  waiting: ["in_consultation", "cancelled", "no_show"],
+  requested: ["scheduled", "confirmed", "cancelled", "rejected"],
+  scheduled: ["confirmed", "checked_in", "cancelled", "no_show", "rejected"],
+  confirmed: ["checked_in", "waiting", "in_consultation", "in_progress", "cancelled", "no_show"],
+  checked_in: ["waiting", "in_consultation", "in_progress", "cancelled", "no_show"],
+  waiting: ["in_consultation", "in_progress", "cancelled", "no_show"],
   in_consultation: ["completed", "cancelled"],
+  in_progress: ["completed", "cancelled"],
   completed: [], // Terminal state
   cancelled: [], // Terminal state
   no_show: [],   // Terminal state
+  rejected: [],  // Terminal state
 };
 
 // POST Check-in appointment (Idempotent, enqueues patient in clinic queue)
@@ -263,13 +417,14 @@ router.get("/:id", optionalAuth, async (req, res) => {
 router.put("/:id/status", requireDatabase, optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status: targetStatus, reason = "", cancelledBy } = req.body;
+    const { status: rawStatus, reason = "", cancelledBy } = req.body;
+    const targetStatus = (rawStatus || "").toLowerCase();
 
     const allowedStatuses = Object.keys(VALID_TRANSITIONS);
     if (!allowedStatuses.includes(targetStatus)) {
       return res.status(400).json({
         success: false,
-        message: `Invalid status '${targetStatus}'. Allowed statuses: ${allowedStatuses.join(", ")}`,
+        message: `Invalid status '${rawStatus}'. Allowed statuses: ${allowedStatuses.join(", ")}`,
       });
     }
 
@@ -284,7 +439,41 @@ router.put("/:id/status", requireDatabase, optionalAuth, async (req, res) => {
       return res.status(404).json({ success: false, message: "Appointment not found" });
     }
 
-    const currentStatus = apt.status || "scheduled";
+    // Role-based status transition authorization:
+    if (req.user) {
+      if (req.user.role === "patient") {
+        if (targetStatus !== "cancelled") {
+          return res.status(403).json({
+            success: false,
+            message: "Access denied: Patients are only authorized to cancel their appointments. Clinical status changes must be performed by attending doctors or reception.",
+          });
+        }
+        const aptPatientEmail = (apt.patientEmail || "").toLowerCase();
+        if (aptPatientEmail && aptPatientEmail !== req.user.email.toLowerCase()) {
+          return res.status(403).json({
+            success: false,
+            message: "Access denied: You are not authorized to cancel another patient's appointment.",
+          });
+        }
+      } else if (req.user.role === "doctor") {
+        const aptDoctorEmail = (apt.doctorEmail || "").toLowerCase();
+        if (aptDoctorEmail && aptDoctorEmail !== req.user.email.toLowerCase()) {
+          return res.status(403).json({
+            success: false,
+            message: "Access denied: Doctors can only manage consultations scheduled with them.",
+          });
+        }
+      } else if (req.user.role === "reception") {
+        if (targetStatus === "completed") {
+          return res.status(403).json({
+            success: false,
+            message: "Forbidden: Reception cannot mark consultations completed. Clinical completion is performed by the physician.",
+          });
+        }
+      }
+    }
+
+    const currentStatus = (apt.status || "scheduled").toLowerCase();
 
     // Validate State Machine Transition
     const allowedNext = VALID_TRANSITIONS[currentStatus] || [];

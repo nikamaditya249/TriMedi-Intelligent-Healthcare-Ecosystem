@@ -6,7 +6,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "node test_phase5_95_paypal_production.js && node scripts/security_negative_matrix_test.js && node scripts/production_smoke_test.js && node scripts/medication_adherence_realtime_e2e_test.js",
+    "test": "node scripts/demo_role_isolation_e2e_test.js && node scripts/functional_role_audit_test.js && node test_phase5_95_paypal_production.js && node scripts/security_negative_matrix_test.js && node scripts/production_smoke_test.js && node scripts/medication_adherence_realtime_e2e_test.js",
+    "test:role-audit": "node scripts/demo_role_isolation_e2e_test.js && node scripts/functional_role_audit_test.js",
     "seed": "node scripts/db_seed.js",
     "db:init": "node scripts/db_init.js",
     "db:seed": "node scripts/db_seed.js",

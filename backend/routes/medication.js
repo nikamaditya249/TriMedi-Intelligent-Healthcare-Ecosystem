@@ -103,6 +103,13 @@ router.post("/:id/dose", requireDatabase, optionalAuth, async (req, res) => {
     const actorEmail = req.user?.email || "patient@trimedi.com";
     const actorRole = req.user?.role || "patient";
 
+    if (actorRole === "doctor" || actorRole === "reception" || actorRole === "pharmacy") {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: Clinical medication doses cannot be recorded by doctor, reception, or pharmacy roles. Ingestion telemetry must be recorded by the patient.",
+      });
+    }
+
     if (!status || !slotKey) {
       return res.status(400).json({
         success: false,

@@ -23,7 +23,7 @@ import { useAuth } from "../context/AuthContext";
 
 export function Landing() {
   const navigate = useNavigate();
-  const { switchDemoRole, isAuthenticated, activeRole } = useAuth();
+  const { isAuthenticated, activeRole } = useAuth();
 
   const handleConsultDoctor = () => {
     if (!isAuthenticated) {
@@ -37,9 +37,16 @@ export function Landing() {
     }
   };
 
-  const handleRoleLaunch = (role) => {
-    switchDemoRole(role);
-    navigate(`/app/${role}/dashboard`);
+  const handleRolePortalClick = (targetRole) => {
+    if (isAuthenticated) {
+      if (activeRole === targetRole) {
+        navigate(`/app/${targetRole}/dashboard`);
+      } else {
+        navigate(`/app/${activeRole}/dashboard`);
+      }
+    } else {
+      navigate("/login");
+    }
   };
 
   return (
@@ -605,13 +612,7 @@ export function Landing() {
                 variant="outline"
                 size="sm"
                 className="w-full justify-center text-xs"
-                onClick={() => {
-                  if (isAuthenticated && activeRole === "patient") {
-                    navigate("/app/patient/dashboard");
-                  } else {
-                    handleRoleLaunch("patient");
-                  }
-                }}
+                onClick={() => handleRolePortalClick("patient")}
               >
                 Patient Portal
               </Button>
@@ -637,13 +638,7 @@ export function Landing() {
                 variant="outline"
                 size="sm"
                 className="w-full justify-center text-xs"
-                onClick={() => {
-                  if (isAuthenticated && activeRole === "doctor") {
-                    navigate("/app/doctor/dashboard");
-                  } else {
-                    handleRoleLaunch("doctor");
-                  }
-                }}
+                onClick={() => handleRolePortalClick("doctor")}
               >
                 Doctor Portal
               </Button>
@@ -669,13 +664,7 @@ export function Landing() {
                 variant="outline"
                 size="sm"
                 className="w-full justify-center text-xs"
-                onClick={() => {
-                  if (isAuthenticated && activeRole === "pharmacy") {
-                    navigate("/app/pharmacy/dashboard");
-                  } else {
-                    handleRoleLaunch("pharmacy");
-                  }
-                }}
+                onClick={() => handleRolePortalClick("pharmacy")}
               >
                 Pharmacy Portal
               </Button>
@@ -701,13 +690,7 @@ export function Landing() {
                 variant="outline"
                 size="sm"
                 className="w-full justify-center text-xs"
-                onClick={() => {
-                  if (isAuthenticated && activeRole === "admin") {
-                    navigate("/app/admin/dashboard");
-                  } else {
-                    handleRoleLaunch("admin");
-                  }
-                }}
+                onClick={() => handleRolePortalClick("admin")}
               >
                 Admin Portal
               </Button>

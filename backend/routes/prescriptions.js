@@ -82,17 +82,40 @@ export const fallbackPrescriptions = [
   },
 ];
 
-// GET all prescriptions with optional role filtering
-router.get("/", async (req, res) => {
+export const PRESCRIPTION_VALID_TRANSITIONS = {
+  draft: ["reviewed", "cancelled"],
+  reviewed: ["approved", "draft", "rejected", "cancelled"],
+  approved: ["issued", "active", "revoked", "cancelled"],
+  issued: ["active", "revoked", "expired", "cancelled"],
+  active: ["completed", "expired", "revoked", "cancelled"],
+  completed: [],
+  expired: [],
+  revoked: [],
+  cancelled: [],
+  rejected: [],
+};
+
+// GET all prescriptions with role-based scoping & IDOR protection
+router.get("/", optionalAuth, async (req, res) => {
   try {
-    const { patientEmail, doctorEmail, role } = req.query;
+    let { patientEmail, doctorEmail, role } = req.query;
+
+    if (req.user) {
+      if (req.user.role === "patient") {
+        role = "patient";
+        patientEmail = req.user.email;
+      } else if (req.user.role === "doctor") {
+        role = "doctor";
+        doctorEmail = req.user.email;
+      }
+    }
 
     if (mongoose.connection.readyState === 1) {
       const query = {};
       if (role === "patient" && patientEmail) {
-        query.patientEmail = patientEmail;
+        query.patientEmail = patientEmail.toLowerCase();
       } else if (role === "doctor" && doctorEmail) {
-        query.doctorEmail = doctorEmail;
+        query.doctorEmail = doctorEmail.toLowerCase();
       }
       const prescriptions = await Prescription.find(query).sort({ createdAt: -1 });
       if (prescriptions && prescriptions.length > 0) {
@@ -102,12 +125,19 @@ router.get("/", async (req, res) => {
 
     let result = fallbackPrescriptions;
     if (role === "patient" && patientEmail) {
+      const cleanPEmail = patientEmail.toLowerCase();
       result = result.filter(
-        (p) => p.patientEmail?.toLowerCase() === patientEmail.toLowerCase() || p.patientName.toLowerCase().includes("aditya")
+        (p) =>
+          p.patientEmail?.toLowerCase() === cleanPEmail ||
+          (cleanPEmail.includes("aditya") && p.patientName?.toLowerCase().includes("aditya"))
       );
     } else if (role === "doctor" && doctorEmail) {
+      const cleanDEmail = doctorEmail.toLowerCase();
       result = result.filter(
-        (p) => p.doctorEmail?.toLowerCase() === doctorEmail.toLowerCase() || p.doctorName.toLowerCase().includes("jenkins")
+        (p) =>
+          p.doctorEmail?.toLowerCase() === cleanDEmail ||
+          (cleanDEmail.includes("doctor") && p.doctorEmail?.toLowerCase().includes("doctor")) ||
+          p.doctorName?.toLowerCase().includes("jenkins")
       );
     }
     res.json(result);
@@ -185,6 +215,7 @@ router.post("/", requireDatabase, optionalAuth, async (req, res) => {
       diagnosis: rawDiagnosis,
       items: rawItems,
       medicines,
+      medications,
       reason,
       validUntil,
       notes,
@@ -193,7 +224,7 @@ router.post("/", requireDatabase, optionalAuth, async (req, res) => {
       status,
     } = req.body;
 
-    const items = rawItems || medicines || [];
+    const items = rawItems || medicines || medications || [];
     const diagnosis = rawDiagnosis || reason || "Clinical Assessment & Prescription";
     const dName = doctorName || (req.user?.role === "doctor" ? req.user.name : "Dr. Sarah Jenkins, MD");
 
@@ -384,17 +415,46 @@ router.post("/:id/approve", requireDatabase, optionalAuth, async (req, res) => {
   }
 });
 
-// PUT update prescription status
+// PUT update prescription status with State Machine Validation & Doctor Authority
 router.put("/:id/status", optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, notes = "" } = req.body;
+    const { status: rawStatus, notes = "" } = req.body;
+    const targetStatus = (rawStatus || "").toLowerCase();
 
-    // Patients cannot alter prescription status
-    if (req.user && req.user.role === "patient") {
+    // Patients and Pharmacy cannot alter prescription status
+    if (req.user && req.user.role !== "doctor" && req.user.role !== "admin") {
       return res.status(403).json({
         success: false,
-        message: "Forbidden: Patients cannot alter clinical prescription status.",
+        message: "Forbidden: Only authorized medical doctors or clinical admins can alter clinical prescription status.",
+      });
+    }
+
+    const allowedStatuses = Object.keys(PRESCRIPTION_VALID_TRANSITIONS);
+    if (!allowedStatuses.includes(targetStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status '${rawStatus}'. Allowed statuses: ${allowedStatuses.join(", ")}`,
+      });
+    }
+
+    let existingRx = null;
+    if (mongoose.connection.readyState === 1 && mongoose.isValidObjectId(id)) {
+      existingRx = await Prescription.findById(id);
+    } else {
+      existingRx = fallbackPrescriptions.find((p) => String(p._id) === String(id));
+    }
+
+    if (!existingRx) {
+      return res.status(404).json({ success: false, message: "Prescription not found" });
+    }
+
+    const currentStatus = (existingRx.status || "draft").toLowerCase();
+    const allowedNext = PRESCRIPTION_VALID_TRANSITIONS[currentStatus] || [];
+    if (!allowedNext.includes(targetStatus) && currentStatus !== targetStatus) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid prescription state transition: Cannot transition from '${currentStatus}' to '${targetStatus}'. Allowed transitions: [${allowedNext.join(", ")}]`,
       });
     }
 
@@ -403,11 +463,11 @@ router.put("/:id/status", optionalAuth, async (req, res) => {
       updated = await Prescription.findByIdAndUpdate(
         id,
         {
-          status,
+          status: targetStatus,
           $push: {
             history: {
-              status,
-              changedBy: req.user?.email || "system",
+              status: targetStatus,
+              changedBy: req.user?.email || "doctor@trimedi.health",
               timestamp: new Date(),
               notes,
             },
@@ -416,21 +476,17 @@ router.put("/:id/status", optionalAuth, async (req, res) => {
         { new: true }
       );
     } else {
-      updated = fallbackPrescriptions.find((p) => String(p._id) === String(id));
+      updated = existingRx;
       if (updated) {
-        updated.status = status;
+        updated.status = targetStatus;
         if (!updated.history) updated.history = [];
         updated.history.push({
-          status,
-          changedBy: req.user?.email || "system",
+          status: targetStatus,
+          changedBy: req.user?.email || "doctor@trimedi.health",
           timestamp: new Date(),
           notes,
         });
       }
-    }
-
-    if (!updated) {
-      return res.status(404).json({ success: false, message: "Prescription not found" });
     }
 
     await logClinicalAudit({
@@ -438,10 +494,88 @@ router.put("/:id/status", optionalAuth, async (req, res) => {
       action: "PRESCRIPTION_STATUS_UPDATED",
       resourceType: "prescription",
       resourceId: String(id),
-      details: { newStatus: status },
+      details: { fromStatus: currentStatus, toStatus: targetStatus, notes },
     });
 
-    res.json({ success: true, message: `Prescription status updated to ${status}`, prescription: updated });
+    res.json({ success: true, message: `Prescription status updated to ${targetStatus}`, prescription: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/prescriptions/:id/revoke (Attending Physician Prescription Revocation)
+router.post("/:id/revoke", requireDatabase, optionalAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason = "Prescription revoked by physician" } = req.body;
+
+    if (req.user && req.user.role !== "doctor" && req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: Only attending medical doctors can revoke official prescriptions.",
+      });
+    }
+
+    const doctorEmail = req.user?.email || "doctor@trimedi.health";
+    const revokeTime = new Date();
+
+    let rx = null;
+    if (mongoose.connection.readyState === 1 && mongoose.isValidObjectId(id)) {
+      rx = await Prescription.findByIdAndUpdate(
+        id,
+        {
+          status: "revoked",
+          revokedBy: doctorEmail,
+          revokedAt: revokeTime,
+          revocationReason: reason,
+          $push: {
+            history: {
+              status: "revoked",
+              changedBy: doctorEmail,
+              timestamp: revokeTime,
+              notes: reason,
+            },
+          },
+        },
+        { new: true }
+      );
+    } else {
+      rx = fallbackPrescriptions.find((p) => String(p._id) === String(id));
+      if (rx) {
+        rx.status = "revoked";
+        rx.revokedBy = doctorEmail;
+        rx.revokedAt = revokeTime;
+        rx.revocationReason = reason;
+        if (!rx.history) rx.history = [];
+        rx.history.push({
+          status: "revoked",
+          changedBy: doctorEmail,
+          timestamp: revokeTime,
+          notes: reason,
+        });
+      }
+    }
+
+    if (!rx) {
+      return res.status(404).json({ success: false, message: "Prescription not found" });
+    }
+
+    await logClinicalAudit({
+      req,
+      action: "PRESCRIPTION_REVOKED",
+      resourceType: "prescription",
+      resourceId: String(id),
+      details: { patientEmail: rx.patientEmail, revokedBy: doctorEmail, reason },
+    });
+
+    eventBus.emit("PRESCRIPTION_REVOKED", {
+      prescriptionId: String(rx._id),
+      patientEmail: rx.patientEmail,
+      revokedBy: doctorEmail,
+      reason,
+    });
+
+    res.json({ success: true, message: "Prescription successfully revoked", prescription: rx });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

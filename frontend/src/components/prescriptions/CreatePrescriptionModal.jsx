@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FiFileText,
   FiPlus,
@@ -17,7 +17,7 @@ import Badge from "../ui/Badge";
 import { createPrescription } from "../../api";
 import { useAuth } from "../../context/AuthContext";
 
-export function CreatePrescriptionModal({ isOpen, onClose, onCreated }) {
+export function CreatePrescriptionModal({ isOpen, onClose, onCreated, initialPatient = null }) {
   const { user } = useAuth();
 
   const [step, setStep] = useState(1); // 1: Patient/Diagnosis, 2: Medicines, 3: Review
@@ -44,6 +44,17 @@ export function CreatePrescriptionModal({ isOpen, onClose, onCreated }) {
       },
     ],
   });
+
+  useEffect(() => {
+    if (initialPatient) {
+      setFormData((prev) => ({
+        ...prev,
+        patientName: initialPatient.name || initialPatient.patientName || prev.patientName,
+        patientEmail: initialPatient.email || initialPatient.patientEmail || prev.patientEmail,
+        diagnosis: initialPatient.diagnosis || prev.diagnosis,
+      }));
+    }
+  }, [initialPatient, isOpen]);
 
   const handleAddItem = () => {
     setFormData({

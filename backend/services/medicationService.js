@@ -355,8 +355,8 @@ export class MedicationService {
     }
 
     // Role & Ownership IDOR Guard
-    if (actorRole === "reception" || actorRole === "pharmacy") {
-      const err = new Error("Forbidden: Clinical medication doses cannot be recorded by reception or pharmacy.");
+    if (actorRole === "doctor" || actorRole === "reception" || actorRole === "pharmacy") {
+      const err = new Error("Forbidden: Clinical medication doses cannot be recorded by doctor, reception, or pharmacy roles.");
       err.statusCode = 403;
       throw err;
     }

@@ -34,11 +34,15 @@ import ReceptionDashboard from "./pages/dashboards/ReceptionDashboard";
 // Subpages
 import {
   MyDoctorsPage,
+  MyPatientsPage,
   PrescriptionsPage,
   AppointmentsPage,
   InventoryPage,
   OrdersPage,
   SystemManagementPage,
+  AdminDoctorsPage,
+  AdminPatientsPage,
+  PharmacyPatientsPage,
 } from "./pages/dashboards/RoleSubpages";
 
 // Real-Time Chat
@@ -152,11 +156,11 @@ function AppContent() {
           }
         />
 
-        {/* PATIENT ROUTES */}
+        {/* PATIENT ROUTES (Strictly Patient Isolated) */}
         <Route
           path="/app/patient/dashboard"
           element={
-            <ProtectedRoute allowedRoles={["patient", "admin"]}>
+            <ProtectedRoute allowedRoles={["patient"]}>
               <AppShell>
                 <PatientDashboard />
               </AppShell>
@@ -164,9 +168,19 @@ function AppContent() {
           }
         />
         <Route
+          path="/app/patient/appointments"
+          element={
+            <ProtectedRoute allowedRoles={["patient"]}>
+              <AppShell>
+                <AppointmentsPage />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/app/patient/doctors"
           element={
-            <ProtectedRoute allowedRoles={["patient", "admin"]}>
+            <ProtectedRoute allowedRoles={["patient"]}>
               <AppShell>
                 <MyDoctorsPage />
               </AppShell>
@@ -176,7 +190,7 @@ function AppContent() {
         <Route
           path="/app/patient/prescriptions"
           element={
-            <ProtectedRoute allowedRoles={["patient", "admin"]}>
+            <ProtectedRoute allowedRoles={["patient"]}>
               <AppShell>
                 <PrescriptionsPage />
               </AppShell>
@@ -186,7 +200,7 @@ function AppContent() {
         <Route
           path="/app/patient/orders"
           element={
-            <ProtectedRoute allowedRoles={["patient", "admin"]}>
+            <ProtectedRoute allowedRoles={["patient"]}>
               <AppShell>
                 <OrdersPage />
               </AppShell>
@@ -196,7 +210,7 @@ function AppContent() {
         <Route
           path="/app/patient/messages"
           element={
-            <ProtectedRoute allowedRoles={["patient", "admin"]}>
+            <ProtectedRoute allowedRoles={["patient"]}>
               <AppShell>
                 <ChatPage />
               </AppShell>
@@ -205,11 +219,11 @@ function AppContent() {
         />
         <Route path="/app/patient" element={<Navigate to="/app/patient/dashboard" replace />} />
 
-        {/* DOCTOR ROUTES */}
+        {/* DOCTOR ROUTES (Strictly Doctor Isolated) */}
         <Route
           path="/app/doctor/dashboard"
           element={
-            <ProtectedRoute allowedRoles={["doctor", "admin"]}>
+            <ProtectedRoute allowedRoles={["doctor"]}>
               <AppShell>
                 <DoctorDashboard />
               </AppShell>
@@ -219,9 +233,9 @@ function AppContent() {
         <Route
           path="/app/doctor/patients"
           element={
-            <ProtectedRoute allowedRoles={["doctor", "admin"]}>
+            <ProtectedRoute allowedRoles={["doctor"]}>
               <AppShell>
-                <MyDoctorsPage />
+                <MyPatientsPage />
               </AppShell>
             </ProtectedRoute>
           }
@@ -229,7 +243,7 @@ function AppContent() {
         <Route
           path="/app/doctor/prescriptions"
           element={
-            <ProtectedRoute allowedRoles={["doctor", "admin"]}>
+            <ProtectedRoute allowedRoles={["doctor"]}>
               <AppShell>
                 <PrescriptionsPage />
               </AppShell>
@@ -239,7 +253,7 @@ function AppContent() {
         <Route
           path="/app/doctor/appointments"
           element={
-            <ProtectedRoute allowedRoles={["doctor", "admin"]}>
+            <ProtectedRoute allowedRoles={["doctor"]}>
               <AppShell>
                 <AppointmentsPage />
               </AppShell>
@@ -249,7 +263,7 @@ function AppContent() {
         <Route
           path="/app/doctor/messages"
           element={
-            <ProtectedRoute allowedRoles={["doctor", "admin"]}>
+            <ProtectedRoute allowedRoles={["doctor"]}>
               <AppShell>
                 <ChatPage />
               </AppShell>
@@ -258,11 +272,11 @@ function AppContent() {
         />
         <Route path="/app/doctor" element={<Navigate to="/app/doctor/dashboard" replace />} />
 
-        {/* PHARMACY ROUTES */}
+        {/* PHARMACY ROUTES (Strictly Pharmacy Isolated) */}
         <Route
           path="/app/pharmacy/dashboard"
           element={
-            <ProtectedRoute allowedRoles={["pharmacy", "admin"]}>
+            <ProtectedRoute allowedRoles={["pharmacy"]}>
               <AppShell>
                 <PharmacyDashboard />
               </AppShell>
@@ -272,7 +286,7 @@ function AppContent() {
         <Route
           path="/app/pharmacy/orders"
           element={
-            <ProtectedRoute allowedRoles={["pharmacy", "admin"]}>
+            <ProtectedRoute allowedRoles={["pharmacy"]}>
               <AppShell>
                 <OrdersPage />
               </AppShell>
@@ -282,7 +296,7 @@ function AppContent() {
         <Route
           path="/app/pharmacy/inventory"
           element={
-            <ProtectedRoute allowedRoles={["pharmacy", "admin"]}>
+            <ProtectedRoute allowedRoles={["pharmacy"]}>
               <AppShell>
                 <InventoryPage />
               </AppShell>
@@ -292,16 +306,16 @@ function AppContent() {
         <Route
           path="/app/pharmacy/patients"
           element={
-            <ProtectedRoute allowedRoles={["pharmacy", "admin"]}>
+            <ProtectedRoute allowedRoles={["pharmacy"]}>
               <AppShell>
-                <MyDoctorsPage />
+                <PharmacyPatientsPage />
               </AppShell>
             </ProtectedRoute>
           }
         />
         <Route path="/app/pharmacy" element={<Navigate to="/app/pharmacy/dashboard" replace />} />
 
-        {/* ADMIN ROUTES */}
+        {/* ADMIN ROUTES (Strictly Admin Isolated) */}
         <Route
           path="/app/admin/dashboard"
           element={
@@ -327,7 +341,7 @@ function AppContent() {
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
               <AppShell>
-                <MyDoctorsPage />
+                <AdminDoctorsPage />
               </AppShell>
             </ProtectedRoute>
           }
@@ -337,7 +351,7 @@ function AppContent() {
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
               <AppShell>
-                <MyDoctorsPage />
+                <AdminPatientsPage />
               </AppShell>
             </ProtectedRoute>
           }
@@ -364,11 +378,11 @@ function AppContent() {
         />
         <Route path="/app/admin" element={<Navigate to="/app/admin/dashboard" replace />} />
 
-        {/* RECEPTION ROUTES */}
+        {/* RECEPTION ROUTES (Strictly Reception Isolated) */}
         <Route
           path="/app/reception/dashboard"
           element={
-            <ProtectedRoute allowedRoles={["reception", "admin"]}>
+            <ProtectedRoute allowedRoles={["reception"]}>
               <AppShell>
                 <ReceptionDashboard />
               </AppShell>
@@ -378,7 +392,7 @@ function AppContent() {
         <Route
           path="/app/reception/queue"
           element={
-            <ProtectedRoute allowedRoles={["reception", "admin"]}>
+            <ProtectedRoute allowedRoles={["reception"]}>
               <AppShell>
                 <ReceptionDashboard />
               </AppShell>
@@ -388,7 +402,7 @@ function AppContent() {
         <Route
           path="/app/reception/appointments"
           element={
-            <ProtectedRoute allowedRoles={["reception", "admin"]}>
+            <ProtectedRoute allowedRoles={["reception"]}>
               <AppShell>
                 <ReceptionDashboard />
               </AppShell>
@@ -398,7 +412,7 @@ function AppContent() {
         <Route
           path="/app/reception/patients"
           element={
-            <ProtectedRoute allowedRoles={["reception", "admin"]}>
+            <ProtectedRoute allowedRoles={["reception"]}>
               <AppShell>
                 <ReceptionDashboard />
               </AppShell>

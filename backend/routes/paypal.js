@@ -98,6 +98,19 @@ router.post("/create-order", optionalAuth, async (req, res) => {
       role: "patient",
     };
 
+    if (caller.role === "doctor") {
+      return res.status(403).json({
+        success: false,
+        message: "Doctors are not permitted to initiate patient commerce orders.",
+      });
+    }
+    if (caller.role === "reception") {
+      return res.status(403).json({
+        success: false,
+        message: "Reception role is not permitted to initiate commerce payment orders.",
+      });
+    }
+
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ success: false, message: "Cart items are required to create a payment order" });
     }

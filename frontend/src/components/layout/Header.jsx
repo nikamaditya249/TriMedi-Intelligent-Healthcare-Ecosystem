@@ -17,7 +17,7 @@ import Avatar from "../ui/Avatar";
 
 export function Header({ onMenuClick }) {
   const navigate = useNavigate();
-  const { user, activeRole, logout, switchDemoRole } = useAuth();
+  const { user, activeRole, logout } = useAuth();
   const { unreadNotifCount, isConnected } = useSocket();
 
   const [profileOpen, setProfileOpen] = useState(false);
@@ -79,14 +79,16 @@ export function Header({ onMenuClick }) {
             <FiMessageSquare className="w-4 h-4" />
           </Link>
 
-          {/* Medicine Store Quick Link */}
-          <Link
-            to="/products"
-            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-          >
-            <FiShoppingBag className="w-3.5 h-3.5 text-slate-500" />
-            <span>Medicine Store</span>
-          </Link>
+          {/* Medicine Store Quick Link - Patient Commerce Only */}
+          {activeRole === "patient" && (
+            <Link
+              to="/products"
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+            >
+              <FiShoppingBag className="w-3.5 h-3.5 text-slate-500" />
+              <span>Medicine Store</span>
+            </Link>
+          )}
 
           {/* Notifications Button */}
           <button

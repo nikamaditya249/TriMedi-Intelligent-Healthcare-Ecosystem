@@ -261,6 +261,21 @@ router.get("/:id", requireAuth, async (req, res) => {
 router.post("/", requireAuth, async (req, res) => {
   try {
     const user = req.user;
+
+    // RBAC: Doctors and Reception are strictly forbidden from placing patient medicine orders
+    if (user.role === "doctor") {
+      return res.status(403).json({
+        success: false,
+        message: "Doctors are not permitted to order medications as patients. Clinical authority requires patients or designated care representatives to place fulfillment orders.",
+      });
+    }
+    if (user.role === "reception") {
+      return res.status(403).json({
+        success: false,
+        message: "Reception role is not authorized to place commercial pharmacy orders.",
+      });
+    }
+
     const {
       items,
       deliveryAddress,

@@ -28,7 +28,9 @@ import uploadRoutes from "./routes/uploads.js";
 import { initSocketIO } from "./services/socketService.js";
 import { startHealthcareScheduler } from "./services/scheduler.js";
 import Product from "./models/Product.js";
+import User from "./models/User.js";
 import { defaultProducts } from "./data/defaultProducts.js";
+import { fallbackUsers } from "./routes/auth.js";
 import validateStartupConfig from "./utils/configValidator.js";
 import errorHandler from "./middleware/errorHandler.js";
 import { authRateLimiter } from "./middleware/rateLimiter.js";
@@ -215,6 +217,14 @@ if (mongoURI) {
           const productsWithoutId = defaultProducts.map(({ _id, ...rest }) => rest);
           await Product.insertMany(productsWithoutId);
           console.log("🎉 Database seeded successfully with 50 products!");
+        }
+
+        // Idempotently ensure demo role accounts exist in MongoDB
+        for (const demoUser of fallbackUsers.slice(0, 5)) {
+          const exists = await User.findOne({ email: demoUser.email });
+          if (!exists) {
+            await User.create(demoUser);
+          }
         }
       } catch (seedErr) {
         console.warn("Auto-seed info:", seedErr.message);

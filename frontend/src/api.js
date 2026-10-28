@@ -132,6 +132,13 @@ export const updatePrescriptionStatus = async (id, status) => {
   });
 };
 
+export const revokePrescription = async (id, reason = "") => {
+  return request(`/prescriptions/${id}/revoke`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+};
+
 // -------------------------------------------------------------
 // 5. APPOINTMENTS
 // -------------------------------------------------------------
@@ -144,6 +151,13 @@ export const getAppointments = async (params = {}) => {
 
 export const bookAppointment = async (appointmentData) => {
   return request("/appointments", {
+    method: "POST",
+    body: JSON.stringify(appointmentData),
+  });
+};
+
+export const scheduleFollowupAppointment = async (appointmentData) => {
+  return request("/appointments/schedule-followup", {
     method: "POST",
     body: JSON.stringify(appointmentData),
   });
@@ -595,8 +609,10 @@ export default {
   createPrescription,
   updatePrescriptionStatus,
   approvePrescription,
+  revokePrescription,
   getAppointments,
   bookAppointment,
+  scheduleFollowupAppointment,
   updateAppointmentStatus,
   checkInAppointment,
   getClinicQueue,

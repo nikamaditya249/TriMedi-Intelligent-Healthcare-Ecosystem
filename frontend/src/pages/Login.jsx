@@ -13,6 +13,8 @@ import {
   FiClock,
   FiRefreshCw,
   FiArrowRight,
+  FiHeart,
+  FiUserCheck,
 } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import { forgotPassword as apiForgotPassword } from "../api";
@@ -53,29 +55,103 @@ export function Login() {
   const preservedTarget = getPreservedTarget();
 
   // Redirect priority helper:
-  // 1. Valid preserved destination from location.state.from
-  // 2. Otherwise, if role === "patient" -> /products
-  // 3. Doctor/Pharmacy/Admin/Reception -> appropriate care workspace
+  // After login, inspect the authenticated backend role and route to its dedicated isolated workspace.
   const getDestinationForRole = (role) => {
     if (preservedTarget) {
       return preservedTarget;
     }
-    if (role === "patient") {
-      return "/products";
+    switch (role) {
+      case "patient":
+        return "/app/patient/dashboard";
+      case "doctor":
+        return "/app/doctor/dashboard";
+      case "pharmacy":
+        return "/app/pharmacy/dashboard";
+      case "admin":
+        return "/app/admin/dashboard";
+      case "reception":
+        return "/app/reception/dashboard";
+      default:
+        return "/app/patient/dashboard";
     }
-    if (role === "doctor") {
-      return "/app/doctor/dashboard";
+  };
+
+  const DEMO_ACCOUNTS = {
+    patient: {
+      email: "demo.patient@trimedi.health",
+      password: "password123",
+      label: "PATIENT",
+      actionText: "Enter as Patient",
+      desc: "Care plans, medication adherence, appointments & orders",
+      icon: FiHeart,
+    },
+    doctor: {
+      email: "demo.doctor@trimedi.health",
+      password: "password123",
+      label: "DOCTOR",
+      actionText: "Enter as Doctor",
+      desc: "Clinical consults, digital Rx, follow-ups & patient monitoring",
+      icon: FiUserCheck,
+    },
+    reception: {
+      email: "demo.reception@trimedi.health",
+      password: "password123",
+      label: "RECEPTION",
+      actionText: "Enter as Reception",
+      desc: "Patient registration, clinic queue & appointment desk",
+      icon: FiClock,
+    },
+    pharmacy: {
+      email: "demo.pharmacy@trimedi.health",
+      password: "password123",
+      label: "PHARMACY",
+      actionText: "Enter as Pharmacy",
+      desc: "Prescription verification, stock inventory & order dispatch",
+      icon: FiShoppingBag,
+    },
+    admin: {
+      email: "demo.admin@trimedi.health",
+      password: "password123",
+      label: "ADMIN",
+      actionText: "Enter as Admin",
+      desc: "User directory, security audit trails & system governance",
+      icon: FiShield,
+    },
+  };
+
+  const handleDemoLogin = async (roleKey) => {
+    const creds = DEMO_ACCOUNTS[roleKey];
+    if (!creds) return;
+
+    setErrorMessage("");
+    setSuccessMessage("");
+    setLoading(true);
+
+    try {
+      // Authenticate against real seeded backend demo account
+      const res = await login({
+        email: creds.email,
+        password: creds.password,
+      });
+
+      if (res.success && res.user) {
+        // Backend authoritative role determines destination workspace
+        const targetRole = res.user.role || roleKey;
+        const destination = getDestinationForRole(targetRole);
+
+        setSuccessMessage(`Authenticated as ${creds.label}! Opening isolated ${targetRole} workspace...`);
+
+        setTimeout(() => {
+          navigate(destination, { replace: true });
+        }, 300);
+      } else {
+        setErrorMessage(res.message || "Demo authentication failed. Please verify server status.");
+      }
+    } catch (err) {
+      setErrorMessage("Unable to connect to demo authentication service: " + err.message);
+    } finally {
+      setLoading(false);
     }
-    if (role === "pharmacy") {
-      return "/app/pharmacy/dashboard";
-    }
-    if (role === "admin") {
-      return "/app/admin/dashboard";
-    }
-    if (role === "reception") {
-      return "/app/reception/dashboard";
-    }
-    return "/products";
   };
 
   // If already authenticated and not actively logging in, redirect according to role priority
@@ -398,6 +474,57 @@ export function Login() {
                   </Button>
                 </div>
               </form>
+
+              {/* Dedicated Section: Explore TriMedi Demo (5 Authoritative Roles) */}
+              <div className="mt-8 pt-6 border-t border-slate-200">
+                <div className="mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-brand-600 animate-pulse" />
+                    <h3 className="text-xs font-bold text-slate-900 tracking-wider uppercase">
+                      Explore TriMedi Demo
+                    </h3>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Select a verified role below to authenticate directly. Each role accesses its own dedicated, isolated product environment.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  {Object.entries(DEMO_ACCOUNTS).map(([key, item]) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        disabled={loading}
+                        onClick={() => handleDemoLogin(key)}
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl border border-slate-200/90 bg-slate-50/70 hover:bg-white hover:border-brand-300 hover:shadow-subtle transition-all duration-150 disabled:opacity-50 text-left group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-brand-700 flex items-center justify-center shrink-0 group-hover:bg-brand-50 group-hover:border-brand-200 transition-colors">
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-slate-900 group-hover:text-brand-800 transition-colors">
+                                {item.label}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 truncate">
+                              {item.desc}
+                            </p>
+                          </div>
+                        </div>
+
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-700 bg-brand-50 border border-brand-200/80 px-2.5 py-1 rounded-lg shrink-0 ml-2 group-hover:bg-brand-700 group-hover:text-white transition-colors">
+                          <span>{item.actionText}</span>
+                          <FiArrowRight className="w-3 h-3" />
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
               {/* Login <-> Signup Switching */}
               <div className="mt-6 pt-5 border-t border-slate-100 text-center">
