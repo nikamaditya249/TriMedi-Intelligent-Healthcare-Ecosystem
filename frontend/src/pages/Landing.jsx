@@ -256,11 +256,11 @@ export function Landing() {
 
   const activeStep = CARE_LOOP_STEPS[activeStepIndex];
 
-  // Radial positions for 6 nodes on a 560x560 SVG coordinate space
-  // Center cx=280, cy=280, radius=195.
-  const cx = 280;
-  const cy = 280;
-  const radius = 195;
+  // Radial positions for 6 nodes on a 500x500 SVG coordinate space
+  // Center cx=250, cy=250, radius=170 (compact proportion to fit 620-720px section height).
+  const cx = 250;
+  const cy = 250;
+  const radius = 170;
 
   const nodePositions = CARE_LOOP_STEPS.map((step, i) => {
     const angle = -Math.PI / 2 + (i * 2 * Math.PI) / 6;
@@ -496,32 +496,31 @@ export function Landing() {
           ========================================================================= */}
       <section
         id="care-loop"
-        className="py-12 sm:py-16 bg-[#F0FDFA]/60 border-b border-teal-100 relative overflow-hidden"
+        className="pt-16 pb-12 sm:pt-16 sm:pb-14 bg-[#F0FDFA]/70 border-b border-teal-100/90 relative overflow-hidden scroll-mt-24 sm:scroll-mt-28"
         onMouseEnter={() => setIsAutoCycling(false)}
         onMouseLeave={() => setIsAutoCycling(true)}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
-          <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-100/70 border border-brand-200 text-brand-800 text-xs font-bold uppercase tracking-wider mb-2.5">
+          <div className="text-center max-w-3xl mx-auto mb-7 sm:mb-8">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-100/70 border border-brand-200 text-brand-800 text-xs font-bold uppercase tracking-wider mb-2">
               <FiRefreshCw className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: "12s" }} />
-              <span>Continuous Care Loop</span>
+              <span>End-to-End Care Loop</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-[34px] font-extrabold text-slate-900 tracking-tight leading-tight">
               One Continuous Healthcare Journey
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
-              Every step is connected to the next, keeping your care journey organized from
-              consultation to refill.
+            <p className="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed max-w-2xl mx-auto">
+              Every step connects to the next, keeping care organized from consultation through refill.
             </p>
           </div>
 
-          {/* Interactive Care Loop Layout (Desktop Split Radial / Mobile Adaptive) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
-            {/* Desktop Circular / Radial Visual (Left / Center on lg) */}
-            <div className="lg:col-span-7 flex justify-center">
-              <div className="relative w-full max-w-[460px] sm:max-w-[500px] aspect-square select-none">
-                <svg className="w-full h-full" viewBox="0 0 560 560">
+          {/* Interactive Care Loop Layout (48% Diagram / 52% Information Panel) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Desktop Circular / Radial Visual (Left on lg) */}
+            <div className="lg:col-span-6 flex justify-center">
+              <div className="relative w-full max-w-[400px] sm:max-w-[440px] aspect-square select-none">
+                <svg className="w-full h-full" viewBox="0 0 500 500">
                   <defs>
                     <linearGradient id="activeArcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#087F73" />
@@ -548,7 +547,7 @@ export function Landing() {
                     r={radius}
                     fill="none"
                     stroke="#E2E8F0"
-                    strokeWidth="3"
+                    strokeWidth="2.5"
                     strokeDasharray="6 6"
                   />
 
@@ -571,14 +570,14 @@ export function Landing() {
                           d={arcPath}
                           fill="none"
                           stroke={isActiveSegment ? "url(#activeArcGrad)" : "#CBD5E1"}
-                          strokeWidth={isActiveSegment ? "4.5" : "2"}
+                          strokeWidth={isActiveSegment ? "4" : "2"}
                           strokeLinecap="round"
                           className="transition-all duration-300"
                         />
                         <circle
                           cx={midX}
                           cy={midY}
-                          r={isActiveSegment ? "5" : "3.5"}
+                          r={isActiveSegment ? "4.5" : "3"}
                           fill={isActiveSegment ? "#087F73" : "#94A3B8"}
                           className="transition-all duration-300"
                         />
@@ -586,24 +585,24 @@ export function Landing() {
                     );
                   })}
 
-                  {/* CENTER OF CIRCLE: TriMedi Connected Care Hub */}
+                  {/* CENTER OF CIRCLE: Compact TriMedi Connected Care Hub */}
                   <g>
                     <circle
                       cx={cx}
                       cy={cy}
-                      r="90"
+                      r="78"
                       fill="#FFFFFF"
                       stroke="#087F73"
-                      strokeWidth="3"
+                      strokeWidth="2.5"
                       className="filter drop-shadow-md"
                     />
-                    <circle cx={cx} cy={cy} r="82" fill="#E8F7F4" opacity="0.4" />
+                    <circle cx={cx} cy={cy} r="72" fill="#E8F7F4" opacity="0.4" />
 
                     <text
                       x={cx}
-                      y={cy - 22}
+                      y={cy - 18}
                       textAnchor="middle"
-                      fontSize="11"
+                      fontSize="10"
                       fontWeight="700"
                       fill="#087F73"
                       letterSpacing="0.1em"
@@ -612,9 +611,9 @@ export function Landing() {
                     </text>
                     <text
                       x={cx}
-                      y={cy + 4}
+                      y={cy + 6}
                       textAnchor="middle"
-                      fontSize="16"
+                      fontSize="15"
                       fontWeight="800"
                       fill="#1E293B"
                     >
@@ -623,20 +622,20 @@ export function Landing() {
 
                     {/* Step indicator in center */}
                     <rect
-                      x={cx - 48}
+                      x={cx - 44}
                       y={cy + 18}
-                      width="96"
-                      height="22"
-                      rx="11"
+                      width="88"
+                      height="20"
+                      rx="10"
                       fill="#FFFFFF"
                       stroke="#9AD9D1"
                       strokeWidth="1"
                     />
                     <text
                       x={cx}
-                      y={cy + 33}
+                      y={cy + 32}
                       textAnchor="middle"
-                      fontSize="10"
+                      fontSize="9.5"
                       fontWeight="700"
                       fill="#087F73"
                     >
@@ -661,15 +660,18 @@ export function Landing() {
                           setIsAutoCycling(false);
                         }}
                         className="cursor-pointer transition-transform duration-300"
-                        style={{ transformOrigin: `${pos.x}px ${pos.y}px` }}
+                        style={{
+                          transformOrigin: `${pos.x}px ${pos.y}px`,
+                          transform: isActive ? "scale(1.05)" : "scale(1)",
+                        }}
                       >
                         {isActive && (
                           <circle
                             cx={pos.x}
                             cy={pos.y}
-                            r="34"
+                            r="29"
                             fill="#087F73"
-                            opacity="0.15"
+                            opacity="0.12"
                             className="animate-pulse"
                           />
                         )}
@@ -677,18 +679,18 @@ export function Landing() {
                         <circle
                           cx={pos.x}
                           cy={pos.y}
-                          r={isActive ? "28" : "24"}
+                          r={isActive ? "23" : "20"}
                           fill={isActive ? "#087F73" : "#FFFFFF"}
                           stroke={isActive ? "#06665D" : "#CBD5E1"}
-                          strokeWidth={isActive ? "3" : "2"}
+                          strokeWidth={isActive ? "2.5" : "2"}
                           className="transition-all duration-300 filter drop-shadow-sm"
                         />
 
                         <text
                           x={pos.x}
-                          y={pos.y - 4}
+                          y={pos.y - 3}
                           textAnchor="middle"
-                          fontSize="9"
+                          fontSize="8.5"
                           fontWeight="800"
                           fontFamily="monospace"
                           fill={isActive ? "#FFFFFF" : "#64748B"}
@@ -698,9 +700,9 @@ export function Landing() {
 
                         <text
                           x={pos.x}
-                          y={pos.y + 11}
+                          y={pos.y + 10}
                           textAnchor="middle"
-                          fontSize="9"
+                          fontSize="8.5"
                           fontWeight="700"
                           letterSpacing="0.03em"
                           fill={isActive ? "#FFFFFF" : "#1E293B"}
@@ -715,12 +717,12 @@ export function Landing() {
             </div>
 
             {/* Interactive Step Details Panel (Right on lg) */}
-            <div className="lg:col-span-5">
-              <div className="bg-white rounded-2xl border-2 border-brand-600/70 p-5 sm:p-7 shadow-card relative">
+            <div className="lg:col-span-6">
+              <div className="bg-white rounded-2xl border-2 border-brand-600/70 p-6 sm:p-7 shadow-card relative">
                 {/* Header Badge */}
-                <div className="flex items-center justify-between pb-3 mb-3.5 border-b border-slate-100">
+                <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center font-bold text-xs border border-brand-200">
+                    <span className="w-7 h-7 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center font-bold text-xs border border-brand-200">
                       {activeStep.step}
                     </span>
                     <div>
@@ -738,7 +740,7 @@ export function Landing() {
                 </div>
 
                 {/* Primary Narrative */}
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   <p className="text-xs sm:text-sm font-semibold text-brand-800">
                     "{activeStep.shortDesc}"
                   </p>
@@ -748,7 +750,7 @@ export function Landing() {
                 </div>
 
                 {/* Key Clinical Safeguards */}
-                <div className="mt-4 pt-3.5 border-t border-slate-100 space-y-2">
+                <div className="mt-3.5 pt-3 border-t border-slate-100 space-y-1.5">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
                     Clinical Continuity Safeguards:
                   </span>
@@ -761,7 +763,7 @@ export function Landing() {
                 </div>
 
                 {/* Direct Action Button */}
-                <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between">
+                <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between">
                   <button
                     type="button"
                     onClick={() => handleCareLoopAction(activeStep.target)}
@@ -796,103 +798,98 @@ export function Landing() {
       </section>
 
       {/* =========================================================================
-          4. "HEALTHCARE THAT STAYS CONNECTED" — VISUAL SPLIT TIMELINE WITH PHOTO
+          4. "HEALTHCARE THAT STAYS CONNECTED" — LANDSCAPE HEALTHCARE TEAM VISUAL BREAK
           ========================================================================= */}
       <section className="py-12 sm:py-16 bg-white border-b border-slate-200/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            {/* Left: Authentic Clinical Photography */}
-            <div className="lg:col-span-5 relative">
-              <div className="relative rounded-2xl overflow-hidden shadow-card border border-slate-200">
-                <img
-                  src={HEALTHCARE_IMAGES.consultation}
-                  alt="Doctor consulting with patient in modern clinical environment"
-                  className="w-full h-full object-cover aspect-[4/5]"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent"></div>
-                <div className="absolute bottom-4 left-4 right-4 p-3.5 rounded-xl bg-white/95 backdrop-blur-sm border border-white/40 shadow-card">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span className="text-[11px] font-bold text-slate-800">
-                      Longitudinal Clinical Record
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-600">
-                    Patient history, prescriptions, and refill tracking remain accessible to authorized care teams.
-                  </p>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+            {/* Left: Narrative & Trust Points */}
+            <div className="lg:col-span-5 space-y-4 text-center lg:text-left">
+              <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-700">
+                <FiActivity className="w-3.5 h-3.5" />
+                <span>Clinical Continuity</span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                Healthcare That Stays Connected
+              </h2>
+
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                TriMedi keeps every important step of care connected — from consultation and digital
+                prescription to pharmacy fulfillment and ongoing medication support.
+              </p>
+
+              {/* 3 Concise Trust Points */}
+              <div className="pt-2 space-y-2.5 text-xs text-slate-700 text-left">
+                <div className="flex items-start gap-2.5">
+                  <FiCheck className="w-4 h-4 text-brand-700 shrink-0 mt-0.5" />
+                  <span className="font-medium">Doctor-led clinical workflows</span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <FiCheck className="w-4 h-4 text-brand-700 shrink-0 mt-0.5" />
+                  <span className="font-medium">Connected prescription and pharmacy fulfillment</span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <FiCheck className="w-4 h-4 text-brand-700 shrink-0 mt-0.5" />
+                  <span className="font-medium">Medication tracking and refill intelligence</span>
                 </div>
               </div>
             </div>
 
-            {/* Right: Vertical Connected Journey Timeline */}
-            <div className="lg:col-span-7 space-y-5">
-              <div>
-                <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-700 mb-1.5">
-                  <FiActivity className="w-3.5 h-3.5" />
-                  <span>Clinical Integration</span>
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                  Healthcare That Stays Connected
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed">
-                  Instead of disconnected steps, TriMedi links consultations, prescriptions,
-                  authentic pharmacy fulfillment, and ongoing treatment tracking into a unified record.
-                </p>
-              </div>
-
-              {/* Vertical Connected Journey Timeline */}
-              <div className="relative pl-6 space-y-4 border-l-2 border-brand-200">
-                {[
-                  {
-                    num: "01",
-                    title: "Consult",
-                    text: "Start with a certified doctor through a structured clinical encounter.",
-                  },
-                  {
-                    num: "02",
-                    title: "Digital Prescription",
-                    text: "Your treatment plan becomes a structured, tamper-evident digital record.",
-                  },
-                  {
-                    num: "03",
-                    title: "Verified Pharmacy",
-                    text: "Prescribed medicines move into a controlled pharmacy workflow with genuine stock.",
-                  },
-                  {
-                    num: "04",
-                    title: "Medication Tracking",
-                    text: "Treatment duration and medication supply remain visible in your personal schedule.",
-                  },
-                  {
-                    num: "05",
-                    title: "Intelligent Refill",
-                    text: "TriMedi identifies potential refill gaps 5 days before your supply finishes.",
-                  },
-                  {
-                    num: "06",
-                    title: "Order Again",
-                    text: "Continue treatment seamlessly with a verified one-click reorder flow.",
-                  },
-                ].map((item) => (
-                  <div key={item.num} className="relative group">
-                    <div className="absolute -left-[31px] top-0.5 w-5 h-5 rounded-full bg-white border-2 border-brand-700 flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-brand-700"></div>
-                    </div>
-                    <div>
-                      <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-brand-700 transition-colors">
-                        <span className="text-xs font-mono font-bold text-brand-700 mr-2">
-                          {item.num}
-                        </span>
-                        {item.title}
-                      </h3>
-                      <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
-                        {item.text}
-                      </p>
-                    </div>
+            {/* Right: Landscape Healthcare Team Image (16:9) */}
+            <div className="lg:col-span-7">
+              <div
+                className="rounded-2xl overflow-hidden border border-teal-700/15 shadow-card hover:scale-[1.01] transition-transform duration-300 relative group aspect-[4/3] sm:aspect-[16/9] bg-slate-900"
+                style={{
+                  borderRadius: "20px",
+                  border: "1px solid rgba(15, 118, 110, 0.15)",
+                  boxShadow: "0 12px 35px rgba(15, 23, 42, 0.08)",
+                }}
+              >
+                <img
+                  src="/images/trimedi-care-team-landscape.jpg"
+                  alt="TriMedi healthcare team representing connected clinical care"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none"></div>
+                <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 p-3 rounded-xl bg-slate-900/80 backdrop-blur-md border border-white/10 text-white flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span className="text-[11px] sm:text-xs font-bold text-white tracking-wide">
+                      Multi-Disciplinary Care Team
+                    </span>
                   </div>
-                ))}
+                  <span className="text-[10px] text-teal-200 font-semibold bg-white/10 px-2 py-0.5 rounded">
+                    Certified Network
+                  </span>
+                </div>
               </div>
+            </div>
+          </div>
+
+          {/* 6-Stage Journey Timeline Summary */}
+          <div className="pt-4 border-t border-slate-100">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {[
+                { num: "01", title: "Consult", desc: "Certified doctor encounter" },
+                { num: "02", title: "Digital Rx", desc: "Structured tamper-evident record" },
+                { num: "03", title: "Pharmacy", desc: "Licensed authentic stock" },
+                { num: "04", title: "Medication", desc: "Daily adherence schedule" },
+                { num: "05", title: "Refill", desc: "5-day proactive gap alert" },
+                { num: "06", title: "Order Again", desc: "1-click therapy continuity" },
+              ].map((step) => (
+                <div
+                  key={step.num}
+                  className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-left"
+                >
+                  <span className="text-[10px] font-mono font-bold text-brand-700 block">
+                    {step.num}
+                  </span>
+                  <h4 className="text-xs font-bold text-slate-900 mt-0.5">{step.title}</h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{step.desc}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
