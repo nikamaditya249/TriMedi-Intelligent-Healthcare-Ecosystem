@@ -256,11 +256,11 @@ export function Landing() {
 
   const activeStep = CARE_LOOP_STEPS[activeStepIndex];
 
-  // Radial positions for 6 nodes on a 500x500 SVG coordinate space
-  // Center cx=250, cy=250, radius=170 (compact proportion to fit 620-720px section height).
-  const cx = 250;
-  const cy = 250;
-  const radius = 170;
+  // Radial positions for 6 nodes on a 520x520 SVG coordinate space
+  // Center cx=260, cy=260, radius=175 for generous node breathing room and zero text clipping
+  const cx = 260;
+  const cy = 260;
+  const radius = 175;
 
   const nodePositions = CARE_LOOP_STEPS.map((step, i) => {
     const angle = -Math.PI / 2 + (i * 2 * Math.PI) / 6;
@@ -373,7 +373,7 @@ export function Landing() {
 
                 {/* Central Radial Ecosystem Diagram */}
                 <div className="relative w-full aspect-[4/3] flex items-center justify-center py-2">
-                  <svg className="w-full h-full" viewBox="0 0 360 260">
+                  <svg className="w-full h-full" viewBox="0 0 380 260">
                     <defs>
                       <linearGradient id="heroGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stopColor="#087F73" stopOpacity="0.8" />
@@ -381,79 +381,71 @@ export function Landing() {
                       </linearGradient>
                     </defs>
 
-                    {/* Connecting Arcs between Center and Surrounding Orbitals */}
-                    {[
-                      { x: 60, y: 55 },
-                      { x: 180, y: 35 },
-                      { x: 300, y: 55 },
-                      { x: 60, y: 205 },
-                      { x: 180, y: 225 },
-                      { x: 300, y: 205 },
-                    ].map((pt, i) => (
-                      <g key={i}>
-                        <line
-                          x1="180"
-                          y1="130"
-                          x2={pt.x}
-                          y2={pt.y}
-                          stroke="#CBD5E1"
-                          strokeWidth="1.5"
-                          strokeDasharray="3 3"
-                        />
-                        <circle cx={pt.x} cy={pt.y} r="22" fill="#F8FAFC" stroke="#E2E8F0" strokeWidth="1.5" />
-                      </g>
-                    ))}
-
                     {/* Outer Orbit Path */}
                     <ellipse
-                      cx="180"
+                      cx="190"
                       cy="130"
-                      rx="130"
-                      ry="95"
+                      rx="138"
+                      ry="92"
                       fill="none"
                       stroke="#9AD9D1"
                       strokeWidth="1.5"
                       strokeDasharray="4 4"
-                      opacity="0.7"
+                      opacity="0.65"
                     />
 
-                    {/* Center Core: TriMedi Connected Care */}
-                    <circle cx="180" cy="130" r="42" fill="#FFFFFF" stroke="#087F73" strokeWidth="2.5" />
-                    <circle cx="180" cy="130" r="36" fill="#E8F7F4" opacity="0.6" />
-                    <text x="180" y="125" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#087F73">
+                    {/* Connecting Lines between Center and Surrounding Orbitals */}
+                    {[
+                      { x: 68, y: 52 },
+                      { x: 190, y: 30 },
+                      { x: 312, y: 52 },
+                      { x: 68, y: 208 },
+                      { x: 190, y: 230 },
+                      { x: 312, y: 208 },
+                    ].map((pt, i) => (
+                      <line
+                        key={i}
+                        x1="190"
+                        y1="130"
+                        x2={pt.x}
+                        y2={pt.y}
+                        stroke="#CBD5E1"
+                        strokeWidth="1.5"
+                        strokeDasharray="3 3"
+                      />
+                    ))}
+
+                    {/* Center Core: TriMedi Connected Care Hub */}
+                    <circle cx="190" cy="130" r="44" fill="#FFFFFF" stroke="#087F73" strokeWidth="2.5" />
+                    <circle cx="190" cy="130" r="38" fill="#E8F7F4" opacity="0.6" />
+                    <text x="190" y="126" textAnchor="middle" fontSize="13" fontWeight="bold" fill="#087F73">
                       TriMedi
                     </text>
-                    <text x="180" y="140" textAnchor="middle" fontSize="9" fontWeight="600" fill="#52627A">
+                    <text x="190" y="142" textAnchor="middle" fontSize="9" fontWeight="600" fill="#475569">
                       Connected Care
                     </text>
                   </svg>
 
-                  {/* HTML Overlay Badges for crisp typography */}
-                  <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-1">
-                    <div className="flex justify-between items-center text-[10px] font-bold">
-                      <span className="bg-white/95 px-2 py-1 rounded-lg border border-slate-200 shadow-xs text-slate-800 flex items-center gap-1">
-                        <FiCalendar className="text-brand-700 w-3 h-3" /> Doctor
+                  {/* 6 Integrated Orbit Badges anchored directly at orbital endpoints */}
+                  {[
+                    { id: "doctor", label: "Doctor", icon: FiCalendar, xPct: "17.9%", yPct: "20.0%", iconColor: "text-brand-700", iconBg: "bg-brand-50" },
+                    { id: "prescription", label: "Prescription", icon: FiFileText, xPct: "50.0%", yPct: "11.5%", iconColor: "text-brand-700", iconBg: "bg-brand-50" },
+                    { id: "pharmacy", label: "Pharmacy", icon: FiPackage, xPct: "82.1%", yPct: "20.0%", iconColor: "text-brand-700", iconBg: "bg-brand-50" },
+                    { id: "medication", label: "Medication", icon: FiHeart, xPct: "17.9%", yPct: "80.0%", iconColor: "text-emerald-700", iconBg: "bg-emerald-50" },
+                    { id: "refill", label: "Refill", icon: FiClock, xPct: "50.0%", yPct: "88.5%", iconColor: "text-amber-700", iconBg: "bg-amber-50" },
+                    { id: "order-again", label: "Order Again", icon: FiRefreshCw, xPct: "82.1%", yPct: "80.0%", iconColor: "text-brand-700", iconBg: "bg-brand-50" },
+                  ].map((node) => (
+                    <div
+                      key={node.id}
+                      className="absolute -translate-x-1/2 -translate-y-1/2 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-slate-200/90 shadow-sm text-[11px] font-bold text-slate-800 whitespace-nowrap hover:border-brand-500 hover:shadow-md transition-all duration-200 pointer-events-auto"
+                      style={{ left: node.xPct, top: node.yPct }}
+                    >
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center ${node.iconBg} ${node.iconColor}`}>
+                        <node.icon className="w-2.5 h-2.5" />
                       </span>
-                      <span className="bg-white/95 px-2 py-1 rounded-lg border border-slate-200 shadow-xs text-slate-800 flex items-center gap-1">
-                        <FiFileText className="text-brand-700 w-3 h-3" /> Prescription
-                      </span>
-                      <span className="bg-white/95 px-2 py-1 rounded-lg border border-slate-200 shadow-xs text-slate-800 flex items-center gap-1">
-                        <FiPackage className="text-brand-700 w-3 h-3" /> Pharmacy
-                      </span>
+                      <span>{node.label}</span>
                     </div>
-
-                    <div className="flex justify-between items-center text-[10px] font-bold">
-                      <span className="bg-white/95 px-2 py-1 rounded-lg border border-slate-200 shadow-xs text-slate-800 flex items-center gap-1">
-                        <FiHeart className="text-emerald-700 w-3 h-3" /> Medication
-                      </span>
-                      <span className="bg-white/95 px-2 py-1 rounded-lg border border-slate-200 shadow-xs text-slate-800 flex items-center gap-1">
-                        <FiClock className="text-amber-700 w-3 h-3" /> Refill
-                      </span>
-                      <span className="bg-white/95 px-2 py-1 rounded-lg border border-slate-200 shadow-xs text-slate-800 flex items-center gap-1">
-                        <FiRefreshCw className="text-brand-700 w-3 h-3" /> Order Again
-                      </span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
 
                 {/* Floating Medication Treatment Record Preview */}
@@ -515,212 +507,248 @@ export function Landing() {
             </p>
           </div>
 
-          {/* Interactive Care Loop Layout (48% Diagram / 52% Information Panel) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* Interactive Care Loop Layout (Balanced Symmetrical Columns) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
             {/* Desktop Circular / Radial Visual (Left on lg) */}
-            <div className="lg:col-span-6 flex justify-center">
-              <div className="relative w-full max-w-[400px] sm:max-w-[440px] aspect-square select-none">
-                <svg className="w-full h-full" viewBox="0 0 500 500">
-                  <defs>
-                    <linearGradient id="activeArcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#087F73" />
-                      <stop offset="100%" stopColor="#0284C7" />
-                    </linearGradient>
+            <div className="lg:col-span-6 flex">
+              <div className="w-full bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-card flex flex-col justify-between relative min-h-[460px]">
+                {/* Visual Header */}
+                <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-brand-600 animate-pulse"></span>
+                    <span className="text-xs font-bold text-slate-800 tracking-wide uppercase">
+                      Continuous Care Cycle
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-slate-500">
+                    6 Connected Stages
+                  </span>
+                </div>
 
-                    {/* Clockwise Directional Arrowhead Marker */}
-                    <marker
-                      id="arrowhead"
-                      markerWidth="6"
-                      markerHeight="6"
-                      refX="3"
-                      refY="3"
-                      orient="auto"
-                    >
-                      <path d="M0,1 L5,3 L0,5 Z" fill="#087F73" />
-                    </marker>
-                  </defs>
+                {/* Circular Diagram Container */}
+                <div className="relative w-full max-w-[430px] sm:max-w-[450px] aspect-square mx-auto flex items-center justify-center select-none my-auto">
+                  <svg className="w-full h-full" viewBox="0 0 520 520">
+                    <defs>
+                      <linearGradient id="activeArcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#087F73" />
+                        <stop offset="100%" stopColor="#0284C7" />
+                      </linearGradient>
 
-                  {/* Circular Track Background */}
-                  <circle
-                    cx={cx}
-                    cy={cy}
-                    r={radius}
-                    fill="none"
-                    stroke="#E2E8F0"
-                    strokeWidth="2.5"
-                    strokeDasharray="6 6"
-                  />
+                      {/* Clockwise Directional Arrowhead Marker */}
+                      <marker
+                        id="arrowhead"
+                        markerWidth="6"
+                        markerHeight="6"
+                        refX="3"
+                        refY="3"
+                        orient="auto"
+                      >
+                        <path d="M0,1 L5,3 L0,5 Z" fill="#087F73" />
+                      </marker>
+                    </defs>
 
-                  {/* 6 Clockwise Connecting Arcs with Directional Flow */}
-                  {CARE_LOOP_STEPS.map((s, i) => {
-                    const nextIndex = (i + 1) % CARE_LOOP_STEPS.length;
-                    const p1 = nodePositions[i];
-                    const p2 = nodePositions[nextIndex];
-                    const isActiveSegment = activeStepIndex === i;
-
-                    const arcPath = `M ${p1.x} ${p1.y} A ${radius} ${radius} 0 0 1 ${p2.x} ${p2.y}`;
-
-                    const midAngle = p1.angle + Math.PI / 6;
-                    const midX = cx + radius * Math.cos(midAngle);
-                    const midY = cy + radius * Math.sin(midAngle);
-
-                    return (
-                      <g key={s.id}>
-                        <path
-                          d={arcPath}
-                          fill="none"
-                          stroke={isActiveSegment ? "url(#activeArcGrad)" : "#CBD5E1"}
-                          strokeWidth={isActiveSegment ? "4" : "2"}
-                          strokeLinecap="round"
-                          className="transition-all duration-300"
-                        />
-                        <circle
-                          cx={midX}
-                          cy={midY}
-                          r={isActiveSegment ? "4.5" : "3"}
-                          fill={isActiveSegment ? "#087F73" : "#94A3B8"}
-                          className="transition-all duration-300"
-                        />
-                      </g>
-                    );
-                  })}
-
-                  {/* CENTER OF CIRCLE: Compact TriMedi Connected Care Hub */}
-                  <g>
+                    {/* Circular Track Background */}
                     <circle
                       cx={cx}
                       cy={cy}
-                      r="78"
-                      fill="#FFFFFF"
-                      stroke="#087F73"
+                      r={radius}
+                      fill="none"
+                      stroke="#E2E8F0"
                       strokeWidth="2.5"
-                      className="filter drop-shadow-md"
+                      strokeDasharray="6 6"
                     />
-                    <circle cx={cx} cy={cy} r="72" fill="#E8F7F4" opacity="0.4" />
 
-                    <text
-                      x={cx}
-                      y={cy - 18}
-                      textAnchor="middle"
-                      fontSize="10"
-                      fontWeight="700"
-                      fill="#087F73"
-                      letterSpacing="0.1em"
-                    >
-                      TRIMEDI
-                    </text>
-                    <text
-                      x={cx}
-                      y={cy + 6}
-                      textAnchor="middle"
-                      fontSize="15"
-                      fontWeight="800"
-                      fill="#1E293B"
-                    >
-                      Connected Care
-                    </text>
+                    {/* 6 Clockwise Connecting Arcs with Directional Flow */}
+                    {CARE_LOOP_STEPS.map((s, i) => {
+                      const nextIndex = (i + 1) % CARE_LOOP_STEPS.length;
+                      const p1 = nodePositions[i];
+                      const p2 = nodePositions[nextIndex];
+                      const isActiveSegment = activeStepIndex === i;
 
-                    {/* Step indicator in center */}
-                    <rect
-                      x={cx - 44}
-                      y={cy + 18}
-                      width="88"
-                      height="20"
-                      rx="10"
-                      fill="#FFFFFF"
-                      stroke="#9AD9D1"
-                      strokeWidth="1"
-                    />
-                    <text
-                      x={cx}
-                      y={cy + 32}
-                      textAnchor="middle"
-                      fontSize="9.5"
-                      fontWeight="700"
-                      fill="#087F73"
-                    >
-                      Step 0{activeStepIndex + 1} of 06
-                    </text>
-                  </g>
+                      const arcPath = `M ${p1.x} ${p1.y} A ${radius} ${radius} 0 0 1 ${p2.x} ${p2.y}`;
 
-                  {/* 6 Interactive Nodes positioned around the perimeter */}
-                  {CARE_LOOP_STEPS.map((s, i) => {
-                    const pos = nodePositions[i];
-                    const isActive = activeStepIndex === i;
+                      const midAngle = p1.angle + Math.PI / 6;
+                      const midX = cx + radius * Math.cos(midAngle);
+                      const midY = cy + radius * Math.sin(midAngle);
 
-                    return (
-                      <g
-                        key={s.id}
-                        onClick={() => {
-                          setActiveStepIndex(i);
-                          setIsAutoCycling(false);
-                        }}
-                        onMouseEnter={() => {
-                          setActiveStepIndex(i);
-                          setIsAutoCycling(false);
-                        }}
-                        className="cursor-pointer transition-transform duration-300"
-                        style={{
-                          transformOrigin: `${pos.x}px ${pos.y}px`,
-                          transform: isActive ? "scale(1.05)" : "scale(1)",
-                        }}
-                      >
-                        {isActive && (
-                          <circle
-                            cx={pos.x}
-                            cy={pos.y}
-                            r="29"
-                            fill="#087F73"
-                            opacity="0.12"
-                            className="animate-pulse"
+                      return (
+                        <g key={s.id}>
+                          <path
+                            d={arcPath}
+                            fill="none"
+                            stroke={isActiveSegment ? "url(#activeArcGrad)" : "#CBD5E1"}
+                            strokeWidth={isActiveSegment ? "4" : "2"}
+                            strokeLinecap="round"
+                            className="transition-all duration-300"
                           />
-                        )}
+                          <circle
+                            cx={midX}
+                            cy={midY}
+                            r={isActiveSegment ? "4.5" : "3"}
+                            fill={isActiveSegment ? "#087F73" : "#94A3B8"}
+                            className="transition-all duration-300"
+                          />
+                        </g>
+                      );
+                    })}
 
-                        <circle
-                          cx={pos.x}
-                          cy={pos.y}
-                          r={isActive ? "23" : "20"}
-                          fill={isActive ? "#087F73" : "#FFFFFF"}
-                          stroke={isActive ? "#06665D" : "#CBD5E1"}
-                          strokeWidth={isActive ? "2.5" : "2"}
-                          className="transition-all duration-300 filter drop-shadow-sm"
-                        />
+                    {/* CENTER OF CIRCLE: Compact TriMedi Connected Care Hub */}
+                    <g>
+                      <circle
+                        cx={cx}
+                        cy={cy}
+                        r="76"
+                        fill="#FFFFFF"
+                        stroke="#087F73"
+                        strokeWidth="2.5"
+                        className="filter drop-shadow-md"
+                      />
+                      <circle cx={cx} cy={cy} r="70" fill="#E8F7F4" opacity="0.45" />
 
-                        <text
-                          x={pos.x}
-                          y={pos.y - 3}
-                          textAnchor="middle"
-                          fontSize="8.5"
-                          fontWeight="800"
-                          fontFamily="monospace"
-                          fill={isActive ? "#FFFFFF" : "#64748B"}
+                      <text
+                        x={cx}
+                        y={cy - 16}
+                        textAnchor="middle"
+                        fontSize="11"
+                        fontWeight="800"
+                        fill="#087F73"
+                        letterSpacing="0.12em"
+                      >
+                        TRIMEDI
+                      </text>
+                      <text
+                        x={cx}
+                        y={cy + 7}
+                        textAnchor="middle"
+                        fontSize="15"
+                        fontWeight="800"
+                        fill="#0F172A"
+                      >
+                        Connected Care
+                      </text>
+
+                      {/* Step indicator in center */}
+                      <rect
+                        x={cx - 45}
+                        y={cy + 19}
+                        width="90"
+                        height="22"
+                        rx="11"
+                        fill="#FFFFFF"
+                        stroke="#9AD9D1"
+                        strokeWidth="1"
+                      />
+                      <text
+                        x={cx}
+                        y={cy + 34}
+                        textAnchor="middle"
+                        fontSize="10"
+                        fontWeight="700"
+                        fill="#087F73"
+                      >
+                        Step 0{activeStepIndex + 1} of 06
+                      </text>
+                    </g>
+
+                    {/* 6 Interactive Pill Nodes positioned around perimeter — Zero Text Clipping */}
+                    {CARE_LOOP_STEPS.map((s, i) => {
+                      const pos = nodePositions[i];
+                      const isActive = activeStepIndex === i;
+
+                      return (
+                        <g
+                          key={s.id}
+                          onClick={() => {
+                            setActiveStepIndex(i);
+                            setIsAutoCycling(false);
+                          }}
+                          onMouseEnter={() => {
+                            setActiveStepIndex(i);
+                            setIsAutoCycling(false);
+                          }}
+                          className="cursor-pointer transition-transform duration-300"
+                          style={{
+                            transformOrigin: `${pos.x}px ${pos.y}px`,
+                            transform: isActive ? "scale(1.04)" : "scale(1)",
+                          }}
                         >
-                          {s.step}
-                        </text>
+                          {isActive && (
+                            <rect
+                              x={pos.x - 70}
+                              y={pos.y - 27}
+                              width="140"
+                              height="54"
+                              rx="27"
+                              fill="#087F73"
+                              opacity="0.16"
+                              className="animate-pulse"
+                            />
+                          )}
 
-                        <text
-                          x={pos.x}
-                          y={pos.y + 10}
-                          textAnchor="middle"
-                          fontSize="8.5"
-                          fontWeight="700"
-                          letterSpacing="0.03em"
-                          fill={isActive ? "#FFFFFF" : "#1E293B"}
-                        >
-                          {s.label}
-                        </text>
-                      </g>
-                    );
-                  })}
-                </svg>
+                          {/* Pill Container */}
+                          <rect
+                            x={pos.x - (isActive ? 64 : 61)}
+                            y={pos.y - (isActive ? 21 : 19)}
+                            width={isActive ? 128 : 122}
+                            height={isActive ? 42 : 38}
+                            rx={isActive ? 21 : 19}
+                            fill={isActive ? "#087F73" : "#FFFFFF"}
+                            stroke={isActive ? "#06665D" : "#CBD5E1"}
+                            strokeWidth={isActive ? "2" : "1.5"}
+                            className="transition-all duration-300 filter drop-shadow-sm"
+                          />
+
+                          {/* Step Number Circle Badge on Left */}
+                          <circle
+                            cx={pos.x - (isActive ? 40 : 38)}
+                            cy={pos.y}
+                            r={isActive ? "12" : "11"}
+                            fill={isActive ? "#FFFFFF" : "#F1F5F9"}
+                            className="transition-colors duration-300"
+                          />
+                          <text
+                            x={pos.x - (isActive ? 40 : 38)}
+                            y={pos.y + 3.5}
+                            textAnchor="middle"
+                            fontSize={isActive ? "10" : "9.5"}
+                            fontWeight="800"
+                            fill={isActive ? "#087F73" : "#64748B"}
+                            className="transition-colors duration-300"
+                          >
+                            {s.step}
+                          </text>
+
+                          {/* Step Label on Right — fully contained with generous padding */}
+                          <text
+                            x={pos.x + 14}
+                            y={pos.y + (isActive ? 4 : 3.5)}
+                            textAnchor="middle"
+                            fontSize={isActive ? "10.5" : "10"}
+                            fontWeight={isActive ? "800" : "700"}
+                            letterSpacing="0.02em"
+                            fill={isActive ? "#FFFFFF" : "#1E293B"}
+                            className="transition-colors duration-300"
+                          >
+                            {s.label}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+
+                {/* Footer Interaction Guide */}
+                <div className="pt-2 text-center text-[11px] text-slate-500">
+                  Click or hover any stage to inspect clinical workflow details
+                </div>
               </div>
             </div>
 
             {/* Interactive Step Details Panel (Right on lg) */}
-            <div className="lg:col-span-6">
-              <div className="bg-white rounded-2xl border-2 border-brand-600/70 p-6 sm:p-7 shadow-card relative">
+            <div className="lg:col-span-6 flex">
+              <div className="w-full bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-7 shadow-card relative flex flex-col justify-between min-h-[460px]">
                 {/* Header Badge */}
-                <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-slate-100">
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2">
                     <span className="w-7 h-7 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center font-bold text-xs border border-brand-200">
                       {activeStep.step}
@@ -740,7 +768,7 @@ export function Landing() {
                 </div>
 
                 {/* Primary Narrative */}
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <p className="text-xs sm:text-sm font-semibold text-brand-800">
                     "{activeStep.shortDesc}"
                   </p>
