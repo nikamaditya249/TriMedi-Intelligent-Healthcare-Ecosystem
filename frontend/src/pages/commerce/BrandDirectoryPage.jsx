@@ -116,7 +116,7 @@ export default function BrandDirectoryPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-6">
             {filteredBrands.map((brand) => {
               const slug = brand.name
                 .toLowerCase()
@@ -127,31 +127,31 @@ export default function BrandDirectoryPage() {
                 <Link
                   key={brand.id}
                   to={`/products/brand/${slug}`}
-                  className="group bg-white rounded-xl border border-slate-200/90 p-5 flex flex-col items-center text-center hover:border-teal-500/50 hover:shadow-md transition-all duration-200"
+                  className="group bg-white rounded-2xl border border-slate-200/90 p-5 flex flex-col items-center text-center hover:border-teal-500 hover:shadow-card transition-all duration-200"
                 >
-                  {/* BRAND LOGO / ICON CONTAINER */}
-                  <div className="w-20 h-20 rounded-full bg-slate-50 border border-slate-100 p-2 flex items-center justify-center overflow-hidden mb-3 group-hover:scale-105 transition-transform duration-300">
+                  {/* BRAND LOGO CONTAINER */}
+                  <div className="w-24 h-24 rounded-2xl bg-white border border-slate-100 p-3 flex items-center justify-center overflow-hidden mb-3.5 group-hover:scale-105 transition-transform duration-200 shadow-2xs">
                     <img
                       src={brand.image}
                       alt={brand.name}
                       loading="lazy"
                       decoding="async"
                       onError={handleImageError}
-                      className="w-full h-full object-cover rounded-full"
+                      className="max-h-full max-w-full object-contain"
                     />
                   </div>
 
                   {/* BRAND NAME */}
-                  <h2 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-teal-700 transition-colors truncate max-w-full">
+                  <h2 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-teal-700 transition-colors truncate max-w-full leading-tight">
                     {brand.name}
                   </h2>
-                  <span className="text-xs text-slate-500 mt-0.5">
+                  <span className="text-xs text-slate-500 mt-1">
                     {brand.tag}
                   </span>
 
-                  <span className="mt-3 text-[11px] font-semibold text-teal-700 group-hover:underline inline-flex items-center gap-0.5">
+                  <span className="mt-3.5 text-xs font-bold text-teal-700 group-hover:text-teal-800 inline-flex items-center gap-1">
                     <span>View Products</span>
-                    <i className="bx bx-chevron-right"></i>
+                    <i className="bx bx-chevron-right text-sm"></i>
                   </span>
                 </Link>
               );

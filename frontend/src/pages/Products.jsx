@@ -52,8 +52,8 @@ export default function Products({ search = "" }) {
   // Top 6 Health Concerns Preview
   const topConcerns = HEALTH_CONCERNS.slice(0, 6);
 
-  // Top 6 Brands Preview
-  const topBrands = FEATURED_BRANDS.slice(0, 6);
+  // Featured Brands Preview (All 8 verified brand partners)
+  const topBrands = FEATURED_BRANDS;
 
   // Top 4 Devices Preview
   const topDevices = HEALTHCARE_DEVICES.slice(0, 4);
@@ -272,7 +272,7 @@ export default function Products({ search = "" }) {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4">
           {topBrands.map((brand) => {
             const slug = brand.name
               .toLowerCase()
@@ -283,22 +283,22 @@ export default function Products({ search = "" }) {
               <Link
                 key={brand.id}
                 to={`/products/brand/${slug}`}
-                className="group bg-white rounded-xl border border-slate-200 p-4 flex flex-col items-center text-center hover:border-teal-500/50 hover:shadow-md transition-all duration-200"
+                className="group bg-white rounded-2xl border border-slate-200/90 p-3 sm:p-3.5 flex flex-col items-center text-center hover:border-teal-500 hover:shadow-card transition-all duration-200"
               >
-                <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 p-1.5 flex items-center justify-center overflow-hidden mb-2.5 group-hover:scale-105 transition-transform">
+                <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-xl bg-white border border-slate-100 p-2 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform duration-200 shadow-2xs">
                   <img
                     src={brand.image}
                     alt={brand.name}
                     loading="lazy"
                     decoding="async"
                     onError={handleImageError}
-                    className="w-full h-full object-cover rounded-full"
+                    className="max-h-full max-w-full object-contain"
                   />
                 </div>
-                <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-teal-700 transition-colors truncate max-w-full">
+                <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-teal-700 transition-colors truncate max-w-full leading-tight">
                   {brand.name}
                 </h3>
-                <span className="text-[11px] text-slate-400 mt-0.5">
+                <span className="text-[10px] sm:text-[11px] font-medium text-slate-400 mt-0.5 truncate max-w-full">
                   {brand.tag}
                 </span>
               </Link>

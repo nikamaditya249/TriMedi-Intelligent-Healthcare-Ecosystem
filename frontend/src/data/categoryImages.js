@@ -63,30 +63,14 @@ export const categoryImages = {
 
   // 3. Featured Brands (Distinct brand imagery & packshots)
   brands: {
-    himalaya:
-      "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=300&auto=format&fit=crop&q=80",
-    tata1mg:
-      "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300&auto=format&fit=crop&q=80",
-    minimalist:
-      "https://images.unsplash.com/photo-1608248597359-59750058e19e?w=300&auto=format&fit=crop&q=80",
-    cetaphil:
-      "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=300&auto=format&fit=crop&q=80",
-    nivea:
-      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=300&auto=format&fit=crop&q=80",
-    dabur:
-      "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&auto=format&fit=crop&q=80",
-    drMorepen:
-      "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=300&auto=format&fit=crop&q=80",
-    fixderma:
-      "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=300&auto=format&fit=crop&q=80",
-    mamaearth:
-      "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&auto=format&fit=crop&q=80",
-    vaseline:
-      "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=300&auto=format&fit=crop&q=80",
-    patanjali:
-      "https://images.unsplash.com/photo-1509358271058-acd22cc93898?w=300&auto=format&fit=crop&q=80",
-    microLabs:
-      "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=300&auto=format&fit=crop&q=80",
+    himalaya: "/brands/Himalaya.png",
+    minimalist: "/brands/minimalist.jpeg",
+    nivea: "/brands/Nivea.jpeg",
+    dabur: "/brands/Dabur.jpeg",
+    fixderma: "/brands/Fixderma.jpeg",
+    mamaearth: "/brands/Mamaearth.png",
+    vaseline: "/brands/Vaseline.jpeg",
+    patanjali: "/brands/Patanjali.png",
   },
 
   // 4. Personal Care

@@ -202,34 +202,23 @@ export const FEATURED_BRANDS = [
   {
     id: "himalaya",
     name: "Himalaya",
+    tag: "Herbal Wellness",
     category: "Herbal Wellness",
     query: "Himalaya",
     image: categoryImages.brands.himalaya,
   },
   {
-    id: "tata1mg",
-    name: "Tata 1mg",
-    category: "Health Supplements",
-    query: "1mg",
-    image: categoryImages.brands.tata1mg,
-  },
-  {
     id: "minimalist",
     name: "Minimalist",
+    tag: "Active Skincare",
     category: "Active Skincare",
     query: "Minimalist",
     image: categoryImages.brands.minimalist,
   },
   {
-    id: "cetaphil",
-    name: "Cetaphil",
-    category: "Gentle Dermatology",
-    query: "Cetaphil",
-    image: categoryImages.brands.cetaphil,
-  },
-  {
     id: "nivea",
     name: "Nivea",
+    tag: "Body & Skin Care",
     category: "Body & Skin Care",
     query: "Nivea",
     image: categoryImages.brands.nivea,
@@ -237,20 +226,15 @@ export const FEATURED_BRANDS = [
   {
     id: "dabur",
     name: "Dabur",
+    tag: "Ayurveda & Health",
     category: "Ayurveda & Health",
     query: "Dabur",
     image: categoryImages.brands.dabur,
   },
   {
-    id: "drMorepen",
-    name: "Dr. Morepen",
-    category: "Medical Devices",
-    query: "Dr. Morepen",
-    image: categoryImages.brands.drMorepen,
-  },
-  {
     id: "fixderma",
     name: "Fixderma",
+    tag: "Clinical Cosmeceuticals",
     category: "Clinical Cosmeceuticals",
     query: "Fixderma",
     image: categoryImages.brands.fixderma,
@@ -258,6 +242,7 @@ export const FEATURED_BRANDS = [
   {
     id: "mamaearth",
     name: "Mamaearth",
+    tag: "Toxin-Free Beauty",
     category: "Toxin-Free Beauty",
     query: "Mamaearth",
     image: categoryImages.brands.mamaearth,
@@ -265,6 +250,7 @@ export const FEATURED_BRANDS = [
   {
     id: "vaseline",
     name: "Vaseline",
+    tag: "Deep Moisture Care",
     category: "Deep Moisture Care",
     query: "Vaseline",
     image: categoryImages.brands.vaseline,
@@ -272,16 +258,10 @@ export const FEATURED_BRANDS = [
   {
     id: "patanjali",
     name: "Patanjali",
+    tag: "Pure Herbal Remedies",
     category: "Pure Herbal Remedies",
     query: "Patanjali",
     image: categoryImages.brands.patanjali,
-  },
-  {
-    id: "microLabs",
-    name: "Micro Labs",
-    category: "Pharmaceuticals",
-    query: "Micro Labs",
-    image: categoryImages.brands.microLabs,
   },
 ];
 
