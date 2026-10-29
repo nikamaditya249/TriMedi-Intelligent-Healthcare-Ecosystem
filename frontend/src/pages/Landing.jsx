@@ -20,7 +20,6 @@ import {
   FiAlertCircle,
   FiChevronRight,
 } from "react-icons/fi";
-import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
@@ -179,7 +178,7 @@ export function Landing() {
   const [productsLoading, setProductsLoading] = useState(true);
   const [addedProductId, setAddedProductId] = useState(null);
 
-  // Auto-cycle through Care Loop nodes every 4 seconds if user is not actively interacting
+  // Auto-cycle through Care Loop nodes every 4.2 seconds if user is not actively interacting
   useEffect(() => {
     if (!isAutoCycling) return;
     const interval = setInterval(() => {
@@ -188,7 +187,7 @@ export function Landing() {
     return () => clearInterval(interval);
   }, [isAutoCycling]);
 
-  // Load 4 to 6 real products from the backend catalog
+  // Load 4 real products from the backend catalog
   useEffect(() => {
     let mounted = true;
     async function loadCatalog() {
@@ -196,7 +195,6 @@ export function Landing() {
         setProductsLoading(true);
         const data = await getProducts();
         if (mounted && Array.isArray(data) && data.length > 0) {
-          // Take 4 curated products
           setFeaturedProducts(data.slice(0, 4));
         }
       } catch (err) {
@@ -260,7 +258,6 @@ export function Landing() {
 
   // Radial positions for 6 nodes on a 560x560 SVG coordinate space
   // Center cx=280, cy=280, radius=195.
-  // Starting at -90 degrees (12 o'clock) and going clockwise:
   const cx = 280;
   const cy = 280;
   const radius = 195;
@@ -293,22 +290,22 @@ export function Landing() {
       {/* =========================================================================
           2. HERO SECTION — CONNECTED HEALTHCARE ECOSYSTEM COMPOSITION
           ========================================================================= */}
-      <section className="relative bg-white pt-10 pb-16 lg:pt-14 lg:pb-20 border-b border-slate-200/80 overflow-hidden">
-        {/* Subtle background ambient mesh */}
+      <section className="relative bg-white pt-8 pb-12 sm:pt-10 sm:pb-14 lg:pt-12 lg:pb-16 border-b border-slate-200/80 overflow-hidden">
+        {/* Ambient subtle mesh */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-brand-50/50 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
         <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-teal-50/40 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-            {/* Left: Strong Brand & Healthcare Story */}
-            <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            {/* Left: Headline & Healthcare Value Proposition */}
+            <div className="lg:col-span-7 space-y-5 text-center lg:text-left">
               <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-brand-50 border border-brand-200/90 text-brand-800 text-xs font-bold tracking-wide">
                 <span className="w-2 h-2 rounded-full bg-brand-600 animate-pulse"></span>
                 <span>CONNECTED HEALTHCARE ECOSYSTEM</span>
               </div>
 
-              <div className="space-y-2">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.12]">
+              <div className="space-y-1.5">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.12]">
                   Healthcare, Connected.
                 </h1>
                 <p className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-brand-700 tracking-tight">
@@ -316,34 +313,32 @@ export function Landing() {
                 </p>
               </div>
 
-              <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed">
+              <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed">
                 TriMedi connects patients, doctors, prescriptions, pharmacies, and medication
                 tracking into one continuous healthcare journey.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-3.5 justify-center lg:justify-start pt-2">
-                <Button
-                  variant="primary"
-                  size="lg"
+              {/* Action Buttons with Consistent Hierarchy */}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-1">
+                <button
+                  type="button"
                   onClick={handleConsultDoctor}
-                  icon={FiArrowRight}
-                  iconPosition="right"
-                  className="font-bold text-sm px-6 shadow-subtle bg-brand-700 hover:bg-brand-800"
+                  className="inline-flex items-center justify-center gap-2 min-h-[46px] px-6 py-3 rounded-xl font-bold text-sm bg-brand-700 hover:bg-brand-800 text-white shadow-subtle transition-colors cursor-pointer"
                 >
-                  Consult a Doctor
-                </Button>
+                  <span>Consult a Doctor</span>
+                  <FiArrowRight className="w-4 h-4 shrink-0" />
+                </button>
 
-                <Button
-                  variant="outline"
-                  size="lg"
+                <button
+                  type="button"
                   onClick={() => navigate("/products")}
-                  className="font-bold text-sm px-6 text-slate-700 hover:text-slate-900 border-slate-300"
+                  className="inline-flex items-center justify-center gap-2 min-h-[46px] px-6 py-3 rounded-xl font-bold text-sm bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-300 hover:border-brand-600 transition-colors cursor-pointer shadow-xs"
                 >
-                  Browse Medicines
-                </Button>
+                  <span>Browse Medicines</span>
+                </button>
               </div>
 
-              {/* 3 Concise Trust Indicators */}
+              {/* 3 Concise Trust Points */}
               <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-y-2 gap-x-6 text-xs text-slate-500">
                 <span className="flex items-center gap-1.5 font-semibold text-slate-700">
                   <FiCheck className="w-4 h-4 text-brand-700" />
@@ -360,11 +355,11 @@ export function Landing() {
               </div>
             </div>
 
-            {/* Right: Premium Radial Healthcare Ecosystem Composition */}
+            {/* Right: Radial Connected Care Architecture Card */}
             <div className="lg:col-span-5 flex justify-center">
               <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-card relative">
                 {/* Visual Header */}
-                <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-100">
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span className="text-xs font-bold text-slate-800 tracking-wide uppercase">
@@ -462,7 +457,7 @@ export function Landing() {
                 </div>
 
                 {/* Floating Medication Treatment Record Preview */}
-                <div className="mt-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200/90 shadow-subtle">
+                <div className="mt-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200/90 shadow-subtle">
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -480,7 +475,7 @@ export function Landing() {
                     </span>
                   </div>
 
-                  <div className="mt-2.5 pt-2 border-t border-slate-200/60">
+                  <div className="mt-2 pt-2 border-t border-slate-200/60">
                     <div className="flex items-center justify-between text-[11px] mb-1">
                       <span className="text-slate-600 font-medium">Supply Remaining</span>
                       <span className="font-bold text-brand-800">6 Days Supply</span>
@@ -501,31 +496,31 @@ export function Landing() {
           ========================================================================= */}
       <section
         id="care-loop"
-        className="py-16 sm:py-20 bg-[#F0FDFA]/60 border-b border-teal-100 relative overflow-hidden"
+        className="py-12 sm:py-16 bg-[#F0FDFA]/60 border-b border-teal-100 relative overflow-hidden"
         onMouseEnter={() => setIsAutoCycling(false)}
         onMouseLeave={() => setIsAutoCycling(true)}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
-          <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-14">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-100/70 border border-brand-200 text-brand-800 text-xs font-bold uppercase tracking-wider mb-3">
+          <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-100/70 border border-brand-200 text-brand-800 text-xs font-bold uppercase tracking-wider mb-2.5">
               <FiRefreshCw className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: "12s" }} />
               <span>Continuous Care Loop</span>
             </div>
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
               One Continuous Healthcare Journey
             </h2>
-            <p className="text-sm sm:text-base text-slate-600 mt-2.5 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
               Every step is connected to the next, keeping your care journey organized from
               consultation to refill.
             </p>
           </div>
 
           {/* Interactive Care Loop Layout (Desktop Split Radial / Mobile Adaptive) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
             {/* Desktop Circular / Radial Visual (Left / Center on lg) */}
             <div className="lg:col-span-7 flex justify-center">
-              <div className="relative w-full max-w-[500px] sm:max-w-[540px] aspect-square select-none">
+              <div className="relative w-full max-w-[460px] sm:max-w-[500px] aspect-square select-none">
                 <svg className="w-full h-full" viewBox="0 0 560 560">
                   <defs>
                     <linearGradient id="activeArcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -543,16 +538,6 @@ export function Landing() {
                       orient="auto"
                     >
                       <path d="M0,1 L5,3 L0,5 Z" fill="#087F73" />
-                    </marker>
-                    <marker
-                      id="arrowheadMuted"
-                      markerWidth="6"
-                      markerHeight="6"
-                      refX="3"
-                      refY="3"
-                      orient="auto"
-                    >
-                      <path d="M0,1 L5,3 L0,5 Z" fill="#94A3B8" />
                     </marker>
                   </defs>
 
@@ -574,17 +559,14 @@ export function Landing() {
                     const p2 = nodePositions[nextIndex];
                     const isActiveSegment = activeStepIndex === i;
 
-                    // Clockwise arc path
                     const arcPath = `M ${p1.x} ${p1.y} A ${radius} ${radius} 0 0 1 ${p2.x} ${p2.y}`;
 
-                    // Midpoint on arc for directional flow indicator
                     const midAngle = p1.angle + Math.PI / 6;
                     const midX = cx + radius * Math.cos(midAngle);
                     const midY = cy + radius * Math.sin(midAngle);
 
                     return (
                       <g key={s.id}>
-                        {/* Segment Path */}
                         <path
                           d={arcPath}
                           fill="none"
@@ -593,8 +575,6 @@ export function Landing() {
                           strokeLinecap="round"
                           className="transition-all duration-300"
                         />
-
-                        {/* Midpoint Directional Chevron */}
                         <circle
                           cx={midX}
                           cy={midY}
@@ -619,7 +599,6 @@ export function Landing() {
                     />
                     <circle cx={cx} cy={cy} r="82" fill="#E8F7F4" opacity="0.4" />
 
-                    {/* TriMedi Brand Hub */}
                     <text
                       x={cx}
                       y={cy - 22}
@@ -669,7 +648,6 @@ export function Landing() {
                   {CARE_LOOP_STEPS.map((s, i) => {
                     const pos = nodePositions[i];
                     const isActive = activeStepIndex === i;
-                    const Icon = s.icon;
 
                     return (
                       <g
@@ -685,7 +663,6 @@ export function Landing() {
                         className="cursor-pointer transition-transform duration-300"
                         style={{ transformOrigin: `${pos.x}px ${pos.y}px` }}
                       >
-                        {/* Outer Glow Halo for active node */}
                         {isActive && (
                           <circle
                             cx={pos.x}
@@ -697,7 +674,6 @@ export function Landing() {
                           />
                         )}
 
-                        {/* Node Base Circle */}
                         <circle
                           cx={pos.x}
                           cy={pos.y}
@@ -708,7 +684,6 @@ export function Landing() {
                           className="transition-all duration-300 filter drop-shadow-sm"
                         />
 
-                        {/* Node Number */}
                         <text
                           x={pos.x}
                           y={pos.y - 4}
@@ -721,7 +696,6 @@ export function Landing() {
                           {s.step}
                         </text>
 
-                        {/* Node Label */}
                         <text
                           x={pos.x}
                           y={pos.y + 11}
@@ -742,9 +716,9 @@ export function Landing() {
 
             {/* Interactive Step Details Panel (Right on lg) */}
             <div className="lg:col-span-5">
-              <div className="bg-white rounded-2xl border-2 border-brand-600/70 p-6 sm:p-8 shadow-card relative">
+              <div className="bg-white rounded-2xl border-2 border-brand-600/70 p-5 sm:p-7 shadow-card relative">
                 {/* Header Badge */}
-                <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-100">
+                <div className="flex items-center justify-between pb-3 mb-3.5 border-b border-slate-100">
                   <div className="flex items-center gap-2">
                     <span className="w-8 h-8 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center font-bold text-xs border border-brand-200">
                       {activeStep.step}
@@ -753,7 +727,7 @@ export function Landing() {
                       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
                         Care Workflow Step
                       </span>
-                      <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
                         {activeStep.fullTitle}
                       </h3>
                     </div>
@@ -764,18 +738,18 @@ export function Landing() {
                 </div>
 
                 {/* Primary Narrative */}
-                <div className="space-y-3">
-                  <p className="text-sm font-semibold text-brand-800">
+                <div className="space-y-2.5">
+                  <p className="text-xs sm:text-sm font-semibold text-brand-800">
                     "{activeStep.shortDesc}"
                   </p>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  <p className="text-xs text-slate-600 leading-relaxed">
                     {activeStep.details}
                   </p>
                 </div>
 
-                {/* Key Clinical Safeguards / Highlights */}
-                <div className="mt-5 pt-4 border-t border-slate-100 space-y-2.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+                {/* Key Clinical Safeguards */}
+                <div className="mt-4 pt-3.5 border-t border-slate-100 space-y-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
                     Clinical Continuity Safeguards:
                   </span>
                   {activeStep.highlights.map((hl, idx) => (
@@ -787,11 +761,11 @@ export function Landing() {
                 </div>
 
                 {/* Direct Action Button */}
-                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between">
                   <button
                     type="button"
                     onClick={() => handleCareLoopAction(activeStep.target)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs shadow-subtle transition-colors"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs shadow-subtle transition-colors cursor-pointer"
                   >
                     <span>{activeStep.actionText}</span>
                     <FiArrowRight className="w-3.5 h-3.5" />
@@ -805,9 +779,9 @@ export function Landing() {
                           setActiveStepIndex(dotIdx);
                           setIsAutoCycling(false);
                         }}
-                        className={`w-2.5 h-2.5 rounded-full transition-all ${
+                        className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
                           activeStepIndex === dotIdx
-                            ? "bg-brand-700 w-5"
+                            ? "bg-brand-700 w-4.5"
                             : "bg-slate-200 hover:bg-slate-300"
                         }`}
                         aria-label={`Jump to step ${dotIdx + 1}`}
@@ -824,9 +798,9 @@ export function Landing() {
       {/* =========================================================================
           4. "HEALTHCARE THAT STAYS CONNECTED" — VISUAL SPLIT TIMELINE WITH PHOTO
           ========================================================================= */}
-      <section className="py-16 sm:py-20 bg-white border-b border-slate-200/90">
+      <section className="py-12 sm:py-16 bg-white border-b border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Left: Authentic Clinical Photography */}
             <div className="lg:col-span-5 relative">
               <div className="relative rounded-2xl overflow-hidden shadow-card border border-slate-200">
@@ -837,7 +811,7 @@ export function Landing() {
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent"></div>
-                <div className="absolute bottom-4 left-4 right-4 p-4 rounded-xl bg-white/95 backdrop-blur-sm border border-white/40 shadow-card">
+                <div className="absolute bottom-4 left-4 right-4 p-3.5 rounded-xl bg-white/95 backdrop-blur-sm border border-white/40 shadow-card">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                     <span className="text-[11px] font-bold text-slate-800">
@@ -852,23 +826,23 @@ export function Landing() {
             </div>
 
             {/* Right: Vertical Connected Journey Timeline */}
-            <div className="lg:col-span-7 space-y-6">
+            <div className="lg:col-span-7 space-y-5">
               <div>
-                <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-700 mb-2">
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-700 mb-1.5">
                   <FiActivity className="w-3.5 h-3.5" />
                   <span>Clinical Integration</span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                   Healthcare That Stays Connected
                 </h2>
-                <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed">
                   Instead of disconnected steps, TriMedi links consultations, prescriptions,
                   authentic pharmacy fulfillment, and ongoing treatment tracking into a unified record.
                 </p>
               </div>
 
               {/* Vertical Connected Journey Timeline */}
-              <div className="relative pl-6 space-y-5 border-l-2 border-brand-200">
+              <div className="relative pl-6 space-y-4 border-l-2 border-brand-200">
                 {[
                   {
                     num: "01",
@@ -902,12 +876,11 @@ export function Landing() {
                   },
                 ].map((item) => (
                   <div key={item.num} className="relative group">
-                    {/* Node marker on the vertical line */}
                     <div className="absolute -left-[31px] top-0.5 w-5 h-5 rounded-full bg-white border-2 border-brand-700 flex items-center justify-center">
                       <div className="w-2 h-2 rounded-full bg-brand-700"></div>
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-slate-900 group-hover:text-brand-700 transition-colors">
+                      <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-brand-700 transition-colors">
                         <span className="text-xs font-mono font-bold text-brand-700 mr-2">
                           {item.num}
                         </span>
@@ -928,28 +901,28 @@ export function Landing() {
       {/* =========================================================================
           5. BEFORE VS. TRIMEDI — VISUAL COMPARISON
           ========================================================================= */}
-      <section className="py-16 sm:py-20 bg-slate-50 border-b border-slate-200/90">
+      <section className="py-12 sm:py-16 bg-slate-50 border-b border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-14">
+          <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
             <h2 className="text-xs font-bold uppercase tracking-wider text-brand-700 mb-2">
               Fragmented vs. Connected Care
             </h2>
             <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               Healthcare Shouldn't Feel Fragmented
             </h3>
-            <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed">
               Why an integrated healthcare ecosystem eliminates therapy interruptions and protects patient health.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 items-stretch">
             {/* Traditional Healthcare (Fragmented) */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-subtle flex flex-col justify-between">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-7 shadow-subtle flex flex-col justify-between">
               <div>
-                <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-100">
+                <div className="flex items-center justify-between pb-3 mb-3.5 border-b border-slate-100">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-                    <h4 className="text-base font-bold text-slate-800">Traditional Healthcare</h4>
+                    <h4 className="text-sm sm:text-base font-bold text-slate-800">Traditional Healthcare</h4>
                   </div>
                   <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded">
                     Fragmented
@@ -957,7 +930,7 @@ export function Landing() {
                 </div>
 
                 {/* Broken workflow illustration */}
-                <div className="py-3 px-3.5 mb-5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-500 space-y-2">
+                <div className="py-2.5 px-3 mb-4 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-500 space-y-1.5">
                   <div className="flex items-center justify-between font-mono text-[11px] text-slate-600">
                     <span>Doctor</span>
                     <span className="text-rose-400 font-bold">⤏ / / ⤏</span>
@@ -972,7 +945,7 @@ export function Landing() {
                   </p>
                 </div>
 
-                <ul className="space-y-3 text-xs sm:text-sm text-slate-600">
+                <ul className="space-y-2.5 text-xs text-slate-600">
                   <li className="flex items-start gap-2.5">
                     <span className="text-rose-500 font-bold mt-0.5">•</span>
                     <span>Paper prescriptions are easily misplaced, damaged, or illegible.</span>
@@ -992,13 +965,13 @@ export function Landing() {
                 </ul>
               </div>
 
-              <div className="mt-6 pt-3 border-t border-slate-100 text-[11px] text-slate-400">
+              <div className="mt-5 pt-3 border-t border-slate-100 text-[11px] text-slate-400">
                 Frequent therapy dropouts and uncoordinated medical records.
               </div>
             </div>
 
             {/* With TriMedi (Connected) */}
-            <div className="bg-white rounded-2xl border-2 border-brand-600 p-6 sm:p-8 shadow-card flex flex-col justify-between relative">
+            <div className="bg-white rounded-2xl border-2 border-brand-600 p-5 sm:p-7 shadow-card flex flex-col justify-between relative">
               <div className="absolute top-4 right-4">
                 <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-brand-50 text-brand-800 border border-brand-200 rounded">
                   Connected Care
@@ -1006,13 +979,13 @@ export function Landing() {
               </div>
 
               <div>
-                <div className="flex items-center gap-2 pb-3.5 mb-4 border-b border-brand-100">
+                <div className="flex items-center gap-2 pb-3 mb-3.5 border-b border-brand-100">
                   <span className="w-2.5 h-2.5 rounded-full bg-brand-600"></span>
-                  <h4 className="text-base font-bold text-brand-900">With TriMedi</h4>
+                  <h4 className="text-sm sm:text-base font-bold text-brand-900">With TriMedi</h4>
                 </div>
 
                 {/* Continuous workflow illustration */}
-                <div className="py-3 px-3.5 mb-5 rounded-xl bg-brand-50/50 border border-brand-200/80 text-xs space-y-2">
+                <div className="py-2.5 px-3 mb-4 rounded-xl bg-brand-50/50 border border-brand-200/80 text-xs space-y-1.5">
                   <div className="flex items-center justify-between font-mono text-[11px] text-brand-900 font-bold">
                     <span>Doctor</span>
                     <span className="text-brand-600">→</span>
@@ -1029,7 +1002,7 @@ export function Landing() {
                   </p>
                 </div>
 
-                <ul className="space-y-3 text-xs sm:text-sm text-slate-700">
+                <ul className="space-y-2.5 text-xs text-slate-700">
                   <li className="flex items-start gap-2.5 font-medium">
                     <FiCheck className="w-4 h-4 text-brand-700 shrink-0 mt-0.5" />
                     <span>Cryptographically verified digital prescriptions saved to patient vault.</span>
@@ -1049,7 +1022,7 @@ export function Landing() {
                 </ul>
               </div>
 
-              <div className="mt-6 pt-3 border-t border-brand-100 text-[11px] font-semibold text-brand-800">
+              <div className="mt-5 pt-3 border-t border-brand-100 text-[11px] font-semibold text-brand-800">
                 Clinical oversight, transparent pricing, and zero treatment gaps.
               </div>
             </div>
@@ -1060,9 +1033,9 @@ export function Landing() {
       {/* =========================================================================
           6. REAL PRODUCT CATALOG SECTION — "MEDICINES WHEN YOU NEED THEM"
           ========================================================================= */}
-      <section id="products-catalog" className="py-16 sm:py-20 bg-white border-b border-slate-200/90">
+      <section id="products-catalog" className="py-12 sm:py-16 bg-white border-b border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-10">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 mb-8">
             <div>
               <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-700 mb-1">
                 <FiPackage className="w-3.5 h-3.5" />
@@ -1076,22 +1049,19 @@ export function Landing() {
               </p>
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              type="button"
               onClick={() => navigate("/products")}
-              icon={FiArrowRight}
-              iconPosition="right"
-              className="text-xs font-bold shrink-0 text-brand-800 border-brand-300 hover:bg-brand-50"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-brand-300 hover:bg-brand-50 text-xs font-bold text-brand-800 transition-colors cursor-pointer"
             >
-              View All Medicines
-            </Button>
+              <span>View All Medicines</span>
+              <FiArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
 
           {/* Product Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
             {productsLoading ? (
-              // Loading Skeleton
               [1, 2, 3, 4].map((n) => (
                 <div key={n} className="rounded-xl border border-slate-200 p-4 bg-slate-50 animate-pulse space-y-3">
                   <div className="w-full aspect-[4/3] bg-slate-200 rounded-lg"></div>
@@ -1109,7 +1079,7 @@ export function Landing() {
                 >
                   <div>
                     {/* Image with fallback */}
-                    <div className="w-full aspect-[4/3] rounded-lg bg-slate-50 border border-slate-100 overflow-hidden mb-3.5 flex items-center justify-center relative">
+                    <div className="w-full aspect-[4/3] rounded-lg bg-slate-50 border border-slate-100 overflow-hidden mb-3 flex items-center justify-center relative">
                       <img
                         src={prod.image || HEALTHCARE_IMAGES.packaging}
                         alt={prod.name}
@@ -1136,7 +1106,7 @@ export function Landing() {
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       {prod.category || "Pharmaceutical"}
                     </p>
-                    <h4 className="text-sm font-bold text-slate-900 mt-0.5 group-hover:text-brand-700 transition-colors line-clamp-1">
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 mt-0.5 group-hover:text-brand-700 transition-colors line-clamp-1">
                       {prod.name}
                     </h4>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -1144,7 +1114,7 @@ export function Landing() {
                     </p>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between">
                     <div>
                       <span className="text-base font-extrabold text-slate-900">
                         ₹{prod.price}
@@ -1159,7 +1129,7 @@ export function Landing() {
                     <button
                       type="button"
                       onClick={(e) => handleAddToCart(prod, e)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer ${
                         addedProductId === prod._id
                           ? "bg-emerald-600 text-white"
                           : "bg-brand-50 hover:bg-brand-700 text-brand-800 hover:text-white border border-brand-200"
@@ -1192,8 +1162,8 @@ export function Landing() {
       {/* =========================================================================
           7. "WHY TRIMEDI" — 4 FEATURE BLOCKS WITH ALTERNATING STORYTELLING LAYOUT
           ========================================================================= */}
-      <section className="py-16 sm:py-20 bg-slate-50/70 border-b border-slate-200/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      <section className="py-12 sm:py-16 bg-slate-50/70 border-b border-slate-200/90">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
           <div className="text-center max-w-3xl mx-auto">
             <h2 className="text-xs font-bold uppercase tracking-wider text-brand-700 mb-2">
               Clinical Platform Principles
@@ -1201,14 +1171,14 @@ export function Landing() {
             <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               Why Healthcare Leaders Choose TriMedi
             </h3>
-            <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed">
               Engineered around clinical integrity, verified dispensing, and treatment continuity.
             </p>
           </div>
 
-          <div className="space-y-10">
+          <div className="space-y-6 sm:space-y-8">
             {/* Block 1: Image Left, Text Right */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-subtle">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-center bg-white rounded-2xl p-5 sm:p-7 border border-slate-200 shadow-subtle">
               <div className="md:col-span-5 rounded-xl overflow-hidden aspect-[4/3] border border-slate-100">
                 <img
                   src={HEALTHCARE_IMAGES.pharmacy}
@@ -1217,14 +1187,14 @@ export function Landing() {
                   loading="lazy"
                 />
               </div>
-              <div className="md:col-span-7 space-y-3">
+              <div className="md:col-span-7 space-y-2.5">
                 <span className="text-xs font-mono font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
                   01 • CONNECTED CARE
                 </span>
-                <h4 className="text-xl font-bold text-slate-900">
+                <h4 className="text-lg sm:text-xl font-bold text-slate-900">
                   One Unified Healthcare Architecture
                 </h4>
-                <p className="text-sm text-slate-600 leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                   Consultation, prescription, pharmacy fulfillment, and medication adherence remain
                   connected in a single longitudinal patient record. No lost paper slips, duplicate
                   forms, or fractured care plans.
@@ -1233,15 +1203,15 @@ export function Landing() {
             </div>
 
             {/* Block 2: Text Left, Image Right */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-subtle">
-              <div className="md:col-span-7 space-y-3 order-2 md:order-1">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-center bg-white rounded-2xl p-5 sm:p-7 border border-slate-200 shadow-subtle">
+              <div className="md:col-span-7 space-y-2.5 order-2 md:order-1">
                 <span className="text-xs font-mono font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
                   02 • CLINICAL AUTHORITY
                 </span>
-                <h4 className="text-xl font-bold text-slate-900">
+                <h4 className="text-lg sm:text-xl font-bold text-slate-900">
                   AI-Assisted, Human Doctor Verified
                 </h4>
-                <p className="text-sm text-slate-600 leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                   Artificial intelligence assists doctors with documentation, drug interaction checks,
                   and dosage calculations, but certified physicians retain ultimate clinical
                   decision-making authority over every prescription.
@@ -1258,7 +1228,7 @@ export function Landing() {
             </div>
 
             {/* Block 3: Image Left, Text Right */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-subtle">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-center bg-white rounded-2xl p-5 sm:p-7 border border-slate-200 shadow-subtle">
               <div className="md:col-span-5 rounded-xl overflow-hidden aspect-[4/3] border border-slate-100">
                 <img
                   src={HEALTHCARE_IMAGES.packaging}
@@ -1267,14 +1237,14 @@ export function Landing() {
                   loading="lazy"
                 />
               </div>
-              <div className="md:col-span-7 space-y-3">
+              <div className="md:col-span-7 space-y-2.5">
                 <span className="text-xs font-mono font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
                   03 • VERIFIED FULFILLMENT
                 </span>
-                <h4 className="text-xl font-bold text-slate-900">
+                <h4 className="text-lg sm:text-xl font-bold text-slate-900">
                   Controlled Pharmacy Dispensing
                 </h4>
-                <p className="text-sm text-slate-600 leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                   Prescription validation, stock reservation, and temperature-controlled pharmacy
                   dispensing guarantee genuine formulations directly from licensed distributors.
                 </p>
@@ -1282,15 +1252,15 @@ export function Landing() {
             </div>
 
             {/* Block 4: Text Left, Image Right */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-subtle">
-              <div className="md:col-span-7 space-y-3 order-2 md:order-1">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-center bg-white rounded-2xl p-5 sm:p-7 border border-slate-200 shadow-subtle">
+              <div className="md:col-span-7 space-y-2.5 order-2 md:order-1">
                 <span className="text-xs font-mono font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
                   04 • INTELLIGENT REFILLS
                 </span>
-                <h4 className="text-xl font-bold text-slate-900">
+                <h4 className="text-lg sm:text-xl font-bold text-slate-900">
                   Proactive Treatment Continuity
                 </h4>
-                <p className="text-sm text-slate-600 leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                   Medication duration is tracked automatically to identify potential treatment gaps
                   before therapy is interrupted, giving patients ample time to order refills with peace of mind.
                 </p>
@@ -1311,26 +1281,26 @@ export function Landing() {
       {/* =========================================================================
           8. BUILT AROUND PATIENT SAFETY & HEALTHCARE TRUST (DARK NAVY BAND)
           ========================================================================= */}
-      <section className="py-16 sm:py-20 bg-[#17213A] text-white border-b border-slate-800">
+      <section className="py-12 sm:py-16 bg-[#17213A] text-white border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mb-12">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 text-teal-300 text-xs font-semibold mb-3 border border-slate-700">
+          <div className="max-w-3xl mb-8 sm:mb-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 text-teal-300 text-xs font-semibold mb-2.5 border border-slate-700">
               <FiShield className="w-3.5 h-3.5 text-teal-400" />
               <span>Clinical Governance & Patient Safety</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-2">
               Built Around Patient Safety & Clinical Integrity
             </h2>
-            <p className="text-sm text-slate-300 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
               Automated intelligence assists workflows, but clinical decisions and prescriptions
               remain strictly doctor-controlled.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-xs">
-            <div className="p-5 rounded-xl bg-slate-800/50 border border-slate-700/80">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 text-xs">
+            <div className="p-4 sm:p-5 rounded-xl bg-slate-800/50 border border-slate-700/80">
               <h4 className="font-bold text-teal-300 mb-1.5 flex items-center gap-1.5 text-sm">
-                <FiCheckCircle className="w-4 h-4 text-teal-400" />
+                <FiCheckCircle className="w-4 h-4 text-teal-400 shrink-0" />
                 Human Clinical Authority
               </h4>
               <p className="text-slate-300 leading-relaxed">
@@ -1338,9 +1308,9 @@ export function Landing() {
               </p>
             </div>
 
-            <div className="p-5 rounded-xl bg-slate-800/50 border border-slate-700/80">
+            <div className="p-4 sm:p-5 rounded-xl bg-slate-800/50 border border-slate-700/80">
               <h4 className="font-bold text-teal-300 mb-1.5 flex items-center gap-1.5 text-sm">
-                <FiFileText className="w-4 h-4 text-teal-400" />
+                <FiFileText className="w-4 h-4 text-teal-400 shrink-0" />
                 Tamper-Evident Prescriptions
               </h4>
               <p className="text-slate-300 leading-relaxed">
@@ -1348,9 +1318,9 @@ export function Landing() {
               </p>
             </div>
 
-            <div className="p-5 rounded-xl bg-slate-800/50 border border-slate-700/80">
+            <div className="p-4 sm:p-5 rounded-xl bg-slate-800/50 border border-slate-700/80">
               <h4 className="font-bold text-teal-300 mb-1.5 flex items-center gap-1.5 text-sm">
-                <FiLock className="w-4 h-4 text-teal-400" />
+                <FiLock className="w-4 h-4 text-teal-400 shrink-0" />
                 Role-Isolated Workspaces
               </h4>
               <p className="text-slate-300 leading-relaxed">
@@ -1358,9 +1328,9 @@ export function Landing() {
               </p>
             </div>
 
-            <div className="p-5 rounded-xl bg-slate-800/50 border border-slate-700/80">
+            <div className="p-4 sm:p-5 rounded-xl bg-slate-800/50 border border-slate-700/80">
               <h4 className="font-bold text-teal-300 mb-1.5 flex items-center gap-1.5 text-sm">
-                <FiActivity className="w-4 h-4 text-teal-400" />
+                <FiActivity className="w-4 h-4 text-teal-400 shrink-0" />
                 Server-Side Authoritative Pricing
               </h4>
               <p className="text-slate-300 leading-relaxed">
@@ -1368,9 +1338,9 @@ export function Landing() {
               </p>
             </div>
 
-            <div className="p-5 rounded-xl bg-slate-800/50 border border-slate-700/80">
+            <div className="p-4 sm:p-5 rounded-xl bg-slate-800/50 border border-slate-700/80">
               <h4 className="font-bold text-teal-300 mb-1.5 flex items-center gap-1.5 text-sm">
-                <FiPackage className="w-4 h-4 text-teal-400" />
+                <FiPackage className="w-4 h-4 text-teal-400 shrink-0" />
                 Verified Pharmacy Inventory
               </h4>
               <p className="text-slate-300 leading-relaxed">
@@ -1378,9 +1348,9 @@ export function Landing() {
               </p>
             </div>
 
-            <div className="p-5 rounded-xl bg-slate-800/50 border border-slate-700/80">
+            <div className="p-4 sm:p-5 rounded-xl bg-slate-800/50 border border-slate-700/80">
               <h4 className="font-bold text-teal-300 mb-1.5 flex items-center gap-1.5 text-sm">
-                <FiClock className="w-4 h-4 text-teal-400" />
+                <FiClock className="w-4 h-4 text-teal-400 shrink-0" />
                 Non-Alarmist 5-Day Alerts
               </h4>
               <p className="text-slate-300 leading-relaxed">
@@ -1394,115 +1364,111 @@ export function Landing() {
       {/* =========================================================================
           9. ROLE-BASED PLATFORM WORKSPACES
           ========================================================================= */}
-      <section className="py-16 sm:py-20 bg-white border-b border-slate-200/90">
+      <section className="py-12 sm:py-16 bg-white border-b border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-14">
+          <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
             <h2 className="text-xs font-bold uppercase tracking-wider text-brand-700 mb-2">
               Role-Based Architecture
             </h2>
             <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               One Ecosystem. Dedicated Portals.
             </h3>
-            <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed">
               Every participant operates within an authenticated, role-isolated workspace designed for clinical safety and efficiency.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
             {/* Patient Portal */}
-            <div className="rounded-xl border border-slate-200/90 bg-slate-50/50 p-6 flex flex-col justify-between hover:border-slate-300 hover:shadow-subtle transition-all">
+            <div className="rounded-xl border border-slate-200/90 bg-slate-50/50 p-5 sm:p-6 flex flex-col justify-between hover:border-slate-300 hover:shadow-subtle transition-all">
               <div>
-                <div className="w-10 h-10 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-200/60 mb-4">
-                  <FiHeart className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-200/60 mb-3.5">
+                  <FiHeart className="w-4.5 h-4.5" />
                 </div>
-                <h4 className="text-base font-bold text-slate-900 mb-1.5">Patients</h4>
-                <ul className="text-xs text-slate-600 space-y-1.5 mb-6">
+                <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1.5">Patients</h4>
+                <ul className="text-xs text-slate-600 space-y-1.5 mb-5">
                   <li>• Certified doctor appointments</li>
                   <li>• Digital prescription vault</li>
                   <li>• Authentic medicine orders</li>
                   <li>• Proactive refill reminders</li>
                 </ul>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-center text-xs"
+              <button
+                type="button"
                 onClick={() => handleRolePortalClick("patient")}
+                className="w-full text-center text-xs font-bold py-2 px-3 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-brand-600 hover:text-brand-800 transition-colors cursor-pointer"
               >
                 Patient Portal
-              </Button>
+              </button>
             </div>
 
             {/* Doctor Portal */}
-            <div className="rounded-xl border border-slate-200/90 bg-slate-50/50 p-6 flex flex-col justify-between hover:border-slate-300 hover:shadow-subtle transition-all">
+            <div className="rounded-xl border border-slate-200/90 bg-slate-50/50 p-5 sm:p-6 flex flex-col justify-between hover:border-slate-300 hover:shadow-subtle transition-all">
               <div>
-                <div className="w-10 h-10 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-200/60 mb-4">
-                  <FiUserCheck className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-200/60 mb-3.5">
+                  <FiUserCheck className="w-4.5 h-4.5" />
                 </div>
-                <h4 className="text-base font-bold text-slate-900 mb-1.5">Doctors</h4>
-                <ul className="text-xs text-slate-600 space-y-1.5 mb-6">
+                <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1.5">Doctors</h4>
+                <ul className="text-xs text-slate-600 space-y-1.5 mb-5">
                   <li>• Longitudinal medical records</li>
                   <li>• Consultation queue & notes</li>
                   <li>• Structured e-prescription issuance</li>
                   <li>• Clinical decision support</li>
                 </ul>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-center text-xs"
+              <button
+                type="button"
                 onClick={() => handleRolePortalClick("doctor")}
+                className="w-full text-center text-xs font-bold py-2 px-3 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-brand-600 hover:text-brand-800 transition-colors cursor-pointer"
               >
                 Doctor Portal
-              </Button>
+              </button>
             </div>
 
             {/* Pharmacy Portal */}
-            <div className="rounded-xl border border-slate-200/90 bg-slate-50/50 p-6 flex flex-col justify-between hover:border-slate-300 hover:shadow-subtle transition-all">
+            <div className="rounded-xl border border-slate-200/90 bg-slate-50/50 p-5 sm:p-6 flex flex-col justify-between hover:border-slate-300 hover:shadow-subtle transition-all">
               <div>
-                <div className="w-10 h-10 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-200/60 mb-4">
-                  <FiPackage className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-200/60 mb-3.5">
+                  <FiPackage className="w-4.5 h-4.5" />
                 </div>
-                <h4 className="text-base font-bold text-slate-900 mb-1.5">Pharmacies</h4>
-                <ul className="text-xs text-slate-600 space-y-1.5 mb-6">
+                <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1.5">Pharmacies</h4>
+                <ul className="text-xs text-slate-600 space-y-1.5 mb-5">
                   <li>• Prescription validation</li>
                   <li>• Real-time dispensing queue</li>
                   <li>• Batch & stock inventory controls</li>
                   <li>• Order fulfillment workflow</li>
                 </ul>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-center text-xs"
+              <button
+                type="button"
                 onClick={() => handleRolePortalClick("pharmacy")}
+                className="w-full text-center text-xs font-bold py-2 px-3 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-brand-600 hover:text-brand-800 transition-colors cursor-pointer"
               >
                 Pharmacy Portal
-              </Button>
+              </button>
             </div>
 
             {/* Admin Portal */}
-            <div className="rounded-xl border border-slate-200/90 bg-slate-50/50 p-6 flex flex-col justify-between hover:border-slate-300 hover:shadow-subtle transition-all">
+            <div className="rounded-xl border border-slate-200/90 bg-slate-50/50 p-5 sm:p-6 flex flex-col justify-between hover:border-slate-300 hover:shadow-subtle transition-all">
               <div>
-                <div className="w-10 h-10 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-200/60 mb-4">
-                  <FiShield className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-200/60 mb-3.5">
+                  <FiShield className="w-4.5 h-4.5" />
                 </div>
-                <h4 className="text-base font-bold text-slate-900 mb-1.5">Administrators</h4>
-                <ul className="text-xs text-slate-600 space-y-1.5 mb-6">
+                <h4 className="text-sm sm:text-base font-bold text-slate-900 mb-1.5">Administrators</h4>
+                <ul className="text-xs text-slate-600 space-y-1.5 mb-5">
                   <li>• Platform governance & audit logs</li>
                   <li>• Directory & role permissions</li>
                   <li>• System health telemetry</li>
                   <li>• Operational compliance controls</li>
                 </ul>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-center text-xs"
+              <button
+                type="button"
                 onClick={() => handleRolePortalClick("admin")}
+                className="w-full text-center text-xs font-bold py-2 px-3 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-brand-600 hover:text-brand-800 transition-colors cursor-pointer"
               >
                 Admin Portal
-              </Button>
+              </button>
             </div>
           </div>
         </div>
@@ -1511,14 +1477,14 @@ export function Landing() {
       {/* =========================================================================
           10. NEED HELP & FAQS
           ========================================================================= */}
-      <section id="help" className="py-14 sm:py-18 bg-slate-50 border-b border-slate-200/90">
+      <section id="help" className="py-10 sm:py-14 bg-slate-50 border-b border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mb-8">
+          <div className="max-w-3xl mb-7">
             <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-700 mb-1">
               <FiHelpCircle className="w-3.5 h-3.5" />
               <span>Assistance & Guidance</span>
             </div>
-            <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
               Need Help With Your Care Journey?
             </h3>
             <p className="text-xs sm:text-sm text-slate-600 mt-1">
@@ -1526,9 +1492,9 @@ export function Landing() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-subtle">
-              <h4 className="text-sm font-bold text-slate-900 mb-1.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="bg-white p-5 sm:p-6 rounded-xl border border-slate-200/90 shadow-subtle">
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900 mb-1.5">
                 How do digital prescriptions work?
               </h4>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -1537,8 +1503,8 @@ export function Landing() {
               </p>
             </div>
 
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-subtle">
-              <h4 className="text-sm font-bold text-slate-900 mb-1.5">
+            <div className="bg-white p-5 sm:p-6 rounded-xl border border-slate-200/90 shadow-subtle">
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900 mb-1.5">
                 Can I order medicines without a prescription?
               </h4>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -1547,8 +1513,8 @@ export function Landing() {
               </p>
             </div>
 
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-subtle">
-              <h4 className="text-sm font-bold text-slate-900 mb-1.5">
+            <div className="bg-white p-5 sm:p-6 rounded-xl border border-slate-200/90 shadow-subtle">
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900 mb-1.5">
                 How does refill tracking work?
               </h4>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -1561,40 +1527,52 @@ export function Landing() {
       </section>
 
       {/* =========================================================================
-          11. FINAL CALL TO ACTION BANNER
+          11. FINAL CALL TO ACTION BANNER (HIGH-CONTRAST & RESTRAINED HEIGHT)
           ========================================================================= */}
-      <section className="py-16 sm:py-20 bg-gradient-to-r from-brand-900 via-brand-800 to-brand-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">
+      <section className="py-12 sm:py-14 lg:py-[72px] bg-gradient-to-r from-brand-900 via-brand-800 to-brand-900 text-white border-t border-brand-950 relative overflow-hidden">
+        {/* Subtle background glow */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent pointer-events-none"></div>
+
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4 relative">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight">
             Start Your Connected Healthcare Journey With TriMedi
           </h2>
-          <p className="text-sm sm:text-base text-brand-100 max-w-xl mx-auto leading-relaxed">
+          <p className="text-xs sm:text-sm text-teal-100/90 max-w-xl mx-auto leading-relaxed font-normal">
             Consult verified doctors, manage prescriptions, track treatment adherence, and reorder
             supplies with zero interruptions.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3.5 justify-center items-center pt-4">
-            <Button
-              variant="primary"
-              size="lg"
+          <div className="flex flex-col sm:flex-row gap-3.5 justify-center items-center pt-2">
+            {/* Primary High-Contrast CTA */}
+            <button
+              type="button"
               onClick={handleConsultDoctor}
-              className="font-bold text-sm px-7 bg-white text-brand-900 hover:bg-brand-50 shadow-subtle border-none"
+              className="inline-flex items-center justify-center gap-2 min-h-[46px] px-7 py-3 rounded-xl font-bold text-sm transition-all duration-150 shadow-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-teal-900 cursor-pointer hover:bg-teal-50"
+              style={{ color: "#044D46", backgroundColor: "#FFFFFF" }}
             >
-              Consult a Doctor
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
+              <span style={{ color: "#044D46" }}>Consult a Doctor</span>
+              <FiArrowRight className="w-4 h-4 shrink-0" style={{ color: "#044D46" }} />
+            </button>
+
+            {/* Secondary High-Contrast CTA */}
+            <button
+              type="button"
               onClick={() => navigate("/products")}
-              className="font-bold text-sm px-7 text-white border-white/60 hover:bg-white/10"
+              className="inline-flex items-center justify-center gap-2 min-h-[46px] px-7 py-3 rounded-xl font-bold text-sm bg-transparent transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-teal-900 cursor-pointer hover:bg-white/10"
+              style={{
+                color: "#FFFFFF",
+                borderWidth: "1px",
+                borderStyle: "solid",
+                borderColor: "rgba(255, 255, 255, 0.45)",
+              }}
             >
-              Browse Medicines
-            </Button>
+              <span style={{ color: "#FFFFFF" }}>Browse Medicines</span>
+            </button>
           </div>
         </div>
       </section>
 
-      {/* 12. GLOBAL FOOTER */}
+      {/* 12. GLOBAL CLINICAL LIGHT FOOTER */}
       <Footer />
     </div>
   );
